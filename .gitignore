@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Large-asset policy (see assets-source/case-404/README.md):
+# Original/master GLBs are large (tens of MB each) and are not committed.
+# Directory structure + docs (.gitkeep, README, inventory, credits) stay
+# tracked so the pipeline layout survives. Approved production assets in
+# public/models/case-404/ ARE committed — they're required for deployment.
+assets-source/**/*.glb
+assets-source/**/*.gltf
+assets-source/**/*.fbx
+assets-source/**/*.blend
+assets-source/**/*.bin

@@ -1,0 +1,32 @@
+/**
+ * CASE 404 design tokens.
+ * Semantic names only — components reference these, never raw hex values.
+ */
+:root {
+  /* Core palette */
+  --color-black: #0a0908;
+  --color-charcoal: #1c1a18;
+  --color-dark-brown: #2a211b;
+  --color-paper: #e8e1d3;
+  --color-paper-muted: #bdb5a4;
+  --color-text: var(--color-paper);
+  --color-text-muted: var(--color-paper-muted);
+  --color-evidence-red: #8a2c2c;
+  --color-tungsten: #d9a860;
+  --color-exterior-cool: #5f7a85;
+  --color-border: #3a332c;
+
+  /* Archive / CRT accent, used sparingly for the project-archive chapter */
+  --color-archive-phosphor: #4fae7a;
+
+  /* Typography */
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: "Segoe UI", system-ui, sans-serif;
+  --font-terminal: "Courier New", ui-monospace, monospace;
+
+  /* Motion */
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 300ms;
+  --motion-duration-slow: 600ms;
+  --motion-ease: ease-in-out;
+}
