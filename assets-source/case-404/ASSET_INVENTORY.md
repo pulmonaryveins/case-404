@@ -209,3 +209,19 @@ boards), rotated so boards run away from the camera, colour multiplied by
 `#c8c2bc`. Previous `wood-boards.glb` derivative and a stray byte-identical
 copy of `wooden_wall__tile_texture.glb` in `public/` were removed (sources
 kept).
+
+---
+
+# Phase 4A — Dossier swap
+
+`dossier_from_fps_creator_classic.glb` (56 tris, single mesh) cannot open.
+Replaced in the scene by `document_file_folder.glb` → runtime
+`public/models/case-404/dossier/dossier-folder.glb` (unmodified copy,
+49.1 MB): folder mesh `Folder_1Shape` (1,396 tris) carries a recorded cover
+open/close as **210 per-frame morph targets** (animation "Anim", 7 s: frames
+0–~88 open, hold, ~123–210 close); pages `A4_Page1–3Shape` + stack are
+separate static meshes. 5 materials, all 4096² textures (the main cost).
+Scale 0.105 → 24 × 33 cm. Cover branding ("BELL SYSTEMS" plate + Bell
+emblem) is painted out at runtime (colour, normal, metal/rough, AO maps);
+the label plate is raised geometry, so it is repainted as a CASE 404 paper
+label rather than removed. `dossierPrimary` stays registered, unused.

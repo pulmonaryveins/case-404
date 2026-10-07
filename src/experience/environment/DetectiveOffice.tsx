@@ -1,4 +1,6 @@
 import { Model } from "../models/Model";
+import { Dossier } from "./Dossier";
+import { EvidenceBoard } from "./EvidenceBoard";
 import { RoomShell } from "./RoomShell";
 
 /**
@@ -17,11 +19,11 @@ export function DetectiveOffice() {
 
       <group name="main-desk">
         <Model id="desk" />
-        <Model id="dossierPrimary" />
+        <Dossier />
       </group>
 
       <group name="evidence-board">
-        <Model id="investigationBoard" />
+        <EvidenceBoard />
       </group>
     </group>
   );

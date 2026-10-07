@@ -83,7 +83,14 @@ EDITING`) → project media, title, description, tools, link. Changing
   404 evidence: CASE 404, SUBJECT UNKNOWN, profile photo, discipline clues
   (Frontend Development, UI/UX Design, Graphic Design, Video Editing), red
   string, pins, notes, annotations, labels. Dedicated future phase.
-- **Dossier** is About → Education → Experience as a physical
+- **Dossier** (`Dossier.tsx`, asset `document_file_folder.glb` — the only
+  folder in the library that can open: its cover has a recorded open/close
+  as 210 per-frame morph targets, scrubbed by blending adjacent frames).
+  Left page = persistent identity, right page = ABOUT with the
+  ABOUT/EDUCATION/EXPERIENCE tab row; both are CanvasTextures painted from
+  `src/data/profile.ts`, revealed only after the cover opens. The cover's
+  third-party label/emblem are painted out at load and the label plate
+  becomes a CASE 404 case label. Story: About → Education → Experience as a physical
   folder/document (SUBJECT UNKNOWN → dossier discovered → identity
   revealed → about → education → experience). Never a website card.
 
@@ -170,14 +177,29 @@ Three.js use is for anything R3F/drei doesn't already express well
 ## 10. GSAP / ScrollTrigger ownership
 
 `src/lib/gsap.ts` registers `ScrollTrigger` exactly once via
-`registerGsap()`, called from `App.tsx`. No component registers plugins
-itself. Timelines/choreography are Phase 4 work.
+`registerGsap()` (idempotent; called by the Lenis provider and
+StoryController). No component registers plugins itself.
+
+**Opening sequence (Phase 4A).** `StoryController.tsx` owns ONE GSAP
+timeline scrubbed by ONE ScrollTrigger over an 800vh scroll stage; the R3F
+canvas is `position: fixed` behind it. The timeline tweens only the plain
+`storyRig` object (`src/story/storyRig.ts`: camera position/target,
+`dossierOpen`, `profileReveal`); `CameraRig` and `Dossier` read it in
+`useFrame`. Zustand only receives chapter changes (CASE_OPENED →
+EVIDENCE_BOARD → SUBJECT_PROFILE). Everything derives from scroll progress,
+so reverse scroll, scrubbing and mid-page refresh are stateless. Camera
+waypoints live in `cameraAnchors.ts` (`roomOverview → boardApproach →
+evidenceBoard → caseFile → leaveBoard → subjectProfile → dossierOpen`).
+Reduced motion: no camera travel — the same scroll range jumps between
+three states (room, case file, open dossier). `?story` (dev only) shows a
+progress/chapter overlay.
 
 ## 11. Lenis ownership
 
 `src/app/providers/LenisProvider.tsx` is the single owner: it creates one
 `Lenis` instance on mount, drives it from GSAP's ticker (so one RAF loop
-serves both), and destroys it on unmount. No other file may instantiate
+serves both), forwards its scroll events to `ScrollTrigger.update`, and
+destroys it on unmount. No other file may instantiate
 Lenis.
 
 ## 12. Zustand ownership
@@ -259,8 +281,11 @@ activation, and content reveals once ScrollTrigger timelines exist.
 
 `src/experience/surfaces/README.md` documents the concept: downloaded
 models provide geometry, surfaces provide application-controlled content
-on top of it (`PaperSurface`, `PhotoSurface`, `DossierPage`, `CRTScreen`,
-etc.). Not implemented yet.
+on top of it. First implementation: the CASE 404 evidence board — the
+board's colour atlas is repainted at load into each paper's existing UV
+island (`paintCaseBoard.ts`, content in `src/data/evidenceBoard.ts`), so
+geometry, pins, strings and draw calls are unchanged. The subject's name
+never appears on the board.
 
 ## 23. Office geography
 

@@ -130,6 +130,22 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
+  dossierFolder: {
+    id: "dossierFolder",
+    url: "/models/case-404/dossier/dossier-folder.glb",
+    category: "dossier",
+    preloadPriority: 2,
+    // document_file_folder.glb: the only dossier asset that can open — its
+    // folder mesh carries a recorded open/close as 210 per-frame morph
+    // targets. Local 2.28 x 3.1 (spine on local -x) -> 0.105 = 24 x 33 cm.
+    // Offset the right-hand folder pivot so the OPEN spread centres on
+    // the desktop at x = 0.05, z = -2.05.
+    position: [0.172, 0.789, -2.07],
+    rotation: [0, 0.06, 0],
+    scale: 0.105,
+    castShadow: true,
+    receiveShadow: true,
+  },
   dossierSecondary: {
     id: "dossierSecondary",
     url: "/models/case-404/dossier/dossier-secondary.glb",

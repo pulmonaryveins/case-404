@@ -3,8 +3,12 @@ import type { Vector3Tuple } from "../../types/common";
 export type CameraAnchorId =
   | "roomOverview"
   | "caseOpened"
+  | "boardApproach"
   | "evidenceBoard"
+  | "caseFile"
+  | "leaveBoard"
   | "subjectProfile"
+  | "dossierOpen"
   | "education"
   | "experience"
   | "digitalArchive"
