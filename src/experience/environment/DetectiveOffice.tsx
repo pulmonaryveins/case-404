@@ -1,23 +1,28 @@
-import { Grid } from "@react-three/drei";
-import { environmentConfig } from "./environmentConfig";
+import { Model } from "../models/Model";
+import { RoomShell } from "./RoomShell";
 
 /**
- * Phase 0: deliberately near-empty. Real geometry (desk, evidence board,
- * dossier, workstation, props) is introduced in Phase 1 after the GLB
- * audit — nothing here is procedurally recreated in the meantime.
+ * Phase 1B.1 opening composition: a dark room, the desk, and the board —
+ * read as one workspace from the front. Everything else is deliberately
+ * absent.
+ *
+ * Window, filing cabinet, suitcase and the evidence prop set are still
+ * registered in the manifest and the source library; they are simply not
+ * part of this frame.
  */
 export function DetectiveOffice() {
   return (
     <group name="detective-office">
-      {environmentConfig.showDevGrid && (
-        <Grid
-          args={[environmentConfig.groundSize, environmentConfig.groundSize]}
-          cellColor="#3a332c"
-          sectionColor="#5f7a85"
-          fadeDistance={25}
-          position={[0, 0, 0]}
-        />
-      )}
+      <RoomShell />
+
+      <group name="main-desk">
+        <Model id="desk" />
+        <Model id="dossierPrimary" />
+      </group>
+
+      <group name="evidence-board">
+        <Model id="investigationBoard" />
+      </group>
     </group>
   );
 }

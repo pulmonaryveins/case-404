@@ -7,7 +7,8 @@ export type CameraAnchorId =
   | "subjectProfile"
   | "education"
   | "experience"
-  | "workstation"
+  | "digitalArchive"
+  | "creativeEvidence"
   | "credentials"
   | "contact"
   | "caseSolved";

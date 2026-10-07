@@ -11,31 +11,26 @@ import type { Vector3Tuple } from "../../types/common";
  */
 
 export type WorldAnchorId =
-  | "room"
-  | "desk"
+  | "mainDesk"
   | "evidenceBoard"
   | "dossier"
-  | "workstation"
+  | "digitalArchive"
+  | "creativeEvidence"
   | "credentials"
-  | "contact"
-  | "lamp"
-  | "window"
-  | "background";
+  | "contact";
 
 /**
- * Semantic placeholders only. Final coordinates are determined after the
- * real GLBs are inspected (Phase 1) — do not treat these as production
- * positions.
+ * Semantic anchors for the office zones (ARCHITECTURE.md §2). Values exist
+ * only where the zone is actually blocked out (mirroring assetManifest);
+ * `null` means "not placed yet" — never invent a coordinate here. Deeper
+ * zones get positions through visual blockout, not guesswork.
  */
-export const worldAnchors: Record<WorldAnchorId, Vector3Tuple> = {
-  room: [0, 0, 0],
-  desk: [0, 0, -1],
-  evidenceBoard: [0, 1.2, -3],
-  dossier: [2, 0.9, -1],
-  workstation: [-2, 0.9, -1],
-  credentials: [2, 0.9, -2],
-  contact: [0, 0.9, -4],
-  lamp: [0.6, 1.1, -1],
-  window: [-3, 1.5, -3],
-  background: [0, 0, -4],
+export const worldAnchors: Record<WorldAnchorId, Vector3Tuple | null> = {
+  mainDesk: [0.05, 0, -2.05],
+  evidenceBoard: [0, 1.46, -3.74],
+  dossier: [0.52, 0.782, -1.85],
+  digitalArchive: null,
+  creativeEvidence: null,
+  credentials: null,
+  contact: null,
 };

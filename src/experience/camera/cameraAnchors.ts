@@ -8,11 +8,13 @@ import { DEFAULT_CAMERA } from "../../lib/three";
  * (Phase 1+). Do not treat these numbers as final.
  */
 export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
+  // Phase 1B.1 (approved): frontal opening composition. Nearly head-on to
+  // the desk and board, small offset so the shot isn't mathematically perfect.
   roomOverview: {
     id: "roomOverview",
-    position: [0, 1.6, 6],
-    target: [0, 1, 0],
-    fov: DEFAULT_CAMERA.fov,
+    position: [0.14, 1.4, 1.0],
+    target: [0.02, 1.05, -3.6],
+    fov: 40,
   },
   caseOpened: {
     id: "caseOpened",
@@ -39,10 +41,17 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     target: [2, 1, 0],
     fov: DEFAULT_CAMERA.fov,
   },
-  workstation: {
-    id: "workstation",
+  // Deeper-office zones: placeholders until each zone is blocked out.
+  digitalArchive: {
+    id: "digitalArchive",
     position: [-2, 1.4, 2],
     target: [-2, 1, 0],
+    fov: DEFAULT_CAMERA.fov,
+  },
+  creativeEvidence: {
+    id: "creativeEvidence",
+    position: [2, 1.4, 2],
+    target: [2, 1, 0],
     fov: DEFAULT_CAMERA.fov,
   },
   credentials: {

@@ -3,9 +3,9 @@ import { useThree } from "@react-three/fiber";
 import { cameraAnchors } from "./cameraAnchors";
 
 /**
- * Phase 0: positions the camera at the default development anchor.
- * Cinematic camera travel (push/pan/truck/tilt between anchors) is built
- * in Phase 4 once the physical office geometry exists.
+ * Phase 1B: applies the roomOverview anchor — the single established static
+ * camera. FOV is set declaratively on the Canvas; this only places the
+ * camera and aims it. Cinematic travel between anchors is Phase 4.
  */
 export function CameraRig() {
   const camera = useThree((state) => state.camera);
