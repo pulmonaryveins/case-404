@@ -34,9 +34,23 @@ actual source listing before any asset is promoted to production.
 | sp226_airsoft_handgun.glb                      | UNKNOWN — REQUIRES VERIFICATION                                                            | UNKNOWN                                                                                 | likely Sketchfab (unverified) | UNKNOWN                         | sp226_airsoft_handgun.glb                      | props/miscellaneous/        | No                                                    | No       | —                  | UNKNOWN              |                                                                                                                                            |
 | ashtray_with_cigarettes.glb                    | UNKNOWN — REQUIRES VERIFICATION                                                            | UNKNOWN                                                                                 | likely Sketchfab (unverified) | UNKNOWN                         | ashtray_with_cigarettes.glb                    | props/miscellaneous/        | No                                                    | No       | —                  | UNKNOWN              |                                                                                                                                            |
 | floppy_disk.glb                                | UNKNOWN — REQUIRES VERIFICATION                                                            | UNKNOWN                                                                                 | likely Sketchfab (unverified) | UNKNOWN                         | floppy_disk.glb                                | workstation/floppy-disks/   | No                                                    | No       | —                  | UNKNOWN              |                                                                                                                                            |
+| old_vintage_desk_lamp.glb                      | UNKNOWN — REQUIRES VERIFICATION                                                            | UNKNOWN                                                                                 | likely Sketchfab (unverified) | UNKNOWN                         | old_vintage_desk_lamp.glb                      | props/lamp/                 | props/desk-lamp.glb (derivative: maps 4096→2048)      | Yes      | texture resize only | UNKNOWN              | Added Phase 5. Not in the Phase 1A intake. |
+| Old telephone (external)                       | dusan.lamos (per brief)                                                                    | https://sketchfab.com/3d-models/old-telephone-ad2b9e613711475187c06b73ba1f7720          | Sketchfab                     | UNKNOWN — check model page      | n/a (embed only)                               | n/a                         | No — not available locally                            | No       | —                  | Check model page     | Requested for Phase 5. No licensed local copy exists; the embed was not extracted. Desk slot reserved. |
 | IBM PCjr 4863 Computer (external)              | UNKNOWN — see Sketchfab page                                                               | https://sketchfab.com/3d-models/ibm-pcjr-4863-computer-1c3c3cd0643d44d49a1771048da74c62 | Sketchfab                     | UNKNOWN — check model page      | n/a (embed only)                               | n/a                         | No (embed, not a local asset)                         | No       | —                  | Check model page     | Official embed only — see `workstation/computer/ibm-pcjr-sketchfab.md`.                                                                    |
 
 **No asset in this table is production-approved.** `UNKNOWN` licensing
 means exactly that — it blocks production promotion, not technical
 inspection. Every row needs its actual source URL/creator/license looked
 up and confirmed before anything here moves to `public/models/case-404/`.
+
+## Phase 5 promotions
+
+Promoted to runtime for the desk (licences still **UNKNOWN** — promotion here
+is technical, not a licence clearance; each still needs its listing checked):
+
+- `old_vintage_desk_lamp.glb` → `props/desk-lamp.glb` (texture resize)
+- `paper_tablet.glb` → `props/plant.glb` (material conversion + decimation)
+- `sp226_airsoft_handgun.glb` → `props/handgun.glb` (texture resize, unlit → lit)
+
+Modified derivatives are built by `scripts/derive-desk-props.mjs`; if a
+licence turns out to forbid modification, rebuild those as unchanged copies.

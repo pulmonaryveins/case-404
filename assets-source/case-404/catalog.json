@@ -24,7 +24,10 @@
       "defaultMaterial",
       "defaultMaterial"
     ],
-    "materialNames": ["KeyClue_Logbook_Page_Mat", "KeyClue_Logbook_Cover_Mat"],
+    "materialNames": [
+      "KeyClue_Logbook_Page_Mat",
+      "KeyClue_Logbook_Cover_Mat"
+    ],
     "extensionsUsed": []
   },
   {
@@ -59,7 +62,11 @@
       "Plane.001",
       "Plane.001_Material.001_0"
     ],
-    "materialNames": ["Material.002", "Material.001", "Material.003"],
+    "materialNames": [
+      "Material.002",
+      "Material.001",
+      "Material.003"
+    ],
     "extensionsUsed": []
   },
   {
@@ -86,7 +93,9 @@
       "SM_EvidencePlasticBag",
       "defaultMaterial"
     ],
-    "materialNames": ["SM_EvidencePlasticBag_1001"],
+    "materialNames": [
+      "SM_EvidencePlasticBag_1001"
+    ],
     "extensionsUsed": []
   },
   {
@@ -148,9 +157,19 @@
     "cameraCount": 0,
     "lightsDetected": false,
     "dimensions": "0.23 x 0.27 x 0.02",
-    "nodeNames": ["Sketchfab_model", "dossier.fbx", "RootNode", "dossier", "dossier_dossier_0"],
-    "materialNames": ["dossier"],
-    "extensionsUsed": ["KHR_materials_unlit"]
+    "nodeNames": [
+      "Sketchfab_model",
+      "dossier.fbx",
+      "RootNode",
+      "dossier",
+      "dossier_dossier_0"
+    ],
+    "materialNames": [
+      "dossier"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_unlit"
+    ]
   },
   {
     "name": "several_folders.glb",
@@ -224,8 +243,15 @@
       "SM_Note_3",
       "Object_10"
     ],
-    "materialNames": ["M_Dossier", "M_ClipMetal", "M_Paper", "M_Paper_3"],
-    "extensionsUsed": ["KHR_materials_specular"]
+    "materialNames": [
+      "M_Dossier",
+      "M_ClipMetal",
+      "M_Paper",
+      "M_Paper_3"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_specular"
+    ]
   },
   {
     "name": "paper_-_3mb.glb",
@@ -259,7 +285,9 @@
       "02_2_all_0",
       "02_1"
     ],
-    "materialNames": ["material"],
+    "materialNames": [
+      "material"
+    ],
     "extensionsUsed": []
   },
   {
@@ -294,7 +322,9 @@
       "SM_A4_paper",
       "defaultMaterial"
     ],
-    "materialNames": ["T_paper_1001"],
+    "materialNames": [
+      "T_paper_1001"
+    ],
     "extensionsUsed": []
   },
   {
@@ -327,7 +357,10 @@
       "Object_8",
       "Object_9"
     ],
-    "materialNames": ["Polaroid_O_Material_u1_v1", "glasses"],
+    "materialNames": [
+      "Polaroid_O_Material_u1_v1",
+      "glasses"
+    ],
     "extensionsUsed": [
       "KHR_materials_clearcoat",
       "KHR_materials_specular",
@@ -360,7 +393,11 @@
       "Object_4",
       "Object_5"
     ],
-    "materialNames": ["Frameblinn2SG", "Framelambert79SG", "initialShadingGroup"],
+    "materialNames": [
+      "Frameblinn2SG",
+      "Framelambert79SG",
+      "initialShadingGroup"
+    ],
     "extensionsUsed": []
   },
   {
@@ -395,8 +432,12 @@
       "Sphere_Material_0",
       "Sphere_Material_0"
     ],
-    "materialNames": ["Material"],
-    "extensionsUsed": ["KHR_texture_transform"]
+    "materialNames": [
+      "Material"
+    ],
+    "extensionsUsed": [
+      "KHR_texture_transform"
+    ]
   },
   {
     "name": "wooden_floor_tileable_material.glb",
@@ -426,7 +467,9 @@
       "Cylinder_material_0",
       "Cylinder_material_0"
     ],
-    "materialNames": ["material"],
+    "materialNames": [
+      "material"
+    ],
     "extensionsUsed": []
   },
   {
@@ -460,8 +503,12 @@
       "Sphere_Material_0",
       "Sphere_Material_0"
     ],
-    "materialNames": ["Material"],
-    "extensionsUsed": ["KHR_texture_transform"]
+    "materialNames": [
+      "Material"
+    ],
+    "extensionsUsed": [
+      "KHR_texture_transform"
+    ]
   },
   {
     "name": "classic_modular_walls_ceiling_fixed.glb",
@@ -495,8 +542,18 @@
       "Object_10",
       "Object_11"
     ],
-    "materialNames": ["Wall", "glass", "glass_2", "iron", "metal", "wood_2", "wood_2.001"],
-    "extensionsUsed": ["KHR_materials_transmission"]
+    "materialNames": [
+      "Wall",
+      "glass",
+      "glass_2",
+      "iron",
+      "metal",
+      "wood_2",
+      "wood_2.001"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_transmission"
+    ]
   },
   {
     "name": "corkboard.glb",
@@ -530,7 +587,9 @@
       "CorkBoard_Pin_A",
       "CorkBoard_Pin_A_M_Bunker_CorkBoard_A_0"
     ],
-    "materialNames": ["M_Bunker_CorkBoard_A"],
+    "materialNames": [
+      "M_Bunker_CorkBoard_A"
+    ],
     "extensionsUsed": []
   },
   {
@@ -565,8 +624,12 @@
       "Plane.058__0",
       "Plane.059"
     ],
-    "materialNames": ["Scene_-_Root"],
-    "extensionsUsed": ["KHR_materials_specular"]
+    "materialNames": [
+      "Scene_-_Root"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_specular"
+    ]
   },
   {
     "name": "isometric_base_for_my_detective_room_scene.glb",
@@ -591,8 +654,12 @@
       "dd828f9f6a014714a646749145633991.obj.cleaner.materialmerger.gles",
       "Object_2"
     ],
-    "materialNames": ["lambert1"],
-    "extensionsUsed": ["KHR_materials_specular"]
+    "materialNames": [
+      "lambert1"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_specular"
+    ]
   },
   {
     "name": "window.glb",
@@ -626,8 +693,14 @@
       "dow_glass_0",
       "dow_f_0"
     ],
-    "materialNames": ["f__0", "glass", "material"],
-    "extensionsUsed": ["KHR_materials_transmission"]
+    "materialNames": [
+      "f__0",
+      "glass",
+      "material"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_transmission"
+    ]
   },
   {
     "name": "antique_office_desk.glb",
@@ -661,8 +734,12 @@
       "Cube.124_Material.005_0",
       "Cube.125"
     ],
-    "materialNames": ["Material.005"],
-    "extensionsUsed": ["KHR_materials_specular"]
+    "materialNames": [
+      "Material.005"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_specular"
+    ]
   },
   {
     "name": "office_drawer.glb",
@@ -696,7 +773,9 @@
       "Plane.019_Material_0",
       "Plane.018"
     ],
-    "materialNames": ["Material"],
+    "materialNames": [
+      "Material"
+    ],
     "extensionsUsed": []
   },
   {
@@ -728,13 +807,49 @@
       "Cylinder.002_lamp_0",
       "Cylinder.002_LampWire_0"
     ],
-    "materialNames": ["PlafondOuter", "PlafondInnter", "Plastic", "lamp", "LampWire"],
+    "materialNames": [
+      "PlafondOuter",
+      "PlafondInnter",
+      "Plastic",
+      "lamp",
+      "LampWire"
+    ],
     "extensionsUsed": [
       "KHR_materials_clearcoat",
       "KHR_materials_emissive_strength",
       "KHR_materials_specular",
       "KHR_materials_transmission"
     ]
+  },
+  {
+    "name": "old_vintage_desk_lamp.glb",
+    "relPath": "assets-source/case-404/props/lamp/old_vintage_desk_lamp.glb",
+    "sizeBytes": 20109780,
+    "sizeLabel": "19.2 MB",
+    "sceneCount": 1,
+    "nodeCount": 5,
+    "meshCount": 1,
+    "primitiveCount": 1,
+    "vertexCount": 9846,
+    "triangleCount": 14820,
+    "materialCount": 1,
+    "textureCount": 4,
+    "largestTexture": "4096x4096",
+    "animationCount": 0,
+    "cameraCount": 0,
+    "lightsDetected": false,
+    "dimensions": "30.79 x 44.38 x 26.33",
+    "nodeNames": [
+      "Sketchfab_model",
+      "Lamp.fbx",
+      "RootNode",
+      "Lamp1",
+      "Lamp1_Lamp_0"
+    ],
+    "materialNames": [
+      "Lamp"
+    ],
+    "extensionsUsed": []
   },
   {
     "name": "ashtray_with_cigarettes.glb",
@@ -761,7 +876,9 @@
       "Ashtray",
       "Ashtray_01 - Default_0"
     ],
-    "materialNames": ["01_-_Default"],
+    "materialNames": [
+      "01_-_Default"
+    ],
     "extensionsUsed": []
   },
   {
@@ -796,8 +913,12 @@
       "thing",
       "thing_gunbaby_0"
     ],
-    "materialNames": ["gunbaby"],
-    "extensionsUsed": ["KHR_materials_unlit"]
+    "materialNames": [
+      "gunbaby"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_unlit"
+    ]
   },
   {
     "name": "phone.glb",
@@ -824,8 +945,12 @@
       "Phone",
       "Phone_01_-_Default_0"
     ],
-    "materialNames": ["01_-_Default"],
-    "extensionsUsed": ["KHR_materials_specular"]
+    "materialNames": [
+      "01_-_Default"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_specular"
+    ]
   },
   {
     "name": "paper_tablet.glb",
@@ -859,8 +984,15 @@
       "Object_10",
       "Object_11"
     ],
-    "materialNames": ["initialShadingGroup", "lambert3SG", "lambert4SG", "lambert7SG"],
-    "extensionsUsed": ["KHR_materials_pbrSpecularGlossiness"]
+    "materialNames": [
+      "initialShadingGroup",
+      "lambert3SG",
+      "lambert4SG",
+      "lambert7SG"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_pbrSpecularGlossiness"
+    ]
   },
   {
     "name": "portable_radio__walkie_talkie_dual_band.glb",
@@ -894,8 +1026,13 @@
       "Volume_low_Radio_0",
       "Mhz_low"
     ],
-    "materialNames": ["Radio", "Screen"],
-    "extensionsUsed": ["KHR_materials_emissive_strength"]
+    "materialNames": [
+      "Radio",
+      "Screen"
+    ],
+    "extensionsUsed": [
+      "KHR_materials_emissive_strength"
+    ]
   },
   {
     "name": "suitcase.glb",
@@ -929,7 +1066,9 @@
       "Box143",
       "Box143_22 - Default_0"
     ],
-    "materialNames": ["22_-_Default"],
+    "materialNames": [
+      "22_-_Default"
+    ],
     "extensionsUsed": []
   },
   {
@@ -950,8 +1089,16 @@
     "cameraCount": 0,
     "lightsDetected": false,
     "dimensions": "0.09 x 0.01 x 0.09",
-    "nodeNames": ["Sketchfab_model", "root", "GLTF_SceneRootNode", "Floppy_0", "Object_4"],
-    "materialNames": ["Floppy"],
+    "nodeNames": [
+      "Sketchfab_model",
+      "root",
+      "GLTF_SceneRootNode",
+      "Floppy_0",
+      "Object_4"
+    ],
+    "materialNames": [
+      "Floppy"
+    ],
     "extensionsUsed": []
   }
 ]

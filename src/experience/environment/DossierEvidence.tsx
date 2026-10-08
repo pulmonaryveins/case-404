@@ -1,6 +1,36 @@
 import { useEffect, useMemo } from "react";
-import { CanvasTexture, FrontSide, SRGBColorSpace } from "three";
-import { paintApartmentPhoto, paintSilhouettePhoto } from "../surfaces/paintDossierPhotos";
+import { useGLTF } from "@react-three/drei";
+import { CanvasTexture, FrontSide, Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
+import { assetManifest } from "../../assets/assetManifest";
+import { boardIslands, type BoardPieceId } from "../surfaces/boardIslands";
+import { paintApartmentPhoto } from "../surfaces/paintDossierPhotos";
+import { createPaperBump, paintPaperFinish } from "../surfaces/paperFinish";
+import { PaperContactShadow } from "./PaperContactShadow";
+
+/** Unwrap the board's photo UV island into an upright print. */
+function boardPhoto(
+  source: CanvasImageSource & { width: number; height: number },
+  id: BoardPieceId,
+) {
+  const { uv, right, down } = boardIslands[id];
+  const [x0, y0, x1, y1] = uv.map((n, i) => n * (i % 2 ? source.height : source.width));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(right[0] ? x1 - x0 : y1 - y0);
+  canvas.height = Math.round(down[0] ? x1 - x0 : y1 - y0);
+  const ox = right[0] === 1 || down[0] === 1 ? x0 : x1;
+  const oy = right[1] === 1 || down[1] === 1 ? y0 : y1;
+  const ctx = canvas.getContext("2d")!;
+  ctx.setTransform(
+    right[0],
+    down[0],
+    right[1],
+    down[1],
+    -(right[0] * ox + right[1] * oy),
+    -(down[0] * ox + down[1] * oy),
+  );
+  ctx.drawImage(source, 0, 0);
+  return canvas;
+}
 
 /** Deterministic print grain plus a warm sepia tone over one canvas region. */
 function toneAndGrain(
@@ -32,16 +62,18 @@ function toTexture(canvas: HTMLCanvasElement) {
 }
 
 function Polaroid({
-  variant,
+  photo,
   caption,
   position,
   angle,
 }: {
-  variant: 0 | 1;
+  photo: HTMLCanvasElement;
   caption: string;
   position: [number, number, number];
   angle: number;
 }) {
+  const bump = useMemo(() => createPaperBump(), []);
+  useEffect(() => () => bump.dispose(), [bump]);
   const print = useMemo(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 640;
@@ -49,32 +81,52 @@ function Polaroid({
     const ctx = canvas.getContext("2d")!;
     ctx.fillStyle = "#f2ead7";
     ctx.fillRect(0, 0, 640, 768);
-    paintSilhouettePhoto(ctx, 34, 34, 572, variant);
-    toneAndGrain(ctx, 34, 34, 572, 572, 404 + variant);
+    paintPaperFinish(ctx, 640, 768);
+    const crop = Math.min(photo.width, photo.height) * 0.86;
+    ctx.drawImage(
+      photo,
+      (photo.width - crop) / 2,
+      (photo.height - crop) / 2,
+      crop,
+      crop,
+      34,
+      34,
+      572,
+      572,
+    );
+    toneAndGrain(ctx, 34, 34, 572, 572, 404);
     ctx.strokeStyle = "#b8af9b";
     ctx.lineWidth = 2;
     ctx.strokeRect(34, 34, 572, 572);
-    ctx.fillStyle = "#504537";
-    ctx.font = '25px "Courier New", monospace';
+    ctx.fillStyle = "#10110f";
+    ctx.font = 'bold 34px "Courier New", monospace';
     ctx.textAlign = "center";
     ctx.fillText(caption, 320, 676);
-    ctx.font = '16px "Courier New", monospace';
-    ctx.fillStyle = "#81715c";
-    ctx.fillText("CASE 404 / NO FACE ON FILE", 320, 721);
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.fillStyle = "#26241e";
+    ctx.fillText("CASE 404 / BOARD ARCHIVE", 320, 721);
     return toTexture(canvas);
-  }, [variant, caption]);
+  }, [photo, caption]);
   useEffect(() => () => print.dispose(), [print]);
   return (
     <group position={position} rotation={[0, 0, angle]}>
+      <PaperContactShadow width={0.97} height={1.164} />
       {/* Front-only mounting paper: a solid box exposed a blank reverse
           through the cover while opening. These prints live inside it. */}
       <mesh receiveShadow>
         <planeGeometry args={[0.97, 1.164]} />
         <meshStandardMaterial color="#e8deca" roughness={0.9} side={FrontSide} />
       </mesh>
-      <mesh position={[0, 0, 0.005]} receiveShadow>
+      <mesh position={[0, 0, 0.005]} receiveShadow castShadow>
         <planeGeometry args={[0.965, 1.159]} />
-        <meshStandardMaterial map={print} roughness={0.7} side={FrontSide} />
+        <meshPhysicalMaterial
+          map={print}
+          bumpMap={bump}
+          bumpScale={0.0015}
+          roughness={0.95}
+          specularIntensity={0.12}
+          side={FrontSide}
+        />
       </mesh>
     </group>
   );
@@ -90,8 +142,9 @@ function paintResidenceCard() {
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#e7dfc7";
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = "#8e221d";
-  ctx.font = 'bold 22px "Courier New", monospace';
+  paintPaperFinish(ctx, w, h);
+  ctx.fillStyle = "#641b18";
+  ctx.font = 'bold 30px "Courier New", monospace';
   ctx.fillText("CASE 404 / RESIDENCE RECORD", 44, 72);
   ctx.fillStyle = "#1f1b17";
   ctx.fillRect(44, 88, w - 88, 3);
@@ -108,24 +161,36 @@ function paintResidenceCard() {
   ctx.fillRect(px - 20, py - 18, 120, 36);
   ctx.fillRect(px + pw - 100, py - 18, 120, 36);
 
-  ctx.fillStyle = "#504537";
-  ctx.font = '26px "Courier New", monospace';
-  ctx.fillText("RESIDENCE / UNIT NOT CONFIRMED", 44, 828);
-  ctx.font = '19px "Courier New", monospace';
-  ctx.fillStyle = "#81715c";
+  ctx.fillStyle = "#10110f";
+  ctx.font = 'bold 34px "Courier New", monospace';
+  ctx.fillText("RESIDENCE / UNCONFIRMED", 44, 828);
+  ctx.font = 'bold 29px "Courier New", monospace';
+  ctx.fillStyle = "#26241e";
   ctx.fillText("ADDRESS:   WITHHELD", 44, 876);
   ctx.fillText("TENANT:    UNKNOWN", 44, 910);
   ctx.fillText("LAST SEEN: NOT RECORDED", 44, 944);
   ctx.fillStyle = "#1f1b17";
   ctx.fillRect(44, 976, w - 88, 2);
-  ctx.font = '16px "Courier New", monospace';
-  ctx.fillStyle = "#81715c";
+  ctx.font = 'bold 26px "Courier New", monospace';
+  ctx.fillStyle = "#26241e";
   ctx.fillText("FILE REF. CASE 404 / R-01", 44, 1010);
   return toTexture(canvas);
 }
 
 /** All three artifacts inherit the actual cover pose from Dossier's attachment. */
 export function DossierEvidence() {
+  const bump = useMemo(() => createPaperBump(), []);
+  useEffect(() => () => bump.dispose(), [bump]);
+  const { scene } = useGLTF(assetManifest.investigationBoard.url);
+  const photos = useMemo(() => {
+    let atlas: CanvasImageSource & { width: number; height: number };
+    scene.traverse((node) => {
+      if (!(node instanceof Mesh) || atlas) return;
+      const map = (node.material as MeshStandardMaterial).map;
+      if (map) atlas = map.userData.originalImage ?? map.image;
+    });
+    return [boardPhoto(atlas!, "Plane061__0"), boardPhoto(atlas!, "Plane067__0")];
+  }, [scene]);
   const card = useMemo(() => paintResidenceCard(), []);
   useEffect(() => () => card.dispose(), [card]);
   return (
@@ -135,25 +200,33 @@ export function DossierEvidence() {
       rotation={[-Math.PI / 2, 0, 0]}
     >
       <Polaroid
-        variant={0}
-        caption="01 / SUBJECT, UNIDENTIFIED"
+        photo={photos[0]}
+        caption="01 / STREET SCENE"
         position={[-0.43, 0.68, 0.012]}
         angle={-0.065}
       />
       <Polaroid
-        variant={1}
-        caption="02 / LAST KNOWN SIGHTING"
+        photo={photos[1]}
+        caption="02 / STREET ARCHIVE"
         position={[-0.38, -0.61, 0.017]}
         angle={0.055}
       />
       <group position={[0.52, -0.02, 0.041]} rotation={[0, 0, -0.055]}>
+        <PaperContactShadow width={0.98} height={1.317} />
         <mesh receiveShadow>
           <planeGeometry args={[0.98, 1.317]} />
           <meshStandardMaterial color="#e7dfc7" roughness={1} side={FrontSide} />
         </mesh>
-        <mesh position={[0, 0, 0.003]} receiveShadow>
+        <mesh position={[0, 0, 0.003]} receiveShadow castShadow>
           <planeGeometry args={[0.976, 1.3115]} />
-          <meshStandardMaterial map={card} roughness={0.95} side={FrontSide} />
+          <meshPhysicalMaterial
+            map={card}
+            bumpMap={bump}
+            bumpScale={0.002}
+            roughness={1}
+            specularIntensity={0.12}
+            side={FrontSide}
+          />
         </mesh>
       </group>
     </group>

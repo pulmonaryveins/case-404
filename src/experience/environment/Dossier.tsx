@@ -8,6 +8,7 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  MeshPhysicalMaterial,
   type Object3D,
   SRGBColorSpace,
   type Texture,
@@ -17,6 +18,9 @@ import { storyRig } from "../../story/storyRig";
 import { paintAboutPage } from "../surfaces/paintDossierPages";
 import { DossierRecords } from "./DossierRecords";
 import { DossierEvidence } from "./DossierEvidence";
+import { PaperContactShadow } from "./PaperContactShadow";
+import { createPaperBump } from "../surfaces/paperFinish";
+import { DossierCoverDesign } from "./DossierCoverDesign";
 
 /**
  * Morph-target frames of the folder's recorded animation: 0 = closed,
@@ -39,9 +43,12 @@ function pageMaterial(canvas: HTMLCanvasElement) {
   const map = new CanvasTexture(canvas);
   map.colorSpace = SRGBColorSpace;
   map.anisotropy = 8;
-  return new MeshStandardMaterial({
+  return new MeshPhysicalMaterial({
     map,
-    roughness: 0.92,
+    bumpMap: createPaperBump(),
+    bumpScale: 0.002,
+    roughness: 1,
+    specularIntensity: 0.12,
     // The printed face is inside the cover. Rendering its reverse side
     // exposes mirrored text above the cover when the folder is closed.
     side: FrontSide,
@@ -56,8 +63,7 @@ function pageMaterials() {
 /**
  * The folder's cover texture carries a third-party "BELL SYSTEMS" label and
  * a Bell emblem. Both are covered with plain cover texture copied from right
- * beside them, and the label becomes a red CASE 404 stamp. Atlas pixels
- * (4096 texture); the cover is mirrored in the atlas, so the stamp is too.
+ * beside them. The separate cover design owns the main CASE 404 stamp.
  */
 /** Copies `tex` to a canvas, runs `paint` on it, returns the new texture. */
 function repaint(tex: Texture, paint: (ctx: CanvasRenderingContext2D, k: number) => void) {
@@ -84,84 +90,101 @@ function hideLogos(ctx: CanvasRenderingContext2D, k: number) {
   patch(2120, 1190, 2120, 890, 210, 195); // Bell emblem
 }
 
-/**
- * The label plate is raised geometry on the cover, so it becomes a pasted
- * paper case label (plate face = atlas 877..1210 x 1590..1808) carrying a
- * red CASE 404 stamp.
- */
-function caseLabel(ctx: CanvasRenderingContext2D, k: number) {
-  ctx.fillStyle = "#d9cfb9";
-  ctx.fillRect(872 * k, 1585 * k, 344 * k, 228 * k);
-  ctx.save();
-  ctx.translate(1043 * k, 1699 * k);
-  ctx.scale(-1, 1);
-  ctx.globalAlpha = 0.88;
-  ctx.strokeStyle = ctx.fillStyle = "#a3271f";
-  ctx.lineWidth = 6 * k;
-  ctx.strokeRect(-140 * k, -62 * k, 280 * k, 118 * k);
-  ctx.font = `bold ${44 * k}px "Courier New", Courier, monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText("CASE", 0, -10 * k);
-  ctx.fillText("404", 0, 38 * k);
-  ctx.font = `bold ${15 * k}px "Courier New", Courier, monospace`;
-  ctx.fillText("SUBJECT / PERSONAL RECORD", 0, 82 * k);
-  ctx.restore();
-}
-
-/** Keep the source cardboard colour; only add the case artwork. */
-function coverArtwork(ctx: CanvasRenderingContext2D, k: number) {
+/** Recolour the cardboard while retaining its original surface detail. */
+function coverArtwork(ctx: CanvasRenderingContext2D, k: number, mesh: Mesh) {
   hideLogos(ctx, k);
-  caseLabel(ctx, k);
-  // An original evidence illustration printed as a taped photograph.
-  // It shares the cover atlas, so it follows every recorded morph frame.
+  // Both sides of the cardboard share this finish. Paper meshes and the
+  // near-vertical metal hardware stay outside this UV mask.
+  const uv = mesh.geometry.getAttribute("uv");
+  const normals = mesh.geometry.getAttribute("normal");
+  const index = mesh.geometry.index;
+  const count = index?.count ?? uv.count;
+  const size = ctx.canvas.width;
   ctx.save();
-  ctx.translate(2225 * k, 1050 * k);
-  ctx.scale(-k, k);
-  ctx.rotate(-0.08);
-  ctx.fillStyle = "rgba(35,25,15,0.3)";
-  ctx.fillRect(-101, -144, 214, 308);
-  ctx.fillStyle = "#eee7d3";
-  ctx.fillRect(-107, -150, 214, 308);
-  const sky = ctx.createLinearGradient(0, -132, 0, 90);
-  sky.addColorStop(0, "#465157");
-  sky.addColorStop(1, "#b7a887");
-  ctx.fillStyle = sky;
-  ctx.fillRect(-91, -132, 182, 236);
-  ctx.fillStyle = "#303735";
-  for (let i = 0; i < 8; i++) {
-    const h = 45 + ((i * 37) % 87);
-    ctx.fillRect(-91 + i * 24, 104 - h, 23, h);
+  ctx.beginPath();
+  for (let i = 0; i < count; i += 3) {
+    const ids = [0, 1, 2].map((offset) => (index ? index.getX(i + offset) : i + offset));
+    if (Math.abs(ids.reduce((sum, id) => sum + normals.getY(id), 0) / 3) < 0.7) continue;
+    ids.forEach((id, j) => {
+      const x = uv.getX(id) * size;
+      const y = uv.getY(id) * size;
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
   }
-  ctx.fillStyle = "#e5d2a0";
-  for (let i = 0; i < 24; i++) ctx.fillRect(-80 + (i % 8) * 23, 55 + Math.floor(i / 8) * 16, 3, 5);
-  ctx.fillStyle = "#44392d";
-  ctx.font = 'bold 13px "Courier New", monospace';
-  ctx.textAlign = "center";
-  ctx.fillText("CEBU / FIELD RECORD", 0, 134);
-  ctx.fillStyle = "rgba(215,194,142,0.65)";
-  ctx.fillRect(-35, -163, 70, 33);
+  ctx.clip();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "rgba(181,151,107,0.88)";
+  ctx.fillRect(0, 0, size, size);
+  // Fine, deterministic flecks keep the tan stock from reading as flat paint.
+  for (let i = 0; i < 95000; i++) {
+    ctx.fillStyle = i % 2 ? "rgba(54,38,22,0.12)" : "rgba(237,218,175,0.10)";
+    ctx.fillRect(
+      ((i * 179) % 4096) * k,
+      ((i * 313 + Math.floor(i / 4096) * 41) % 4096) * k,
+      2 * k,
+      k,
+    );
+  }
+  // Uneven handling stains and scuffs, fixed across reloads. Everything is
+  // clipped to the cardboard, leaving the documents and photographs intact.
+  let seed = 404;
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 65; i++) {
+    ctx.save();
+    ctx.translate(random() * size, random() * size);
+    ctx.rotate(random() * Math.PI);
+    ctx.scale((35 + random() * 145) * k, (25 + random() * 95) * k);
+    const stain = ctx.createRadialGradient(-0.2, 0.1, 0.05, 0, 0, 1);
+    stain.addColorStop(0, "rgba(75,49,25,0.23)");
+    stain.addColorStop(0.45, "rgba(90,62,30,0.12)");
+    stain.addColorStop(1, "rgba(90,62,30,0)");
+    ctx.fillStyle = stain;
+    ctx.fillRect(-1, -1, 2, 2);
+    ctx.restore();
+  }
+  for (let i = 0; i < 850; i++) {
+    const x = random() * size;
+    const y = random() * size;
+    ctx.strokeStyle = i % 3 ? "rgba(70,49,29,0.16)" : "rgba(235,216,170,0.25)";
+    ctx.lineWidth = (0.6 + random()) * k;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (random() - 0.5) * 45 * k, y + random() * 24 * k);
+    ctx.stroke();
+  }
+  // Worn seams along the measured outer/inner cover UV-island edges.
+  for (const u of [0.003, 0.352, 0.391, 0.745]) {
+    const x = u * size;
+    const edge = ctx.createLinearGradient(x - 22 * k, 0, x + 22 * k, 0);
+    edge.addColorStop(0, "rgba(68,45,25,0)");
+    edge.addColorStop(0.5, "rgba(68,45,25,0.24)");
+    edge.addColorStop(1, "rgba(68,45,25,0)");
+    ctx.fillStyle = edge;
+    ctx.fillRect(x - 22 * k, 0, 44 * k, size);
+  }
   ctx.restore();
 }
 
 /**
  * The folder's cover carries a third-party "BELL SYSTEMS" label (an
  * embossed plate: colour, normal and metal/roughness maps) and a Bell
- * emblem. Both are removed from every map; the plate becomes a paper case
- * label. Atlas pixels assume 4096; the cover is mirrored in the atlas, so
- * the label text is drawn mirrored.
+ * emblem. Remove both from every map, including the baked bevel and shadow.
  */
 function brandCover(mesh: Mesh) {
   const mat = mesh.material as MeshStandardMaterial;
-  if (!mat.map || mat.map.userData.case404) return;
+  if (!mat.map || mat.map.userData.coverFinish === "aged-tan-both-sides-v3") return;
   const done = new Map<Texture, Texture>();
   const fix = (tex: Texture | null, paint: (ctx: CanvasRenderingContext2D, k: number) => void) => {
     if (!tex) return null;
     if (!done.has(tex)) done.set(tex, repaint(tex, paint));
     return done.get(tex)!;
   };
-  mat.map = fix(mat.map, coverArtwork);
+  mat.map = fix(mat.map, (ctx, k) => coverArtwork(ctx, k, mesh));
   mat.roughness = 0.95;
   mat.map!.userData.case404 = true;
+  mat.map!.userData.coverFinish = "aged-tan-both-sides-v3";
   mat.normalMap = fix(mat.normalMap, hideLogos);
   mat.roughnessMap = fix(mat.roughnessMap, hideLogos);
   mat.metalnessMap = fix(mat.metalnessMap, hideLogos);
@@ -209,6 +232,7 @@ export function Dossier() {
   }, [scene]);
   const rightMat = pageMaterials();
   const leaf = useRef<Group>(null);
+  const coverDesign = useRef<Group>(null);
   const lastProgress = useRef(-1);
 
   useLayoutEffect(() => {
@@ -252,19 +276,30 @@ export function Dossier() {
         y = position.getY(150);
       leaf.current.position.set(x, y, LEFT_PAGE[2]);
       leaf.current.rotation.z = Math.atan2(y - position.getY(7), x - position.getX(7));
+      if (coverDesign.current) {
+        coverDesign.current.position.copy(leaf.current.position);
+        coverDesign.current.rotation.copy(leaf.current.rotation);
+      }
     }
   });
 
   return (
     <group position={asset.position} rotation={asset.rotation} scale={asset.scale}>
       <primitive object={animated.scene} />
-      <DossierRecords material={rightMat} />
+      <DossierRecords />
+      <group ref={coverDesign}>
+        <DossierCoverDesign />
+      </group>
+      <group position={[0.02, 0.087, 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
+        <PaperContactShadow width={PAGE.w} height={PAGE.h} />
+      </group>
       {[0, 1, 2].map((i) => (
         <mesh
           key={i}
           position={[0.02 + i * 0.018, 0.055 + i * 0.01, 0.12 - i * 0.025]}
           rotation={[-Math.PI / 2, 0, i * 0.009]}
           receiveShadow
+          castShadow
         >
           <planeGeometry args={[PAGE.w + 0.025, PAGE.h + 0.03]} />
           <meshStandardMaterial

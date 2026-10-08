@@ -300,15 +300,22 @@ travels there later (§2).
 
 ## 24. Lighting philosophy
 
-Opening (Phase 2A, `OfficeLighting.tsx`): one warm key spotlight (the
-only shadow caster) above and in front of the desk, aimed at the board;
-a neutral-cool hemisphere fill so unlit surfaces fall to charcoal, not
-brown; and drei `ContactShadows` rendered once (`frames={1}`) for desk
-grounding. Spotlight targets must be added to the scene graph — setting
-`target-position` alone leaves the target at the origin. Later: the
-approved desk lamp becomes the visible motivation for the key; localized
-green/blue phosphor for the Digital Archive. Prefer deep shadows over
-uniform illumination; avoid many realtime shadow casters.
+Phase 5: the **desk lamp is the dominant, visible source**.
+`DeskLampLight.tsx` is a warm spotlight parented to the lamp prop at its
+measured bulb (just below it — the bulb is closed geometry and would
+shadow a light placed inside it), aimed down across the desk. It is the
+desk's shadow caster; its shadow camera is bounded to the desk's reach
+(`far` 1.6 m), which measured as the difference between 60 and 30 fps.
+
+`OfficeLighting.tsx` only supports it: a dim, broad wash from above that
+keeps the board readable (a desk-height lamp cannot light a board hung
+above and behind it without looking staged), kept as a shadow caster
+because the board's pinned papers need their contact shadows; a low
+neutral-cool hemisphere so shadows stay dark grey; `ContactShadows`
+rendered once for the desk's feet. Two shadow casters total. Spotlight
+targets must be in the scene graph — setting `target-position` alone
+leaves the target at the origin. Later: localized green/blue phosphor for
+the Digital Archive.
 
 ## 25. Loading strategy
 

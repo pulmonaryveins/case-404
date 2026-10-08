@@ -71,6 +71,26 @@ function type(ctx: Ctx, s: string, x: number, y: number, px: number, color = INK
   ctx.fillText(s, x, y);
 }
 
+const HAND = '"Segoe Print", "Bradley Hand", "Comic Sans MS", cursive';
+
+/** A loose, hand-scrawled note instead of a typeset label — slightly tilted. */
+function scrawl(
+  ctx: Ctx,
+  s: string,
+  x: number,
+  y: number,
+  px: number,
+  { color = INK, rotation = 0, weight = "normal" } = {},
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${px}px ${HAND}`;
+  ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+
 function stamp(ctx: Ctx, s: string, cx: number, cy: number, px: number, angle: number) {
   ctx.save();
   ctx.translate(cx, cy);
@@ -195,7 +215,7 @@ function paintMapAndCaseFile(ctx: Ctx, atlas: CanvasImageSource, size: number) {
  * Black-and-white press-style photograph of an unidentifiable person: soft
  * focus, a smeared face, grain, scratches and a vignette.
  */
-function paintPortrait(ctx: Ctx, x: number, y: number, w: number, h: number) {
+export function paintPortrait(ctx: Ctx, x: number, y: number, w: number, h: number) {
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
@@ -320,8 +340,10 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
   type(ctx, `${caseWord} `, w / 2 - total / 2, h * 0.15, h * 0.11);
   type(ctx, number, w / 2 - total / 2 + caseW, h * 0.15, h * 0.11, RED);
 
+  // The record itself is typed: a case sheet off a 1940s office machine,
+  // not marker on a whiteboard.
   ctx.textAlign = "center";
-  type(ctx, caseFile.subtitle, w / 2, h * 0.24, h * 0.05);
+  type(ctx, caseFile.subtitle, w / 2, h * 0.235, h * 0.048);
   ctx.textAlign = "left";
   ctx.fillStyle = INK;
   ctx.fillRect(m, h * 0.275, w - m * 2, 2);
@@ -353,13 +375,41 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
   ctx.fillRect(px - pw * 0.05, py - ph * 0.02, pw * 0.28, ph * 0.07);
   ctx.fillRect(px + pw * 0.77, py - ph * 0.02, pw * 0.28, ph * 0.07);
 
-  let fyy = py + h * 0.035;
-  const fx = px + pw + w * 0.05;
+  // Grease-pencil ring around the subject: an investigator singling him out.
+  // Two overlapping, slightly offset passes read as drawn by hand rather than
+  // as a vector ellipse. Thin enough to stay an annotation, not a graphic.
+  ctx.save();
+  ctx.translate(px + pw / 2, py + ph / 2);
+  ctx.strokeStyle = RED;
+  ctx.lineWidth = w * 0.0055;
+  ctx.globalAlpha = 0.72;
+  ctx.rotate(-0.03);
+  ctx.beginPath();
+  ctx.ellipse(0, h * 0.01, pw * 0.58, ph * 0.56, 0, 0.15, Math.PI * 2 + 0.15);
+  ctx.stroke();
+  ctx.rotate(0.05);
+  ctx.beginPath();
+  ctx.ellipse(w * 0.008, -h * 0.008, pw * 0.6, ph * 0.58, 0, 0.4, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // Typed record block. The column beside the photograph is only ~0.3w wide,
+  // which will not hold a label and its value side by side at a legible size
+  // ("OCCUPATION:" plus a value overruns it), so each value is typed under
+  // its own label the way a case sheet would be filled in.
+  let fyy = py + h * 0.065;
+  const fx = px + pw + w * 0.055;
   for (const f of caseFile.fields) {
-    type(ctx, f.label, fx, fyy, h * 0.028);
-    type(ctx, f.value, fx, fyy + h * 0.05, f.accent ? h * 0.058 : h * 0.036, f.accent ? RED : INK);
-    fyy += h * 0.105;
+    type(ctx, f.label, fx, fyy, h * 0.026, "rgba(31,27,23,0.75)");
+    type(ctx, f.value, fx, fyy + h * 0.042, h * 0.034, f.accent ? RED : INK);
+    fyy += h * 0.092;
   }
+
+  // The one handwritten mark on the sheet — added later, in red pencil.
+  scrawl(ctx, "no match on file", fx, fyy + h * 0.012, h * 0.028, {
+    color: RED,
+    rotation: -0.035,
+  });
 
   // Fingerprint smudge by the stamp.
   ctx.save();
@@ -624,6 +674,21 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
       ctx.fillRect(w * 0.58, h * 0.46, 3, h * 0.48);
       break;
     }
+    case "evidenceCard": {
+      // Central evidence tucked under the case file: a stamped archive card,
+      // typed, no discipline of its own.
+      agedPaper(ctx, w, h, "#d9cdb0", seed);
+      stamp(ctx, "EVIDENCE", w / 2, h * 0.3, h * 0.13, -0.05);
+      ctx.textAlign = "center";
+      type(ctx, "LOG 404-B", w / 2, h * 0.58, h * 0.1);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(31,27,23,0.4)";
+      ctx.fillRect(w * 0.18, h * 0.68, w * 0.64, 2);
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(w * 0.18, h * (0.77 + i * 0.07), w * (0.64 - i * 0.16), 2);
+      }
+      break;
+    }
     case "filmStrip": {
       ctx.fillStyle = "#171614";
       ctx.fillRect(0, 0, w, h);
@@ -649,8 +714,14 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
 function paintPieces(ctx: Ctx, size: number) {
   pieces.forEach((p, i) => {
     const { w, h } = enterPiece(ctx, p.piece, size);
-    if (p.kind === "wireframeSheet") {
-      // Whole sheet repainted: a loose paper sketch, no print border.
+    if (p.keepOriginal) {
+      // Leave the board's own baked-in photo untouched; just re-age it so it
+      // matches the grain pass every other piece gets.
+      grain(ctx, w, h, 100 + i * 17, 0.05);
+      return;
+    }
+    if (p.kind === "wireframeSheet" || p.kind === "evidenceCard") {
+      // Whole sheet repainted: loose paper, no photographic print border.
       paintKind(ctx, p.kind, w, h, 100 + i * 17);
       return;
     }

@@ -9,8 +9,12 @@ import { storyRig } from "./storyRig";
 import type { ChapterId } from "./storyTypes";
 import { CatmullRomCurve3, Vector3 } from "three";
 
-/** Scroll length of the opening sequence, in viewport heights. */
-const STAGE_VH = 800;
+/**
+ * Scroll length of the opening sequence, in viewport heights. Six screens
+ * for two camera moves and the folder opening; 800 made the same journey
+ * feel like it was being paid out rather than travelled.
+ */
+const STAGE_VH = 600;
 const SCRUB_SECONDS = 0.45;
 
 const debug = import.meta.env.DEV && new URLSearchParams(window.location.search).has("story");
@@ -122,10 +126,18 @@ export function StoryController() {
       );
     };
 
-    travel(["roomOverview", "boardApproach", "evidenceBoard", "caseFile"], 0, 0.4);
-    // A brief case-file beat, then one continuous arc down to the desk.
-    travel(["caseFile", "leaveBoard", "subjectProfile", "dossierOpen"], 0.43, 0.43);
-    tl.to(storyRig, { dossierOpen: 1, profileReveal: 1, duration: 0.2 }, 0.7);
+    // Two moves, not a tour. The push-in is now a single straight run: the
+    // anchors it used to thread through sat nearly in line with it and only
+    // added small changes of direction, which read as separate little scenes.
+    travel(["roomOverview", "caseFile"], 0, 0.42);
+    // A beat to read the case file, then one arc down onto the desk. Both
+    // intermediates here are load-bearing, unlike on the way in: `leaveBoard`
+    // keeps the camera in front of the desk (z > -1.63) while it tilts down,
+    // and `subjectProfile` pulls the aim onto the desk early. Without it the
+    // target crosses the wall below the board too slowly and the shot sits on
+    // blank plaster for most of the descent.
+    travel(["caseFile", "leaveBoard", "subjectProfile", "dossierOpen"], 0.48, 0.42);
+    tl.to(storyRig, { dossierOpen: 1, profileReveal: 1, duration: 0.22 }, 0.74);
     tl.set({}, {}, 1);
 
     return () => {

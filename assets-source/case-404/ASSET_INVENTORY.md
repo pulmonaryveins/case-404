@@ -225,3 +225,38 @@ Scale 0.105 → 24 × 33 cm. Cover branding ("BELL SYSTEMS" plate + Bell
 emblem) is painted out at runtime (colour, normal, metal/rough, AO maps);
 the label plate is raised geometry, so it is repainted as a CASE 404 paper
 label rather than removed. `dossierPrimary` stays registered, unused.
+
+---
+
+# Phase 5 — Desk props & practical lighting
+
+Intake folder `Downloads/3D-asset` was checked first: every file in it was
+already imported in Phase 1A. The only new model is
+`props/lamp/old_vintage_desk_lamp.glb`, dropped straight into the source
+library (not previously inventoried).
+
+True bounds below are measured with node transforms applied (gltf-transform
+`getBounds`), not the local accessor bounds of the Phase 1A table.
+
+| Source asset | Measured | What it is | Phase 5 decision |
+| --- | --- | --- | --- |
+| old_vintage_desk_lamp.glb **(new)** | 0.31 × 0.44 × 0.26 m, base at origin | Green-shade brass banker's lamp. 1 mesh, 14,820 tris, 1 material, 4 × 4096² maps (19.2 MB). Emissive map covers only the bulb (x −0.01…0.07, y 0.354…0.413, z 0.04…0.10, measured by sampling the map at vertex UVs). | **Integrated** — dominant light source. |
+| paper_tablet.glb (desk plant) | 0.15 × 0.21 (unitless, ~cm) | Leafy plant in round pot. Materials are `KHR_materials_pbrSpecularGlossiness`, which three.js no longer supports — renders flat grey as-is. | **Integrated** via converted derivative. |
+| sp226_airsoft_handgun.glb | 0.21 × 0.14 × 0.04 m | SIG P226 (1980s design — not period). Material is `KHR_materials_unlit`, so it ignores all lights. | **Integrated** by explicit request; made lit. Era mismatch noted. |
+| paper_-_3mb.glb | 3 arrangements, sheets 0.65 × 1.0 units | Neat stack, messy pile, single typed sheet. | **Tried on the desk, then removed** at the user's request. Source kept; no runtime copy. |
+| ashtray_with_cigarettes.glb | 0.14 × 0.04 × 0.17 m | (already runtime) | **Placed** on desk right. |
+| phone.glb | — | 1980s–90s push-button office phone with LCD. | **Not used** — wrong era; telephone slot reserved. |
+| — | — | Vintage telephone (Sketchfab "Old telephone" by dusan.lamos, `ad2b9e613711475187c06b73ba1f7720`) | **Missing locally.** Embed-only; not extracted. Slot reserved. |
+| — | — | Pen / pencil holder | **Missing.** No asset in the library. |
+
+**Runtime derivatives** — built by `scripts/derive-desk-props.mjs` (sources
+read, never written):
+
+| Runtime file | From | Change | Why |
+| --- | --- | --- | --- |
+| `props/desk-lamp.glb` (7.3 MB) | old_vintage_desk_lamp.glb | maps 4096² → 2048² | ~357 MB decoded VRAM for a 44 cm prop |
+| `props/plant.glb` (5.4 MB) | paper_tablet.glb | spec/gloss → metal/rough; 112K → 29K tris | renders grey otherwise; dropped frames in 3 passes |
+| `props/handgun.glb` (0.3 MB) | sp226_airsoft_handgun.glb | map 4096² → 1024²; unlit → lit (metal 0.75, rough 0.42) | unlit glowed flat in a dim room |
+
+Placement is data in `assetManifest.ts`; `DeskProps.tsx` grounds each prop
+on the measured desk plane (`DESK_TOP` = 0.778 m) from its real bounding box.

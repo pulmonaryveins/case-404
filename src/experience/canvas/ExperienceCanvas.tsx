@@ -21,7 +21,11 @@ export function ExperienceCanvas() {
   return (
     <Canvas
       dpr={DPR_RANGE}
-      shadows="soft"
+      // PCFShadowMap, stated explicitly: three removed PCFSoftShadowMap (what
+      // "soft" selects) and silently falls back to this anyway. Naming it
+      // keeps the console clean and makes it clear that `shadow-radius` on
+      // the lights is live — PCFSoft would have ignored it.
+      shadows="percentage"
       camera={{
         fov: cameraAnchors.roomOverview.fov,
         near: DEFAULT_CAMERA.near,

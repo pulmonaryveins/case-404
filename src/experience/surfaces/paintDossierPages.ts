@@ -1,9 +1,9 @@
-import { dossierTabs, profile } from "../../data/profile";
-import { education } from "../../data/education";
+import { profile, profileSkills } from "../../data/profile";
 import { experienceEntries } from "../../data/experience";
+import { paintPaperFinish } from "./paperFinish";
 
-const INK = "#1f1b17";
-const RED = "#8e221d";
+const INK = "#10110f";
+const RED = "#641b18";
 const PAPER = "#f1eedb";
 const TYPE = '"Courier New", Courier, monospace';
 const SERIF = 'Georgia, "Times New Roman", serif';
@@ -31,6 +31,7 @@ function page(seed: number) {
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, PAGE_W, PAGE_H);
   seededGrain(ctx, seed);
+  paintPaperFinish(ctx, PAGE_W, PAGE_H);
   const edge = ctx.createRadialGradient(
     PAGE_W / 2,
     PAGE_H / 2,
@@ -176,71 +177,35 @@ export function paintProfilePage(onPortrait: () => void) {
   return canvas;
 }
 
-/** Right page: the changing record — ABOUT for now, with the tab row. */
-export function paintAboutPage(section = 0, entry = 0) {
+/** Single-page profile, using the original scene-lit paper style. */
+export function paintAboutPage() {
   const { canvas, ctx } = page(9);
-  const m = 100;
-  const tabW = (PAGE_W - m * 2) / dossierTabs.length;
-  dossierTabs.forEach((tab, i) => {
-    const x = m + i * tabW;
-    const active = i === section;
-    ctx.fillStyle = active ? INK : "rgba(31,27,23,0.12)";
-    ctx.fillRect(x + 4, 90, tabW - 8, 70);
-    ctx.textAlign = "center";
-    text(ctx, tab, x + tabW / 2, 138, 30, TYPE, active ? PAPER : "#5b5448");
-    ctx.textAlign = "left";
-  });
-  ctx.fillStyle = INK;
-  ctx.fillRect(m, 160, PAGE_W - m * 2, 4);
-
-  if (section !== 0) {
-    text(ctx, "SUBJECT RECORD", m, 235, 24, TYPE, "#756f5c");
-    text(ctx, section === 1 ? "Education record" : "Experience record", m, 300, 58, SERIF);
-    ctx.fillStyle = RED;
-    ctx.fillRect(m, 316, 140, 5);
-    const school = education[entry];
-    const job = experienceEntries[entry];
-    let y = 420;
-    if (section === 1 && school) {
-      y = paragraph(ctx, school.institution, m, y, PAGE_W - m * 2, 42);
-      y = paragraph(ctx, school.credential, m, y + 35, PAGE_W - m * 2, 36);
-      paragraph(ctx, school.period, m, y + 35, PAGE_W - m * 2, 32);
-    } else if (section === 2 && job) {
-      y = paragraph(ctx, job.organization, m, y, PAGE_W - m * 2, 42);
-      y = paragraph(ctx, job.role, m, y + 25, PAGE_W - m * 2, 36);
-      y = paragraph(ctx, job.period, m, y + 25, PAGE_W - m * 2, 30);
-      paragraph(ctx, job.summary, m, y + 50, PAGE_W - m * 2, 34);
-    } else paragraph(ctx, "Records have not been supplied yet.", m, y, PAGE_W - m * 2, 36);
-    const count = Math.max(1, section === 1 ? education.length : experienceEntries.length);
-    text(
-      ctx,
-      `FILE REF. CASE 404 / ${entry + 1} OF ${count}`,
-      m,
-      PAGE_H - 110,
-      24,
-      TYPE,
-      "#6b6458",
-    );
-    if (count > 1) {
-      text(ctx, "< PREV", 580, PAGE_H - 110, 24, TYPE, entry > 0 ? INK : "#aaa18a");
-      text(ctx, "NEXT >", 795, PAGE_H - 110, 24, TYPE, entry < count - 1 ? INK : "#aaa18a");
-    }
-    return canvas;
-  }
-  text(ctx, "SUBJECT RECORD", m, 235, 24, TYPE, "#756f5c");
-  text(ctx, "About the subject", m, 300, 58, SERIF);
+  const m = 80;
+  const width = PAGE_W - m * 2;
+  text(ctx, "CASE 404 / SUBJECT RECORD", m, 78, 24, TYPE, INK);
+  text(ctx, "About the subject", m, 129, 30, SERIF);
   ctx.fillStyle = RED;
-  ctx.fillRect(m, 316, 140, 5);
-  paragraph(ctx, profile.about, m, 420, PAGE_W - m * 2, 38);
-  ctx.strokeStyle = "#aaa18a";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(m, 860, PAGE_W - m * 2, 240);
-  text(ctx, "FILE METADATA", m + 28, 910, 27, SERIF);
-  text(ctx, "LOCATION", m + 28, 970, 23);
-  text(ctx, profile.location, m + 250, 970, 23, SERIF);
-  text(ctx, "STATUS", m + 28, 1025, 23);
-  text(ctx, profile.status, m + 250, 1025, 23, SERIF);
-
-  text(ctx, "FILE REF. CASE 404 / P-01", m, PAGE_H - 110, 24, TYPE, "#6b6458");
+  ctx.fillRect(m, 147, width, 3);
+  text(ctx, profile.name.join(" "), m, 219, 48, SERIF);
+  paragraph(ctx, "UI/UX Designer & Frontend Developer", m, 277, width, 31);
+  text(ctx, "IT STUDENT / CEBU CITY, PHILIPPINES", m, 334, 23, TYPE, INK);
+  paragraph(ctx, profile.about, m, 365, width, 32);
+  text(ctx, "SKILLS / TOOLKIT", m, 515, 28, TYPE, RED);
+  profileSkills.forEach(({ label, value }, index) => {
+    const y = 558 + index * 43;
+    text(ctx, label, m, y, 22, TYPE, INK);
+    paragraph(ctx, value, m + 225, y, width - 225, 28);
+  });
+  text(ctx, "SELECTED EXPERIENCE", m, 706, 28, TYPE, RED);
+  experienceEntries.forEach((job, index) => {
+    const y = 752 + index * 138;
+    ctx.fillStyle = "rgba(40,35,25,0.35)";
+    ctx.fillRect(m, y - 26, width, 1);
+    text(ctx, job.organization, m, y + 12, 31, SERIF);
+    text(ctx, job.period, m, y + 50, 23, SERIF, INK);
+    paragraph(ctx, job.role, m + 245, y + 50, width - 245, 27);
+    paragraph(ctx, job.summary, m, y + 94, width, 29);
+  });
+  text(ctx, "FILE REF. CASE 404 / PROFILE / 01", m, 1330, 23, TYPE, INK);
   return canvas;
 }

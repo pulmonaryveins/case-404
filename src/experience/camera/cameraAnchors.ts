@@ -11,7 +11,7 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   // the desk and board, small offset so the shot isn't mathematically perfect.
   roomOverview: {
     id: "roomOverview",
-    position: [0.14, 1.4, 1.0],
+    position: [0.14, 1.4, 0.3],
     target: [0.02, 1.05, -3.6],
     fov: 40,
   },
@@ -53,16 +53,16 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   subjectProfile: {
     id: "subjectProfile",
     // Start lifting over the desk before the cover opens.
-    position: [0.172, 1.34, -1.7],
-    target: [0.152, 0.805, -2.055],
+    position: [0.055, 1.34, -1.7],
+    target: [0.035, 0.805, -2.035],
     fov: 40,
   },
   dossierOpen: {
     id: "dossierOpen",
     // ~76 degrees above the paper: readable text with a little depth for
     // the clips and stacked sheets. Aim at the spread including its tabs.
-    position: [0.066, 1.37, -1.91],
-    target: [0.066, 0.805, -2.055],
+    position: [-0.051, 1.37, -1.91],
+    target: [-0.051, 0.805, -2.035],
     fov: 40,
   },
   education: { id: "education", position: [2, 1.4, 2], target: [2, 1, 0], fov: DEFAULT_CAMERA.fov },

@@ -20,11 +20,14 @@ export type PieceKind =
   | "colorPalette"
   | "editingTimeline"
   | "filmStrip"
-  | "videoStill";
+  | "videoStill"
+  | "evidenceCard";
 
 export interface BoardPiece {
   piece: BoardPieceId;
   kind: PieceKind;
+  /** Keep the board's own baked-in photo instead of painting placeholder art. */
+  keepOriginal?: boolean;
 }
 
 /** Case file painted over the centre of the (kept, aged) world map. */
@@ -39,8 +42,12 @@ export const caseFile = {
     { label: "LOCATION:", value: "UNKNOWN", accent: false },
   ],
   stamp: "CONFIDENTIAL",
-  /** Map-space rectangle as fractions of the map: x, y, width, height. */
-  rect: [0.3, 0.2, 0.4, 0.72],
+  /**
+   * Map-space rectangle as fractions of the map: x, y, width, height. Sits
+   * high on the map so the master pin lands on its top edge and the file
+   * reads as pinned at the point every string converges on.
+   */
+  rect: [0.3, 0.04, 0.4, 0.72],
 } as const satisfies { piece: BoardPieceId } & Record<string, unknown>;
 
 /**
@@ -49,21 +56,28 @@ export const caseFile = {
  */
 export const pieces: BoardPiece[] = [
   // FRONTEND — upper left
-  { piece: "Plane067__0", kind: "codeEditor" },
-  { piece: "Plane059__0", kind: "codePrintout" },
-  { piece: "Plane061__0", kind: "browserPage" },
+  { piece: "Plane067__0", kind: "codeEditor", keepOriginal: true },
+  { piece: "Plane059__0", kind: "codePrintout", keepOriginal: true },
+  { piece: "Plane061__0", kind: "browserPage", keepOriginal: true },
   // UI/UX — lower left
-  { piece: "Plane062__0", kind: "wireframeSheet" },
-  { piece: "Plane063__0", kind: "uiScreen" },
-  { piece: "Plane060__0", kind: "phoneScreen" },
+  { piece: "Plane062__0", kind: "wireframeSheet", keepOriginal: true },
+  { piece: "Plane063__0", kind: "uiScreen", keepOriginal: true },
+  { piece: "Plane060__0", kind: "phoneScreen", keepOriginal: true },
   // GRAPHIC DESIGN — upper right
-  { piece: "Plane070__0", kind: "posterLetter" },
-  { piece: "Plane069__0", kind: "shapeStudy" },
-  { piece: "Plane072__0", kind: "colorPalette" },
+  { piece: "Plane070__0", kind: "posterLetter", keepOriginal: true },
+  { piece: "Plane069__0", kind: "shapeStudy", keepOriginal: true },
+  { piece: "Plane072__0", kind: "colorPalette", keepOriginal: true },
   // VIDEO EDITING — lower right
-  { piece: "Plane071__0", kind: "editingTimeline" },
-  { piece: "Plane066__0", kind: "filmStrip" },
-  { piece: "Plane065__0", kind: "videoStill" },
+  { piece: "Plane071__0", kind: "editingTimeline", keepOriginal: true },
+  { piece: "Plane066__0", kind: "filmStrip", keepOriginal: true },
+  // This island's baked content is one of the board's original "#2" number
+  // tags, not a photograph — meaningless filler once the numbers are gone, so
+  // it gets painted. A film strip rather than the `videoStill` art: sprocket
+  // holes read as period evidence, where a play button and a timecode do not.
+  { piece: "Plane065__0", kind: "filmStrip" },
+  // Under the case file. Its baked content is another of the board's "#6"
+  // number tags, so it gets painted rather than kept.
+  { piece: "Plane073__0", kind: "evidenceCard" },
 ];
 
 /** Role label on each cluster's note card. */
@@ -76,11 +90,14 @@ export const tags: { piece: BoardPieceId; lines: string[] }[] = [
 
 /**
  * Original board nodes removed so only the four clusters remain: leftover
- * photos/notes, plus every pin that is not on a kept paper or a map corner.
+ * photos/notes, plus every pin that is not holding a kept paper. 6, 11, 12
+ * and 13 are the strays left stuck in the world map holding nothing — the
+ * board has 28 pins and only 16 papers to pin.
  */
 export const hiddenPieces = [
-  "Plane073__0",
-  ...[15, 19, 27, 29, 30, 31, 32, 33].map((n) => `Cylinder0${String(n).padStart(2, "0")}__0`),
+  ...[6, 11, 12, 13, 15, 27, 29, 30, 31, 32, 33].map(
+    (n) => `Cylinder0${String(n).padStart(2, "0")}__0`,
+  ),
 ];
 
 /**
@@ -102,24 +119,29 @@ export const movedPieces = [
     to: [-1.425, 1.62],
     lift: 0.024,
   },
-  { nodes: ["Plane061__0", "Cylinder018__0"], from: [-0.8, 1.86], to: [-1.48, 1.795], lift: 0.018 },
+  // Pulled in beside the case file as central evidence (see `connections`).
+  { nodes: ["Plane061__0", "Cylinder018__0"], from: [-0.8, 1.86], to: [-0.95, 1.78], lift: 0.018 },
   // UI/UX — lower left
   { nodes: ["Plane062__0", "Cylinder014__0"], from: [-1.33, 0.89], to: [-1.22, 1.12], lift: 0 },
   { nodes: ["Plane063__0", "Cylinder017__0"], from: [-0.64, 1.03], to: [-1.25, 1.36], lift: 0 },
   { nodes: ["Plane064__0", "Cylinder016__0"], from: [-0.86, 0.92], to: [-1.51, 1.03], lift: 0.024 },
-  { nodes: ["Plane060__0", "Cylinder009__0"], from: [-1.28, 1.57], to: [-1.53, 1.34], lift: 0.02 },
+  { nodes: ["Plane060__0", "Cylinder009__0"], from: [-1.28, 1.57], to: [-0.95, 1.42], lift: 0.02 },
   // GRAPHIC DESIGN — upper right
   { nodes: ["Plane069__0", "Cylinder021__0"], from: [0.33, 1.71], to: [0.36, 1.92], lift: 0 },
   { nodes: ["Plane070__0", "Cylinder022__0"], from: [0.54, 1.72], to: [0.39, 1.73], lift: 0.012 },
   { nodes: ["Plane074__0", "Cylinder023__0"], from: [0.32, 1.53], to: [0.16, 1.63], lift: 0.024 },
-  { nodes: ["Plane072__0", "Cylinder020__0"], from: [-0.1, 1.93], to: [0.17, 1.88], lift: 0.018 },
-  // Map corner pin the palette now covers: stays in place, lifted over it.
-  { nodes: ["Cylinder011__0"], from: [0.09, 1.87], to: [0.09, 1.87], lift: 0.03 },
+  { nodes: ["Plane072__0", "Cylinder020__0"], from: [-0.1, 1.93], to: [-0.09, 1.78], lift: 0.018 },
   // VIDEO EDITING — lower right
   { nodes: ["Plane071__0", "Cylinder024__0"], from: [0.34, 1.27], to: [0.3, 1.32], lift: 0 },
   { nodes: ["Plane066__0", "Cylinder025__0"], from: [-0.28, 1.03], to: [0.33, 1.155], lift: 0.012 },
   { nodes: ["Plane075__0", "Cylinder035__0"], from: [0.22, 1.07], to: [0.13, 1.07], lift: 0.024 },
-  { nodes: ["Plane065__0", "Cylinder026__0"], from: [-0.39, 0.92], to: [0.12, 1.32], lift: 0.018 },
+  { nodes: ["Plane065__0", "Cylinder026__0"], from: [-0.39, 0.92], to: [-0.09, 1.42], lift: 0.018 },
+  // The board's 13th paper, brought back from `hiddenPieces` and set under the
+  // case file as central evidence. Cylinder019 is its own pin (0.05 away; the
+  // next nearest is 0.22, further than the paper is wide) and is also the
+  // master pin's `cloneOf` — the clone is re-anchored to `masterPin`, so the
+  // original is free to move down here with its paper.
+  { nodes: ["Plane073__0", "Cylinder019__0"], from: [-0.318, 1.904], to: [-0.53, 1.15], lift: 0.02 },
 ] as const;
 
 /**
@@ -152,33 +174,53 @@ export const mapStains = {
 } as const;
 
 /**
- * Red-string connections: ONE master pin on the case file's top edge, and one
- * straight string out to every pin on the board — each role's photos and its
- * sticky note. Board-face coordinates (s = right, t = up) are in the board
- * GLB's own space.
+ * Red-string network. The master pin sits ON the case file's top edge, and
+ * every strand leaves it SIDEWAYS into the two photographs flanking the file,
+ * never downward.
+ *
+ * That constraint is the whole design. With the anchor on the file, a
+ * straight run from it to anything below has to cross the record — the
+ * title, the subject photograph, the typed fields — because the file is tall
+ * and the pin is at its top. Bending strands around it was tried and read as
+ * floating rather than pinned. So the descent happens one hop out instead:
+ * the flanking photographs sit clear of the file's left and right edges, and
+ * everything below hangs off them. The strings run down the map either side
+ * of the record and never touch it.
+ *
+ * Each note card then fans to its own photographs. Strands that share an
+ * origin cannot cross each other, so a cluster is a tidy splay rather than
+ * the zig-zag a photo-to-photo chain produced.
+ *
+ * Board-face coordinates (s = right, t = up) are in the board GLB's own space.
  */
 export const connections = {
-  masterPin: { cloneOf: "Cylinder019__0", s: -0.529, t: 1.715, scale: 1.3 },
-  targets: [
-    // FRONTEND
-    { discipline: "Frontend Development", pin: "Cylinder007__0" },
-    { discipline: "Frontend Development", pin: "Cylinder008__0" },
-    { discipline: "Frontend Development", pin: "Cylinder018__0" },
-    { discipline: "Frontend Development", pin: "Cylinder010__0" },
-    // UI/UX
-    { discipline: "UI/UX Design", pin: "Cylinder014__0" },
-    { discipline: "UI/UX Design", pin: "Cylinder017__0" },
-    { discipline: "UI/UX Design", pin: "Cylinder009__0" },
-    { discipline: "UI/UX Design", pin: "Cylinder016__0" },
-    // GRAPHIC DESIGN
-    { discipline: "Graphic Design", pin: "Cylinder021__0" },
-    { discipline: "Graphic Design", pin: "Cylinder022__0" },
-    { discipline: "Graphic Design", pin: "Cylinder020__0" },
-    { discipline: "Graphic Design", pin: "Cylinder023__0" },
-    // VIDEO EDITING
-    { discipline: "Video Editing", pin: "Cylinder024__0" },
-    { discipline: "Video Editing", pin: "Cylinder025__0" },
-    { discipline: "Video Editing", pin: "Cylinder026__0" },
-    { discipline: "Video Editing", pin: "Cylinder035__0" },
+  masterPin: { cloneOf: "Cylinder019__0", s: -0.529, t: 1.845, scale: 1.3 },
+  /** Out to the evidence flanking the case file — sideways, clear of it. */
+  spokes: [
+    { discipline: "Central evidence, left", pin: "Cylinder018__0" },
+    { discipline: "Central evidence, right", pin: "Cylinder020__0" },
+  ],
+  links: [
+    // Down each flank, on the map beside the file rather than over it.
+    { discipline: "Central evidence, left", from: "Cylinder018__0", to: "Cylinder009__0" },
+    { discipline: "Central evidence, right", from: "Cylinder020__0", to: "Cylinder026__0" },
+    // Flanking evidence → each discipline's note card.
+    { discipline: "Frontend Development", from: "Cylinder018__0", to: "Cylinder010__0" },
+    { discipline: "UI/UX Design", from: "Cylinder009__0", to: "Cylinder016__0" },
+    { discipline: "Graphic Design", from: "Cylinder020__0", to: "Cylinder023__0" },
+    { discipline: "Video Editing", from: "Cylinder026__0", to: "Cylinder035__0" },
+    // The evidence under the case file, slung between the two lower flanking
+    // photographs so it reads as a V tucked beneath the record.
+    { discipline: "Central evidence, left", from: "Cylinder009__0", to: "Cylinder019__0" },
+    { discipline: "Central evidence, right", from: "Cylinder026__0", to: "Cylinder019__0" },
+    // Note card → its own photographs.
+    { discipline: "Frontend Development", from: "Cylinder010__0", to: "Cylinder007__0" },
+    { discipline: "Frontend Development", from: "Cylinder010__0", to: "Cylinder008__0" },
+    { discipline: "UI/UX Design", from: "Cylinder016__0", to: "Cylinder014__0" },
+    { discipline: "UI/UX Design", from: "Cylinder016__0", to: "Cylinder017__0" },
+    { discipline: "Graphic Design", from: "Cylinder023__0", to: "Cylinder021__0" },
+    { discipline: "Graphic Design", from: "Cylinder023__0", to: "Cylinder022__0" },
+    { discipline: "Video Editing", from: "Cylinder035__0", to: "Cylinder024__0" },
+    { discipline: "Video Editing", from: "Cylinder035__0", to: "Cylinder025__0" },
   ],
 } as const;

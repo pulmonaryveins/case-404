@@ -18,8 +18,14 @@ export const profile: Profile = {
   location: "CEBU, PHILIPPINES",
   roles: ["UI/UX DESIGNER", "FRONTEND DEVELOPER"],
   about:
-    "A curious mind who turns ideas into meaningful digital experiences. I design, develop and create, bringing concepts to life through clean interfaces, thoughtful design and engaging visuals.",
+    "I build intuitive interfaces and tell visual stories through design and media. My work brings together frontend development, industry training and creative team leadership.",
 };
+
+export const profileSkills = [
+  { label: "DEVELOPMENT", value: "React, JavaScript, HTML, CSS, Tailwind, MySQL" },
+  { label: "DESIGN & MEDIA", value: "Figma, Photoshop, Premiere Pro" },
+  { label: "WORKFLOW", value: "Vite, Git, GitHub" },
+] as const;
 
 /** Right-page records. Only ABOUT has content in Phase 4A. */
 export const dossierTabs = ["ABOUT", "EDUCATION", "EXPERIENCE"] as const;

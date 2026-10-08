@@ -138,9 +138,10 @@ export const assetManifest = {
     // document_file_folder.glb: the only dossier asset that can open — its
     // folder mesh carries a recorded open/close as 210 per-frame morph
     // targets. Local 2.28 x 3.1 (spine on local -x) -> 0.105 = 24 x 33 cm.
-    // Offset the right-hand folder pivot so the OPEN spread centres on
-    // the desktop at x = 0.05, z = -2.05.
-    position: [0.172, 0.789, -2.07],
+    // The closed folder's local bounds are centred slightly left of its
+    // pivot, so this offset places its physical centre on the desk centre
+    // at x = 0.05, z = -2.05.
+    position: [0.055, 0.789, -2.05],
     rotation: [0, 0.06, 0],
     scale: 0.105,
     castShadow: true,
@@ -191,14 +192,62 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
+  // ---------------------------------------------------------------------
+  // Phase 5 desk props, rendered by DeskProps. For these, `position` x/z is
+  // where the object's measured footprint centre lands on the desktop; y is
+  // documentation only — DeskProp grounds every prop on DESK_TOP from its
+  // real bounding box. `rotation` uses Euler order YXZ, so y is a plain yaw
+  // about the vertical and x/z tilt the object first (e.g. laying it flat).
+  // Runtime copies come from scripts/derive-desk-props.mjs.
+  // ---------------------------------------------------------------------
+  // old_vintage_desk_lamp.glb: green-shade brass banker's lamp, authored in
+  // metres (0.31 x 0.44 x 0.26), base at origin. Textures 4096² -> 2048².
+  // Back-left, shade turned in toward the folder.
+  deskLamp: {
+    id: "deskLamp",
+    url: "/models/case-404/props/desk-lamp.glb",
+    category: "props",
+    preloadPriority: 2,
+    position: [-0.52, 0.778, -2.27],
+    rotation: [0, 0.9, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
   ashtray: {
     id: "ashtray",
     url: "/models/case-404/props/ashtray.glb",
     category: "props",
     preloadPriority: 4,
-    position: [-0.28, 0.783, -1.0],
+    position: [-0.5, 0.778, -1.98],
     rotation: [0, 0.4, 0],
     scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // sp226_airsoft_handgun.glb: metres (0.21 long), authored standing on its
+  // side; x -90° lays it flat. Atmosphere only — not interactive, not focal.
+  handgun: {
+    id: "handgun",
+    url: "/models/case-404/props/handgun.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.62, 0.778, -1.8],
+    rotation: [-Math.PI / 2, 0.5, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // paper_tablet.glb (a desk plant despite the name). Unitless (~20.8 tall);
+  // 0.019 makes a ~40 cm plant. Far-right back corner of the desk.
+  plant: {
+    id: "plant",
+    url: "/models/case-404/props/plant.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.72, 0.778, -2.3],
+    rotation: [0, 0.8, 0],
+    scale: 0.019,
     castShadow: true,
     receiveShadow: true,
   },
