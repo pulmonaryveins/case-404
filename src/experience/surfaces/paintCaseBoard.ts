@@ -1,5 +1,5 @@
 import { boardIslands, type BoardPieceId } from "./boardIslands";
-import { caseFile, pieces, tags, type PieceKind } from "../../data/evidenceBoard";
+import { caseFile, mapStains, pieces, tags, type PieceKind } from "../../data/evidenceBoard";
 
 const INK = "#1f1b17";
 const RED = "#8e221d";
@@ -92,6 +92,61 @@ function stamp(ctx: Ctx, s: string, cx: number, cy: number, px: number, angle: n
 /* ------------------------------------------------------------------ */
 
 /**
+ * Covers each baked shadow in `mapStains` with a feathered copy of clean map
+ * from just beside it. Source and target are both in atlas space, so the
+ * patch keeps the atlas orientation. Expects the context to be inside the
+ * map piece (see enterPiece).
+ */
+function healMapStains(ctx: Ctx, w: number, h: number) {
+  const m = ctx.getTransform();
+  const { mapBounds, patches } = mapStains;
+  const ds = mapBounds.s[1] - mapBounds.s[0];
+  const dt = mapBounds.t[1] - mapBounds.t[0];
+  /** Atlas-space rectangle covering the paper rect (x, y, pw x ph). */
+  const atlasRect = (x: number, y: number, pw: number, ph: number) => {
+    const at = (px: number, py: number) => [m.a * px + m.c * py + m.e, m.b * px + m.d * py + m.f];
+    const [x0, y0] = at(x, y);
+    const [x1, y1] = at(x + pw, y + ph);
+    return {
+      x: Math.min(x0, x1),
+      y: Math.min(y0, y1),
+      w: Math.abs(x1 - x0),
+      h: Math.abs(y1 - y0),
+    };
+  };
+  const patch = document.createElement("canvas");
+
+  for (const { s, t, hw, hh, from } of patches) {
+    const pw = ((hw * 2) / ds) * w;
+    const ph = ((hh * 2) / dt) * h;
+    const x = ((s - mapBounds.s[0]) / ds) * w - pw / 2;
+    const y = ((mapBounds.t[1] - t) / dt) * h - ph / 2;
+    const dest = atlasRect(x, y, pw, ph);
+    const src = atlasRect(x, y - from * (ph + 4), pw, ph);
+    patch.width = Math.ceil(dest.w);
+    patch.height = Math.ceil(dest.h);
+    const pctx = patch.getContext("2d")!;
+    pctx.globalCompositeOperation = "source-over";
+    pctx.clearRect(0, 0, patch.width, patch.height);
+    pctx.drawImage(ctx.canvas, src.x, src.y, src.w, src.h, 0, 0, patch.width, patch.height);
+    // Elliptical feather: opaque core, transparent rim.
+    const side = Math.max(patch.width, patch.height);
+    const fade = pctx.createRadialGradient(0, 0, side * 0.2, 0, 0, side / 2);
+    fade.addColorStop(0, "rgba(0,0,0,1)");
+    fade.addColorStop(1, "rgba(0,0,0,0)");
+    pctx.globalCompositeOperation = "destination-in";
+    pctx.translate(patch.width / 2, patch.height / 2);
+    pctx.scale(patch.width / side, patch.height / side);
+    pctx.fillStyle = fade;
+    pctx.fillRect(-side, -side, side * 2, side * 2);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(patch, dest.x, dest.y);
+    ctx.restore();
+  }
+}
+
+/**
  * Keeps the board's own world map but pushes it toward an archival sepia,
  * then lays a smaller CASE 404 file over its centre.
  */
@@ -108,6 +163,7 @@ function paintMapAndCaseFile(ctx: Ctx, atlas: CanvasImageSource, size: number) {
   ctx.globalCompositeOperation = "source-over";
 
   const { w, h } = enterPiece(ctx, caseFile.piece, size);
+  healMapStains(ctx, w, h);
   // Faint fold lines: the map has been folded and pinned up many times.
   ctx.fillStyle = "rgba(60,40,20,0.10)";
   ctx.fillRect(w / 2 - 1, 0, 2, h);
@@ -135,6 +191,124 @@ function paintMapAndCaseFile(ctx: Ctx, atlas: CanvasImageSource, size: number) {
   ctx.restore();
 }
 
+/**
+ * Black-and-white press-style photograph of an unidentifiable person: soft
+ * focus, a smeared face, grain, scratches and a vignette.
+ */
+function paintPortrait(ctx: Ctx, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const bg = ctx.createLinearGradient(x, y, x, y + h);
+  bg.addColorStop(0, "#82817a");
+  bg.addColorStop(1, "#3d3c38");
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+  const glow = ctx.createRadialGradient(
+    x + w * 0.3,
+    y + h * 0.3,
+    0,
+    x + w * 0.3,
+    y + h * 0.3,
+    w * 0.7,
+  );
+  glow.addColorStop(0, "rgba(225,223,214,0.4)");
+  glow.addColorStop(1, "rgba(225,223,214,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(x, y, w, h);
+
+  // The figure is drawn separately so it can be blurred as one soft shape.
+  const fig = document.createElement("canvas");
+  fig.width = Math.ceil(w);
+  fig.height = Math.ceil(h);
+  const f = fig.getContext("2d")!;
+  const cx = w * 0.5;
+  const hy = h * 0.38;
+  f.fillStyle = "#18181a"; // jacket
+  f.beginPath();
+  f.moveTo(w * 0.02, h);
+  f.quadraticCurveTo(w * 0.06, h * 0.72, w * 0.3, h * 0.66);
+  f.lineTo(w * 0.7, h * 0.66);
+  f.quadraticCurveTo(w * 0.94, h * 0.72, w * 0.98, h);
+  f.closePath();
+  f.fill();
+  f.fillStyle = "#b9b8b1"; // shirt collar
+  f.beginPath();
+  f.moveTo(w * 0.38, h * 0.66);
+  f.lineTo(w * 0.5, h * 0.86);
+  f.lineTo(w * 0.62, h * 0.66);
+  f.lineTo(w * 0.56, h * 0.64);
+  f.lineTo(w * 0.5, h * 0.73);
+  f.lineTo(w * 0.44, h * 0.64);
+  f.closePath();
+  f.fill();
+  f.fillStyle = "#55544f"; // neck
+  f.fillRect(w * 0.43, h * 0.5, w * 0.14, h * 0.18);
+  const skin = f.createLinearGradient(w * 0.3, 0, w * 0.7, 0);
+  skin.addColorStop(0, "#c2c1b9");
+  skin.addColorStop(1, "#6a6963");
+  f.fillStyle = "#85847e"; // ears
+  f.beginPath();
+  f.ellipse(cx - w * 0.175, hy + h * 0.02, w * 0.03, h * 0.06, 0, 0, Math.PI * 2);
+  f.ellipse(cx + w * 0.175, hy + h * 0.02, w * 0.03, h * 0.06, 0, 0, Math.PI * 2);
+  f.fill();
+  f.fillStyle = skin; // head
+  f.beginPath();
+  f.ellipse(cx, hy, w * 0.17, h * 0.21, 0, 0, Math.PI * 2);
+  f.fill();
+  f.fillStyle = "#121212"; // hair
+  f.beginPath();
+  f.ellipse(cx, hy - h * 0.07, w * 0.18, h * 0.16, 0, Math.PI, Math.PI * 2);
+  f.closePath();
+  f.fill();
+  f.fillStyle = "rgba(20,20,20,0.5)"; // eyes and mouth, barely there
+  f.beginPath();
+  f.ellipse(cx - w * 0.07, hy - h * 0.01, w * 0.04, h * 0.018, 0, 0, Math.PI * 2);
+  f.ellipse(cx + w * 0.07, hy - h * 0.01, w * 0.04, h * 0.018, 0, 0, Math.PI * 2);
+  f.ellipse(cx, hy + h * 0.1, w * 0.06, h * 0.012, 0, 0, Math.PI * 2);
+  f.fill();
+
+  ctx.filter = `blur(${Math.max(1, w * 0.014)}px)`;
+  ctx.drawImage(fig, x, y);
+  // Motion ghost: the subject moved, so the face smears sideways.
+  ctx.globalAlpha = 0.4;
+  ctx.filter = `blur(${Math.max(2, w * 0.045)}px)`;
+  ctx.drawImage(fig, x + w * 0.02, y - h * 0.004);
+  ctx.globalAlpha = 1;
+  ctx.filter = "none";
+
+  // Vignette, grain, scratches.
+  const vig = ctx.createRadialGradient(
+    x + w / 2,
+    y + h / 2,
+    w * 0.25,
+    x + w / 2,
+    y + h / 2,
+    w * 0.8,
+  );
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(x, y, w, h);
+  ctx.save();
+  ctx.translate(x, y);
+  grain(ctx, w, h, 321, 0.16);
+  const r = rng(909);
+  ctx.strokeStyle = "rgba(235,232,222,0.22)";
+  ctx.lineWidth = Math.max(1, w * 0.004);
+  for (let i = 0; i < 5; i++) {
+    const sx = r() * w;
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx + (r() - 0.5) * w * 0.05, h);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
 function paintCaseFile(ctx: Ctx, w: number, h: number) {
   const m = w * 0.08;
   ctx.textAlign = "center";
@@ -152,36 +326,51 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
   ctx.fillStyle = INK;
   ctx.fillRect(m, h * 0.275, w - m * 2, 2);
 
-  // Anonymous subject photo, taped on.
-  const px = m;
-  const py = h * 0.32;
-  const pw = w * 0.46;
-  const ph = h * 0.42;
-  ctx.fillStyle = "#3b3834";
-  ctx.fillRect(px, py, pw, ph);
-  ctx.fillStyle = "#4a4640";
-  ctx.fillRect(px + pw * 0.05, py + ph * 0.04, pw * 0.9, ph * 0.92);
-  ctx.fillStyle = "#16130f";
+  // Coffee ring: the file has sat on a desk a long time.
+  ctx.save();
+  ctx.strokeStyle = "rgba(120,80,40,0.16)";
+  ctx.lineWidth = w * 0.012;
   ctx.beginPath();
-  ctx.arc(px + pw / 2, py + ph * 0.4, pw * 0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(px + pw / 2, py + ph * 1.02, pw * 0.42, ph * 0.38, 0, Math.PI, 0);
-  ctx.fill();
-  ctx.textAlign = "center";
-  type(ctx, "?", px + pw / 2, py + ph * 0.47, ph * 0.2, "#cfc6b4");
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(235,228,205,0.55)";
-  ctx.fillRect(px - pw * 0.06, py - ph * 0.03, pw * 0.3, ph * 0.07);
-  ctx.fillRect(px + pw * 0.76, py - ph * 0.03, pw * 0.3, ph * 0.07);
+  ctx.arc(w * 0.82, h * 0.2, w * 0.085, 0.3, Math.PI * 1.85);
+  ctx.stroke();
+  ctx.restore();
 
-  let fyy = py + h * 0.04;
+  // Anonymous subject photograph: a print with a white border, taped on.
+  const px = m;
+  const py = h * 0.31;
+  const pw = w * 0.48;
+  const ph = h * 0.46;
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = h * 0.012;
+  ctx.shadowOffsetY = h * 0.006;
+  ctx.fillStyle = "#d8d4c6";
+  ctx.fillRect(px, py, pw, ph);
+  ctx.restore();
+  const bd = pw * 0.045;
+  paintPortrait(ctx, px + bd, py + bd, pw - bd * 2, ph - bd * 3);
+  ctx.fillStyle = "rgba(235,228,205,0.6)";
+  ctx.fillRect(px - pw * 0.05, py - ph * 0.02, pw * 0.28, ph * 0.07);
+  ctx.fillRect(px + pw * 0.77, py - ph * 0.02, pw * 0.28, ph * 0.07);
+
+  let fyy = py + h * 0.035;
   const fx = px + pw + w * 0.05;
   for (const f of caseFile.fields) {
-    type(ctx, f.label, fx, fyy, h * 0.03);
-    type(ctx, f.value, fx, fyy + h * 0.055, f.accent ? h * 0.06 : h * 0.038, f.accent ? RED : INK);
-    fyy += h * 0.14;
+    type(ctx, f.label, fx, fyy, h * 0.028);
+    type(ctx, f.value, fx, fyy + h * 0.05, f.accent ? h * 0.058 : h * 0.036, f.accent ? RED : INK);
+    fyy += h * 0.105;
   }
+
+  // Fingerprint smudge by the stamp.
+  ctx.save();
+  ctx.strokeStyle = "rgba(60,40,30,0.3)";
+  ctx.lineWidth = Math.max(1, h * 0.003);
+  for (let i = 1; i <= 7; i++) {
+    ctx.beginPath();
+    ctx.ellipse(w * 0.87, h * 0.8, h * 0.012 * i, h * 0.016 * i, 0.3, 0.4, Math.PI * 1.7);
+    ctx.stroke();
+  }
+  ctx.restore();
 
   // Barcode + stamp along the foot of the file.
   const r = rng(77);
@@ -192,7 +381,10 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
     ctx.fillRect(bx, h * 0.83, bw, h * 0.07);
     bx += bw + 2 + Math.floor(r() * 3);
   }
-  stamp(ctx, caseFile.stamp, w * 0.66, h * 0.87, h * 0.045, -0.12);
+  stamp(ctx, caseFile.stamp, w * 0.62, h * 0.87, h * 0.045, -0.12);
+  ctx.textAlign = "center";
+  type(ctx, "FILE 404-A  //  DO NOT REMOVE", w / 2, h * 0.965, h * 0.02, "rgba(31,27,23,0.55)");
+  ctx.textAlign = "left";
 }
 
 /* ------------------------------------------------------------------ */
@@ -228,22 +420,6 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
       ctx.font = `bold ${h * 0.075}px ${TYPE}`;
       ctx.fillStyle = "#2d2a26";
       lines.forEach((l, i) => ctx.fillText(l, w * 0.08, h * (0.16 + i * 0.13)));
-      break;
-    }
-    case "workspaceSilhouette": {
-      // Unidentified person at a desk, from behind, lit by a monitor.
-      ctx.fillStyle = "#3a3733";
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = "#a9a294";
-      ctx.fillRect(w * 0.45, h * 0.18, w * 0.42, h * 0.3);
-      ctx.fillStyle = "#121110";
-      ctx.beginPath();
-      ctx.arc(w * 0.38, h * 0.38, w * 0.12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(w * 0.38, h * 0.85, w * 0.3, h * 0.35, 0, Math.PI, 0);
-      ctx.fill();
-      ctx.fillRect(0, h * 0.72, w, h * 0.06);
       break;
     }
     case "wireframeSheet": {
@@ -284,25 +460,103 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
       ctx.stroke();
       break;
     }
-    case "skyline": {
-      // Coastal city at dusk, black and white.
-      const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, "#8d877c");
-      sky.addColorStop(1, "#c9c2b4");
-      ctx.fillStyle = sky;
+    case "uiScreen": {
+      // App mock-up: nav bar, hero block, card row.
+      ctx.fillStyle = "#e3dccb";
       ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = "#2b2926";
-      let x = 0;
-      while (x < w) {
-        const bw = w * (0.05 + r() * 0.09);
-        const bh = h * (0.15 + r() * 0.4);
-        ctx.fillRect(x, h * 0.68 - bh, bw, bh);
-        x += bw + w * 0.01;
+      ctx.fillStyle = "#2f3a46";
+      ctx.fillRect(0, 0, w, h * 0.14);
+      ctx.fillStyle = "#d3a648";
+      ctx.fillRect(w * 0.04, h * 0.045, w * 0.14, h * 0.05);
+      ctx.fillStyle = "#8a8f94";
+      for (let i = 0; i < 3; i++) ctx.fillRect(w * (0.6 + i * 0.12), h * 0.055, w * 0.08, h * 0.03);
+      ctx.fillStyle = "#b7452c";
+      ctx.fillRect(w * 0.06, h * 0.22, w * 0.88, h * 0.3);
+      ctx.fillStyle = "#e8e0cf";
+      ctx.fillRect(w * 0.1, h * 0.29, w * 0.4, h * 0.05);
+      ctx.fillRect(w * 0.1, h * 0.38, w * 0.26, h * 0.03);
+      ctx.fillStyle = "#2f3a46";
+      ctx.fillRect(w * 0.1, h * 0.46, w * 0.12, h * 0.04);
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = "#c9bfa8";
+        ctx.fillRect(w * (0.06 + i * 0.3), h * 0.6, w * 0.28, h * 0.32);
+        ctx.fillStyle = "#6d7a86";
+        ctx.fillRect(w * (0.09 + i * 0.3), h * 0.64, w * 0.22, h * 0.12);
       }
-      ctx.fillStyle = "#5b5750";
-      ctx.fillRect(0, h * 0.68, w, h * 0.32);
-      ctx.fillStyle = "rgba(220,214,200,0.35)";
-      for (let i = 0; i < 6; i++) ctx.fillRect(r() * w, h * (0.72 + r() * 0.22), w * 0.2, 1.5);
+      break;
+    }
+    case "browserPage": {
+      // Web page screenshot: address bar, hero, text lines, button.
+      ctx.fillStyle = "#e6e0d2";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#2c2f35";
+      ctx.fillRect(0, 0, w, h * 0.13);
+      ctx.fillStyle = "#c9c2b2";
+      ctx.fillRect(w * 0.18, h * 0.035, w * 0.64, h * 0.06);
+      ctx.fillStyle = "#2c2f35";
+      ctx.fillRect(w * 0.08, h * 0.22, w * 0.5, h * 0.09);
+      ctx.fillStyle = "#8a8f94";
+      for (let i = 0; i < 3; i++)
+        ctx.fillRect(w * 0.08, h * (0.38 + i * 0.07), w * (0.7 - i * 0.12), h * 0.035);
+      ctx.fillStyle = "#b7452c";
+      ctx.fillRect(w * 0.08, h * 0.66, w * 0.24, h * 0.1);
+      ctx.fillStyle = "#6d7a86";
+      ctx.fillRect(w * 0.64, h * 0.2, w * 0.28, h * 0.55);
+      break;
+    }
+    case "phoneScreen": {
+      // Mobile app mock-up on a dark ground.
+      ctx.fillStyle = "#2a2926";
+      ctx.fillRect(0, 0, w, h);
+      const pw = w * 0.5;
+      const px = (w - pw) / 2;
+      ctx.fillStyle = "#14130f";
+      ctx.fillRect(px - w * 0.03, h * 0.06, pw + w * 0.06, h * 0.88);
+      ctx.fillStyle = "#e3dccb";
+      ctx.fillRect(px, h * 0.1, pw, h * 0.8);
+      ctx.fillStyle = "#b7452c";
+      ctx.fillRect(px, h * 0.1, pw, h * 0.16);
+      ctx.fillStyle = "#c9bfa8";
+      for (let i = 0; i < 3; i++)
+        ctx.fillRect(px + pw * 0.08, h * (0.32 + i * 0.18), pw * 0.84, h * 0.13);
+      ctx.fillStyle = "#6d7a86";
+      for (let i = 0; i < 3; i++)
+        ctx.fillRect(px + pw * 0.12, h * (0.35 + i * 0.18), pw * 0.22, h * 0.07);
+      break;
+    }
+    case "colorPalette": {
+      // Brand swatches with a type specimen.
+      ctx.fillStyle = "#ddd5c2";
+      ctx.fillRect(0, 0, w, h);
+      const swatches = ["#b7452c", "#d3a648", "#2d4a63", "#1f1b17", "#e8e0cf"];
+      swatches.forEach((c, i) => {
+        ctx.fillStyle = c;
+        ctx.fillRect(w * (0.06 + i * 0.176), h * 0.08, w * 0.15, h * 0.5);
+      });
+      ctx.fillStyle = "#1f1b17";
+      ctx.font = `bold ${h * 0.26}px Georgia, "Times New Roman", serif`;
+      ctx.fillText("Aa", w * 0.06, h * 0.9);
+      ctx.fillRect(w * 0.42, h * 0.72, w * 0.5, h * 0.04);
+      ctx.fillRect(w * 0.42, h * 0.82, w * 0.34, h * 0.04);
+      break;
+    }
+    case "videoStill": {
+      // Footage frame with a play marker and timecode.
+      ctx.fillStyle = "#26231f";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "#4d4a43";
+      ctx.fillRect(w * 0.06, h * 0.08, w * 0.88, h * 0.62);
+      ctx.fillStyle = "#d8d0c0";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.42, h * 0.22);
+      ctx.lineTo(w * 0.42, h * 0.56);
+      ctx.lineTo(w * 0.62, h * 0.39);
+      ctx.fill();
+      ctx.font = `bold ${h * 0.09}px ${TYPE}`;
+      ctx.fillStyle = "#c8c0b0";
+      ctx.fillText("00:12:08", w * 0.08, h * 0.88);
+      ctx.fillStyle = "#d33b2c";
+      ctx.fillRect(w * 0.06, h * 0.72, w * 0.5, h * 0.025);
       break;
     }
     case "posterLetter": {
@@ -388,8 +642,6 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
       }
       break;
     }
-    case "photoBack":
-      break;
   }
   grain(ctx, w, h, seed + 1, 0.07);
 }
@@ -397,16 +649,9 @@ function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number
 function paintPieces(ctx: Ctx, size: number) {
   pieces.forEach((p, i) => {
     const { w, h } = enterPiece(ctx, p.piece, size);
-    if (p.kind === "photoBack" || p.kind === "wireframeSheet") {
-      // Whole sheet repainted: back of a print, or a loose paper sketch.
-      if (p.kind === "photoBack") {
-        agedPaper(ctx, w, h, "#7f725c", 200 + i);
-        ctx.fillStyle = "rgba(60,50,40,0.18)";
-        ctx.font = `${h * 0.07}px ${TYPE}`;
-        ctx.fillText("—", w * 0.1, h * 0.2);
-      } else {
-        paintKind(ctx, p.kind, w, h, 100 + i * 17);
-      }
+    if (p.kind === "wireframeSheet") {
+      // Whole sheet repainted: a loose paper sketch, no print border.
+      paintKind(ctx, p.kind, w, h, 100 + i * 17);
       return;
     }
     // Photos keep a thin print border and a slightly deeper bottom margin.
@@ -446,10 +691,61 @@ function paintTags(ctx: Ctx, size: number) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Cork + baked shadows                                                */
+/* ------------------------------------------------------------------ */
+
+// The cork's atlas island (a 4096px atlas) and its board-face extent. Its
+// own shadow bake covers the whole face, so the interior is refilled from a
+// clean linen sample; the scene's real shadows replace the baked ones.
+const CORK = {
+  quad: [
+    [115, 2592],
+    [2543, 2596],
+    [2509, 3990],
+    [71, 3990],
+  ],
+  sample: [2150, 3480, 300, 260],
+  s: [-1.58, 0.52],
+  t: [0.88, 2.05],
+} as const;
+
+function repaintCork(ctx: Ctx, atlas: CanvasImageSource, size: number) {
+  const k = size / 4096;
+  const [q0, q1, q2, q3] = CORK.quad.map(([x, y]) => [x * k, y * k]);
+  const [sx, sy, sw, sh] = CORK.sample.map((n) => n * k);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(q0[0] + 14 * k, q0[1] + 14 * k);
+  ctx.lineTo(q1[0] - 14 * k, q1[1] + 14 * k);
+  ctx.lineTo(q2[0] - 14 * k, q2[1] - 14 * k);
+  ctx.lineTo(q3[0] + 14 * k, q3[1] - 14 * k);
+  ctx.closePath();
+  ctx.clip();
+
+  // Mirror-tiled linen so the repeat has no visible seams.
+  const x0 = Math.min(q0[0], q3[0]);
+  const y0 = Math.min(q0[1], q1[1]);
+  const x1 = Math.max(q1[0], q2[0]);
+  const y1 = Math.max(q2[1], q3[1]);
+  for (let ty = 0; y0 + ty * sh < y1; ty++) {
+    for (let tx = 0; x0 + tx * sw < x1; tx++) {
+      ctx.save();
+      ctx.translate(x0 + tx * sw + (tx % 2 ? sw : 0), y0 + ty * sh + (ty % 2 ? sh : 0));
+      ctx.scale(tx % 2 ? -1 : 1, ty % 2 ? -1 : 1);
+      ctx.drawImage(atlas, sx, sy, sw, sh, 0, 0, sw, sh);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
 /**
  * Copies the board's original colour atlas and repaints every paper piece
- * with CASE 404 content in place — same UV islands, same geometry, same
- * baked shadows on the cork.
+ * with CASE 404 content in place — same UV islands, same geometry. The
+ * cork's baked shadows are replaced by clean linen.
  */
 export function paintCaseBoard(atlas: ImageBitmap | HTMLImageElement) {
   const canvas = document.createElement("canvas");
@@ -458,6 +754,7 @@ export function paintCaseBoard(atlas: ImageBitmap | HTMLImageElement) {
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(atlas, 0, 0);
   const size = canvas.width;
+  repaintCork(ctx, atlas, size);
   paintMapAndCaseFile(ctx, atlas, size);
   paintPieces(ctx, size);
   paintTags(ctx, size);

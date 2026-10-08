@@ -3,28 +3,28 @@ import { useGLTF } from "@react-three/drei";
 import {
   Box3,
   CanvasTexture,
+  LineCurve3,
   Mesh,
   MeshStandardMaterial,
   type Object3D,
-  QuadraticBezierCurve3,
   TubeGeometry,
   Vector3,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { assetManifest } from "../../assets/assetManifest";
-import { connections } from "../../data/evidenceBoard";
+import { connections, hiddenPieces, movedPieces } from "../../data/evidenceBoard";
 import { paintCaseBoard } from "../surfaces/paintCaseBoard";
 
 const STRING_RADIUS = 0.0016;
-const STRING_SAG = 0.03;
 
 /**
  * The investigation board with its generic content replaced by CASE 404
  * evidence:
  * - colour atlas repainted once at load (same material, geometry, UVs);
  * - the four original strands hidden;
- * - one master pin (a clone of an existing pin) at the map's top-centre;
- * - one red string from it to each discipline's existing pin, merged into a
+ * - stray papers and pins hidden, leaving four role clusters;
+ * - one master pin (a clone of an existing pin) on the case file's top edge;
+ * - one straight red string from it to every other pin on the board, merged into a
  *   single mesh (one extra draw call for all strings).
  */
 export function EvidenceBoard() {
@@ -65,8 +65,22 @@ function buildBoard(source: Object3D) {
     if (!(o instanceof Mesh)) return;
     o.castShadow = true;
     o.receiveShadow = true;
-    if (o.name.startsWith("BezierCurve")) o.visible = false;
+    if (o.name.startsWith("BezierCurve") || hiddenPieces.includes(o.name)) o.visible = false;
   });
+
+  // Board face: s = right = -z, t = up = +y, both in the board root's frame.
+  for (const { nodes, from, to, lift } of movedPieces) {
+    for (const name of nodes) {
+      const node = board.getObjectByName(name)!;
+      const p = board.worldToLocal(node.getWorldPosition(new Vector3()));
+      p.y += to[1] - from[1];
+      p.z -= to[0] - from[0];
+      p.x += lift;
+      node.position.copy(node.parent!.worldToLocal(board.localToWorld(p)));
+      node.updateMatrixWorld(true);
+    }
+  }
+  board.updateMatrixWorld(true);
 
   const { cloneOf, s, t, scale } = connections.masterPin;
   const pin = board.getObjectByName(cloneOf) as Mesh;
@@ -86,10 +100,8 @@ function buildBoard(source: Object3D) {
     const box = new Box3().setFromObject(board.getObjectByName(name)!);
     const c = box.getCenter(new Vector3());
     const end = new Vector3(c.x + (box.max.x - c.x) * 0.6, c.y, c.z);
-    const mid = hubHead.clone().lerp(end, 0.5);
-    mid.y -= STRING_SAG;
-    const curve = new QuadraticBezierCurve3(hubHead, mid, end);
-    return new TubeGeometry(curve, 32, STRING_RADIUS, 5, false);
+    const curve = new LineCurve3(hubHead, end);
+    return new TubeGeometry(curve, 1, STRING_RADIUS, 5, false);
   });
   const strings = new Mesh(
     mergeGeometries(tubes),

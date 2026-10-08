@@ -1,19 +1,47 @@
 import { useEffect, useMemo } from "react";
-import { useTexture } from "@react-three/drei";
 import { CanvasTexture, FrontSide, SRGBColorSpace } from "three";
+import { paintApartmentPhoto, paintSilhouettePhoto } from "../surfaces/paintDossierPhotos";
+
+/** Deterministic print grain plus a warm sepia tone over one canvas region. */
+function toneAndGrain(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  seed: number,
+) {
+  const pixels = ctx.getImageData(x, y, w, h);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    seed = (seed * 16807) % 2147483647;
+    const gray =
+      pixels.data[i] * 0.2126 + pixels.data[i + 1] * 0.7152 + pixels.data[i + 2] * 0.0722;
+    const v = gray + (seed / 2147483647 - 0.5) * 22;
+    pixels.data[i] = Math.max(0, Math.min(255, v * 1.02));
+    pixels.data[i + 1] = Math.max(0, Math.min(255, v * 0.94));
+    pixels.data[i + 2] = Math.max(0, Math.min(255, v * 0.8));
+  }
+  ctx.putImageData(pixels, x, y);
+}
+
+function toTexture(canvas: HTMLCanvasElement) {
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
 
 function Polaroid({
-  url,
+  variant,
   caption,
   position,
   angle,
 }: {
-  url: string;
+  variant: 0 | 1;
   caption: string;
   position: [number, number, number];
   angle: number;
 }) {
-  const photo = useTexture(url);
   const print = useMemo(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 640;
@@ -21,33 +49,8 @@ function Polaroid({
     const ctx = canvas.getContext("2d")!;
     ctx.fillStyle = "#f2ead7";
     ctx.fillRect(0, 0, 640, 768);
-    const img = photo.image as HTMLImageElement;
-    const size = Math.min(img.width, img.height);
-    ctx.save();
-    ctx.filter = "grayscale(1) contrast(1.16) brightness(0.96)";
-    ctx.drawImage(
-      img,
-      (img.width - size) / 2,
-      (img.height - size) / 2,
-      size,
-      size,
-      34,
-      34,
-      572,
-      572,
-    );
-    ctx.restore();
-    // Fine, deterministic monochrome print grain, confined to the photo.
-    const pixels = ctx.getImageData(34, 34, 572, 572);
-    let seed = 404;
-    for (let i = 0; i < pixels.data.length; i += 4) {
-      seed = (seed * 16807) % 2147483647;
-      const gray =
-        pixels.data[i] * 0.2126 + pixels.data[i + 1] * 0.7152 + pixels.data[i + 2] * 0.0722;
-      const value = Math.max(0, Math.min(255, gray + (seed / 2147483647 - 0.5) * 9));
-      pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = value;
-    }
-    ctx.putImageData(pixels, 34, 34);
+    paintSilhouettePhoto(ctx, 34, 34, 572, variant);
+    toneAndGrain(ctx, 34, 34, 572, 572, 404 + variant);
     ctx.strokeStyle = "#b8af9b";
     ctx.lineWidth = 2;
     ctx.strokeRect(34, 34, 572, 572);
@@ -57,12 +60,9 @@ function Polaroid({
     ctx.fillText(caption, 320, 676);
     ctx.font = '16px "Courier New", monospace';
     ctx.fillStyle = "#81715c";
-    ctx.fillText("PHILIPPINES / EVERYDAY LIFE", 320, 721);
-    const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
-    texture.anisotropy = 8;
-    return texture;
-  }, [photo, caption]);
+    ctx.fillText("CASE 404 / NO FACE ON FILE", 320, 721);
+    return toTexture(canvas);
+  }, [variant, caption]);
   useEffect(() => () => print.dispose(), [print]);
   return (
     <group position={position} rotation={[0, 0, angle]}>
@@ -80,14 +80,54 @@ function Polaroid({
   );
 }
 
+/** Residence record card: a dusk photo of the subject's apartment block. */
+function paintResidenceCard() {
+  const w = 784;
+  const h = 1054;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#e7dfc7";
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "#8e221d";
+  ctx.font = 'bold 22px "Courier New", monospace';
+  ctx.fillText("CASE 404 / RESIDENCE RECORD", 44, 72);
+  ctx.fillStyle = "#1f1b17";
+  ctx.fillRect(44, 88, w - 88, 3);
+
+  const px = 44;
+  const py = 120;
+  const pw = w - 88;
+  const ph = 640;
+  ctx.fillStyle = "#d8d4c6";
+  ctx.fillRect(px - 14, py - 14, pw + 28, ph + 28);
+  paintApartmentPhoto(ctx, px, py, pw, ph);
+  toneAndGrain(ctx, px, py, pw, ph, 77);
+  ctx.fillStyle = "rgba(235,228,205,0.55)"; // tape
+  ctx.fillRect(px - 20, py - 18, 120, 36);
+  ctx.fillRect(px + pw - 100, py - 18, 120, 36);
+
+  ctx.fillStyle = "#504537";
+  ctx.font = '26px "Courier New", monospace';
+  ctx.fillText("RESIDENCE / UNIT NOT CONFIRMED", 44, 828);
+  ctx.font = '19px "Courier New", monospace';
+  ctx.fillStyle = "#81715c";
+  ctx.fillText("ADDRESS:   WITHHELD", 44, 876);
+  ctx.fillText("TENANT:    UNKNOWN", 44, 910);
+  ctx.fillText("LAST SEEN: NOT RECORDED", 44, 944);
+  ctx.fillStyle = "#1f1b17";
+  ctx.fillRect(44, 976, w - 88, 2);
+  ctx.font = '16px "Courier New", monospace';
+  ctx.fillStyle = "#81715c";
+  ctx.fillText("FILE REF. CASE 404 / R-01", 44, 1010);
+  return toTexture(canvas);
+}
+
 /** All three artifacts inherit the actual cover pose from Dossier's attachment. */
 export function DossierEvidence() {
-  const map = useTexture("/images/dossier/philippines.svg", (texture) => {
-    if (!Array.isArray(texture)) {
-      texture.colorSpace = SRGBColorSpace;
-      texture.anisotropy = 8;
-    }
-  });
+  const card = useMemo(() => paintResidenceCard(), []);
+  useEffect(() => () => card.dispose(), [card]);
   return (
     <group
       name="dossier-left-evidence"
@@ -95,14 +135,14 @@ export function DossierEvidence() {
       rotation={[-Math.PI / 2, 0, 0]}
     >
       <Polaroid
-        url="/images/dossier/market.jpg"
-        caption="01 / CARBON MARKET"
+        variant={0}
+        caption="01 / SUBJECT, UNIDENTIFIED"
         position={[-0.43, 0.68, 0.012]}
         angle={-0.065}
       />
       <Polaroid
-        url="/images/dossier/street.jpg"
-        caption="02 / A MORNING WALK"
+        variant={1}
+        caption="02 / LAST KNOWN SIGHTING"
         position={[-0.38, -0.61, 0.017]}
         angle={0.055}
       />
@@ -113,7 +153,7 @@ export function DossierEvidence() {
         </mesh>
         <mesh position={[0, 0, 0.003]} receiveShadow>
           <planeGeometry args={[0.976, 1.3115]} />
-          <meshStandardMaterial map={map} roughness={0.95} side={FrontSide} />
+          <meshStandardMaterial map={card} roughness={0.95} side={FrontSide} />
         </mesh>
       </group>
     </group>
