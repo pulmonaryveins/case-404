@@ -20,7 +20,7 @@ const WALL = { x: -3.6, centreY: 1.72, centreZ: -1, width: 7, height: 3.44 } as 
 const WIN = { z: -2.3, y: 1.6 } as const;
 const OPENING = { w: 1.4, h: 1.4 } as const;
 /** Moonlight peak, and the share kept once the dossier is open (as the lamp). */
-const MOON = 18;
+const MOON = 21;
 const OPEN_FRACTION = 0.3;
 
 /**
@@ -102,23 +102,25 @@ export function MoonWindow() {
         <meshBasicMaterial color="#dfe8ff" toneMapped={false} />
       </mesh>
 
-      <primitive object={target} position={[-1.1, 0.9, -3.3]} />
+      {/* A slightly higher, broader pool reaches the board without adding
+          another overhead source or losing the window-bar silhouette. */}
+      <primitive object={target} position={[-1.1, 1.1, -3.3]} />
       <spotLight
         ref={light}
         position={[-7.4, 2.5, -0.7]}
         target={target}
-        color="#8fb2ff"
+        color="#a5bce8"
         intensity={MOON}
-        angle={0.3}
+        angle={0.32}
         penumbra={0.7}
         decay={1}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-near={2}
         shadow-camera-far={13}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.01}
-        shadow-radius={5}
+        shadow-bias={-0.00015}
+        shadow-normalBias={0.003}
+        shadow-radius={6}
       />
     </group>
   );
