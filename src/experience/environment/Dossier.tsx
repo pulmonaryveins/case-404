@@ -93,13 +93,73 @@ function hideLogos(ctx: CanvasRenderingContext2D, k: number) {
 /** Recolour the cardboard while retaining its original surface detail. */
 function coverArtwork(ctx: CanvasRenderingContext2D, k: number, mesh: Mesh) {
   hideLogos(ctx, k);
+  const size = ctx.canvas.width;
+
+  // The ageing is painted on an unclipped layer and composited through the
+  // cardboard mask in a single drawImage. Running its ~12k individual ops
+  // inside ctx.clip() instead made every one of them ~16x more expensive and
+  // cost ~90s on load. source-over is associative, so the result is identical.
+  const layer = document.createElement("canvas");
+  layer.width = layer.height = size;
+  const lc = layer.getContext("2d")!;
+
+  lc.fillStyle = "rgba(181,151,107,0.88)";
+  lc.fillRect(0, 0, size, size);
+
+  // Fine, deterministic flecks keep the tan stock from reading as flat paint.
+  // Count follows the texture resolution so the ink area stays constant
+  // rather than scattering sub-pixel rects that cost the same as whole ones.
+  const fw = Math.max(1, 2 * k);
+  const fh = Math.max(1, k);
+  const fleckCount = Math.round((95000 * 2 * k * k) / (fw * fh));
+  for (let i = 0; i < fleckCount; i++) {
+    lc.fillStyle = i % 2 ? "rgba(54,38,22,0.12)" : "rgba(237,218,175,0.10)";
+    lc.fillRect(((i * 179) % 4096) * k, ((i * 313 + Math.floor(i / 4096) * 41) % 4096) * k, fw, fh);
+  }
+
+  // Uneven handling stains and scuffs, fixed across reloads.
+  let seed = 404;
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 65; i++) {
+    lc.save();
+    lc.translate(random() * size, random() * size);
+    lc.rotate(random() * Math.PI);
+    lc.scale((35 + random() * 145) * k, (25 + random() * 95) * k);
+    const stain = lc.createRadialGradient(-0.2, 0.1, 0.05, 0, 0, 1);
+    stain.addColorStop(0, "rgba(75,49,25,0.23)");
+    stain.addColorStop(0.45, "rgba(90,62,30,0.12)");
+    stain.addColorStop(1, "rgba(90,62,30,0)");
+    lc.fillStyle = stain;
+    lc.fillRect(-1, -1, 2, 2);
+    lc.restore();
+  }
+  for (let i = 0; i < 850; i++) {
+    const x = random() * size;
+    const y = random() * size;
+    lc.strokeStyle = i % 3 ? "rgba(70,49,29,0.16)" : "rgba(235,216,170,0.25)";
+    lc.lineWidth = (0.6 + random()) * k;
+    lc.beginPath();
+    lc.moveTo(x, y);
+    lc.lineTo(x + (random() - 0.5) * 45 * k, y + random() * 24 * k);
+    lc.stroke();
+  }
+  // Worn seams along the measured outer/inner cover UV-island edges.
+  for (const u of [0.003, 0.352, 0.391, 0.745]) {
+    const x = u * size;
+    const edge = lc.createLinearGradient(x - 22 * k, 0, x + 22 * k, 0);
+    edge.addColorStop(0, "rgba(68,45,25,0)");
+    edge.addColorStop(0.5, "rgba(68,45,25,0.24)");
+    edge.addColorStop(1, "rgba(68,45,25,0)");
+    lc.fillStyle = edge;
+    lc.fillRect(x - 22 * k, 0, 44 * k, size);
+  }
+
   // Both sides of the cardboard share this finish. Paper meshes and the
   // near-vertical metal hardware stay outside this UV mask.
   const uv = mesh.geometry.getAttribute("uv");
   const normals = mesh.geometry.getAttribute("normal");
   const index = mesh.geometry.index;
   const count = index?.count ?? uv.count;
-  const size = ctx.canvas.width;
   ctx.save();
   ctx.beginPath();
   for (let i = 0; i < count; i += 3) {
@@ -114,56 +174,7 @@ function coverArtwork(ctx: CanvasRenderingContext2D, k: number, mesh: Mesh) {
     ctx.closePath();
   }
   ctx.clip();
-  ctx.globalCompositeOperation = "source-over";
-  ctx.fillStyle = "rgba(181,151,107,0.88)";
-  ctx.fillRect(0, 0, size, size);
-  // Fine, deterministic flecks keep the tan stock from reading as flat paint.
-  for (let i = 0; i < 95000; i++) {
-    ctx.fillStyle = i % 2 ? "rgba(54,38,22,0.12)" : "rgba(237,218,175,0.10)";
-    ctx.fillRect(
-      ((i * 179) % 4096) * k,
-      ((i * 313 + Math.floor(i / 4096) * 41) % 4096) * k,
-      2 * k,
-      k,
-    );
-  }
-  // Uneven handling stains and scuffs, fixed across reloads. Everything is
-  // clipped to the cardboard, leaving the documents and photographs intact.
-  let seed = 404;
-  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 65; i++) {
-    ctx.save();
-    ctx.translate(random() * size, random() * size);
-    ctx.rotate(random() * Math.PI);
-    ctx.scale((35 + random() * 145) * k, (25 + random() * 95) * k);
-    const stain = ctx.createRadialGradient(-0.2, 0.1, 0.05, 0, 0, 1);
-    stain.addColorStop(0, "rgba(75,49,25,0.23)");
-    stain.addColorStop(0.45, "rgba(90,62,30,0.12)");
-    stain.addColorStop(1, "rgba(90,62,30,0)");
-    ctx.fillStyle = stain;
-    ctx.fillRect(-1, -1, 2, 2);
-    ctx.restore();
-  }
-  for (let i = 0; i < 850; i++) {
-    const x = random() * size;
-    const y = random() * size;
-    ctx.strokeStyle = i % 3 ? "rgba(70,49,29,0.16)" : "rgba(235,216,170,0.25)";
-    ctx.lineWidth = (0.6 + random()) * k;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + (random() - 0.5) * 45 * k, y + random() * 24 * k);
-    ctx.stroke();
-  }
-  // Worn seams along the measured outer/inner cover UV-island edges.
-  for (const u of [0.003, 0.352, 0.391, 0.745]) {
-    const x = u * size;
-    const edge = ctx.createLinearGradient(x - 22 * k, 0, x + 22 * k, 0);
-    edge.addColorStop(0, "rgba(68,45,25,0)");
-    edge.addColorStop(0.5, "rgba(68,45,25,0.24)");
-    edge.addColorStop(1, "rgba(68,45,25,0)");
-    ctx.fillStyle = edge;
-    ctx.fillRect(x - 22 * k, 0, 44 * k, size);
-  }
+  ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
 
