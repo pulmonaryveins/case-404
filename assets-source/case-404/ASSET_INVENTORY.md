@@ -267,3 +267,15 @@ read, never written):
 
 Placement is data in `assetManifest.ts`; `DeskProps.tsx` grounds each prop
 on the measured desk plane (`DESK_TOP` = 0.778 m) from its real bounding box.
+
+---
+
+# Desk additions (floor, noob, magnifying glass)
+
+| Source | Moved to | Runtime | Notes |
+| --- | --- | --- | --- |
+| `dark_wooden_floor__tile_texture.glb` (52 MB) | `environment/architecture/floors/` | `floors/dark-wood-floor.glb` (12 MB, material on a 1×1 quad via `derive-architecture.mjs`) | Material-preview file (cube, plane, 9 spheres, ~1M tris). Replaces `wood-floor.glb`; tinted `#ffd2a0` in `RoomShell.tsx`. |
+| `roblox-noob.glb` (39 KB, 1,066 tris) | `props/toys/` | `props/roblox-noob.glb` (unmodified copy) | Single mesh, no skeleton, 1,066 tris. Stands beside the creeper. Third-party IP (Roblox) — check rights. |
+| `antique_magnifying_glass.glb` (13.6 MB, 2,498 tris) | `props/magnifier/` | `props/magnifying-glass.glb` (0.4 MB, maps 2048²→1024²) | Lies flat on the open leather pad. |
+
+Licences/authors unknown for all three (see `ASSET_CREDITS.md`).

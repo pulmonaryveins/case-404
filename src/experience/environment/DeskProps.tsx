@@ -111,6 +111,8 @@ const DESK_PROPS: AssetId[] = [
   "plant",
   "aluminiumPen",
   "creeper",
+  "roblox",
+  "magnifier",
   "phone",
   "fedora",
   "sheriffBadge",
@@ -121,9 +123,9 @@ const BULLET_LENGTH = 0.04;
 const BULLET_TEMPLATE = "bullet_mesh_03";
 /** x, z, yaw, standing: three rounds just behind the revolver (toward the back of the desk). */
 const BULLETS: [number, number, number, boolean][] = [
-  [-0.47, -2.0, 0.5, false],
-  [-0.43, -2.04, -0.4, false],
-  [-0.5, -2.06, 0, true],
+  [-0.47, -2.07, 0.5, false],
+  [-0.43, -2.11, -0.4, false],
+  [-0.5, -2.13, 0, true],
 ];
 
 /** Soft, dark radial blob: grounds a small prop where the lamp's map can't. */

@@ -208,7 +208,7 @@ export const assetManifest = {
     url: "/models/case-404/props/phone.glb",
     category: "props",
     preloadPriority: 3,
-    position: [0.62, 0.778, -1.97],
+    position: [0.44, 0.778, -2.26],
     rotation: [0, -0.6, 0],
     scale: 0.0058,
     castShadow: true,
@@ -329,6 +329,33 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
+  // roblox-noob.glb (unmodified copy). Local height 5.1, so 0.025 makes a ~13 cm
+  // figure — a little taller than the creeper it stands beside, facing the camera.
+  roblox: {
+    id: "roblox",
+    url: "/models/case-404/props/roblox-noob.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.69, 0.778, -2.15],
+    rotation: [0, Math.PI / 2 - 0.3, 0],
+    scale: 0.025,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // antique_magnifying_glass.glb → magnifying-glass.glb (maps 2048² → 1024²;
+  // scripts/optimize-glb.mjs). Local 54 x 124 x 16 (lens diameter x length x
+  // thickness), so 0.0017 makes a ~21 cm lupe. Lies flat (x -90°) on the leather pad in front, at the revolver's depth.
+  magnifier: {
+    id: "magnifier",
+    url: "/models/case-404/props/magnifying-glass.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.35, 0.778, -1.82],
+    rotation: [-Math.PI / 2, 0.3, 0],
+    scale: 0.0017,
+    castShadow: true,
+    receiveShadow: true,
+  },
   // white_fedora_hat_with_black_band.glb → fedora.glb (maps → 1024² WebP,
   // 83K → 21K tris; scripts/optimize-glb.mjs). Unitless, 1.45 x 0.74 x 1.9 and
   // upright; 0.12 makes a ~23 cm fedora. Base colour factor set near-black in the
@@ -339,7 +366,7 @@ export const assetManifest = {
     url: "/models/case-404/props/fedora.glb",
     category: "props",
     preloadPriority: 4,
-    position: [0.41, 0.778, -1.93],
+    position: [0.7, 0.778, -1.9],
     rotation: [0, -0.5, 0],
     scale: 0.12,
     castShadow: true,
@@ -355,7 +382,7 @@ export const assetManifest = {
     url: "/models/case-404/props/sheriff-badge.glb",
     category: "props",
     preloadPriority: 4,
-    position: [-0.37, 0.778, -2.0],
+    position: [-0.37, 0.778, -2.07],
     rotation: [-Math.PI / 2, 0, 0.5],
     scale: 0.018,
     castShadow: true,

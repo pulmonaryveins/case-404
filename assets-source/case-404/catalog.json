@@ -401,6 +401,45 @@
     "extensionsUsed": []
   },
   {
+    "name": "dark_wooden_floor__tile_texture.glb",
+    "relPath": "assets-source/case-404/environment/architecture/floors/dark_wooden_floor__tile_texture.glb",
+    "sizeBytes": 52047172,
+    "sizeLabel": "49.6 MB",
+    "sceneCount": 1,
+    "nodeCount": 17,
+    "meshCount": 11,
+    "primitiveCount": 11,
+    "vertexCount": 566419,
+    "triangleCount": 1032494,
+    "materialCount": 1,
+    "textureCount": 3,
+    "largestTexture": "2048x2048",
+    "animationCount": 0,
+    "cameraCount": 0,
+    "lightsDetected": false,
+    "dimensions": "2.00 x 2.00 x 2.00",
+    "nodeNames": [
+      "Sketchfab_model",
+      "306ae5f16c044a78869da4186025b678.fbx",
+      "RootNode",
+      "Cube",
+      "Cube_Material_0",
+      "Plane",
+      "Plane_Material_0",
+      "Sphere",
+      "Sphere_Material_0",
+      "Sphere_Material_0",
+      "Sphere_Material_0",
+      "Sphere_Material_0"
+    ],
+    "materialNames": [
+      "Material"
+    ],
+    "extensionsUsed": [
+      "KHR_texture_transform"
+    ]
+  },
+  {
     "name": "old_wooden_wall__tile_texture.glb",
     "relPath": "assets-source/case-404/environment/architecture/floors/old_wooden_wall__tile_texture.glb",
     "sizeBytes": 57437944,
@@ -852,6 +891,39 @@
     "extensionsUsed": []
   },
   {
+    "name": "antique_magnifying_glass.glb",
+    "relPath": "assets-source/case-404/props/magnifier/antique_magnifying_glass.glb",
+    "sizeBytes": 13587696,
+    "sizeLabel": "13.0 MB",
+    "sceneCount": 1,
+    "nodeCount": 8,
+    "meshCount": 3,
+    "primitiveCount": 3,
+    "vertexCount": 1965,
+    "triangleCount": 2498,
+    "materialCount": 1,
+    "textureCount": 4,
+    "largestTexture": "2048x2048",
+    "animationCount": 0,
+    "cameraCount": 0,
+    "lightsDetected": false,
+    "dimensions": "52.16 x 71.61 x 54.06",
+    "nodeNames": [
+      "Sketchfab_model",
+      "Collada visual scene group",
+      "lupe_grip_low",
+      "defaultMaterial",
+      "lupe_glass_low",
+      "defaultMaterial",
+      "lupe_frame_low",
+      "defaultMaterial"
+    ],
+    "materialNames": [
+      "Lupe_MTL"
+    ],
+    "extensionsUsed": []
+  },
+  {
     "name": "ashtray_with_cigarettes.glb",
     "relPath": "assets-source/case-404/props/miscellaneous/ashtray_with_cigarettes.glb",
     "sizeBytes": 3403008,
@@ -1068,6 +1140,40 @@
     ],
     "materialNames": [
       "22_-_Default"
+    ],
+    "extensionsUsed": []
+  },
+  {
+    "name": "roblox-noob.glb",
+    "relPath": "assets-source/case-404/props/toys/roblox-noob.glb",
+    "sizeBytes": 39632,
+    "sizeLabel": "38.7 KB",
+    "sceneCount": 1,
+    "nodeCount": 9,
+    "meshCount": 1,
+    "primitiveCount": 1,
+    "vertexCount": 671,
+    "triangleCount": 1066,
+    "materialCount": 1,
+    "textureCount": 1,
+    "largestTexture": "1024x512",
+    "animationCount": 0,
+    "cameraCount": 0,
+    "lightsDetected": false,
+    "dimensions": "1.20 x 4.00 x 5.10",
+    "nodeNames": [
+      "Sketchfab_model",
+      "root",
+      "GLTF_SceneRootNode",
+      "RootNode (gltf orientation matrix)_0",
+      "RootNode (model correction matrix)_1",
+      "71d581051f8b42aab90839584e68a679.obj.cleaner.gles_2",
+      "_3",
+      "_4",
+      "Object_8"
+    ],
+    "materialNames": [
+      "N00b1Mtl"
     ],
     "extensionsUsed": []
   },

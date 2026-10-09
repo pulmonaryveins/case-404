@@ -27,11 +27,11 @@ const derivatives = [
     keepX: [3.3, 4.35],
   },
   {
-    // Material only: the file is four ~110k-tri preview cylinders sharing one
-    // tileable board material. The cylinders are dropped and a 1x1 quad
+    // Material only: the file is a material-preview scene (a cube, a plane and
+    // sample spheres, ~1M tris) sharing one tileable board material. All of it is dropped and a 1x1 quad
     // carries the material; the scene tiles it across the floor.
-    src: `${SRC}/floors/wooden_floor_tileable_material.glb`,
-    out: `${OUT}/floors/wood-floor.glb`,
+    src: `${SRC}/floors/dark_wooden_floor__tile_texture.glb`,
+    out: `${OUT}/floors/dark-wood-floor.glb`,
     keep: [],
     materialOnly: true,
   },

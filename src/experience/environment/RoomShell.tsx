@@ -3,7 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { Mesh, RepeatWrapping, type MeshStandardMaterial } from "three";
 import { Model } from "../models/Model";
 
-const FLOOR_URL = "/models/case-404/environment/architecture/floors/wood-floor.glb";
+const FLOOR_URL = "/models/case-404/environment/architecture/floors/dark-wood-floor.glb";
 const FLOOR_SIZE = 12;
 /** One texture tile ≈ 1.5m: ten boards across ≈ 15cm boards. */
 const FLOOR_TILE_METRES = 1.5;
@@ -73,9 +73,9 @@ function BoardFloor() {
       tex.center.set(0.5, 0.5);
       tex.rotation = Math.PI / 2;
     }
-    // The board texture is already a muted grey-brown, distinct from the
-    // desk's red-brown; only nudge it a little darker.
-    mat.color.set("#c8c2bc");
+    // Warm brown tint (near-white, so it lifts rather than darkens) over the very dark boards, so the floor sits with the desk
+    // and lamp light instead of reading as cold grey.
+    mat.color.set("#ffd2a0");
     return mat;
   }, [scene]);
 
