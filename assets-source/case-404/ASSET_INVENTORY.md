@@ -242,10 +242,17 @@ True bounds below are measured with node transforms applied (gltf-transform
 | --- | --- | --- | --- |
 | old_vintage_desk_lamp.glb **(new)** | 0.31 × 0.44 × 0.26 m, base at origin | Green-shade brass banker's lamp. 1 mesh, 14,820 tris, 1 material, 4 × 4096² maps (19.2 MB). Emissive map covers only the bulb (x −0.01…0.07, y 0.354…0.413, z 0.04…0.10, measured by sampling the map at vertex UVs). | **Integrated** — dominant light source. |
 | paper_tablet.glb (desk plant) | 0.15 × 0.21 (unitless, ~cm) | Leafy plant in round pot. Materials are `KHR_materials_pbrSpecularGlossiness`, which three.js no longer supports — renders flat grey as-is. | **Integrated** via converted derivative. |
-| sp226_airsoft_handgun.glb | 0.21 × 0.14 × 0.04 m | SIG P226 (1980s design — not period). Material is `KHR_materials_unlit`, so it ignores all lights. | **Integrated** by explicit request; made lit. Era mismatch noted. |
+| sp226_airsoft_handgun.glb | 0.21 × 0.14 × 0.04 m | SIG P226 (1980s design — not period). Material is `KHR_materials_unlit`, so it ignores all lights. | **Replaced** by the Colt Python revolver (below). Source kept; no runtime copy. |
+| colt_python_revolver.glb **(new)** | 0.17 × 0.08 × 0.025 m, authored upright, barrel toward −z | Colt Python revolver, 136K tris, 3 materials, 9 × 4096² maps, 6 chambered cartridges + 1 loose. | **Integrated** — lies on its side on the desk, scale 1.45; chambered rounds hidden. Loose rounds come from `357_magnum_bullets.glb` (below). Lies on the left pad, barrel toward the camera and right. |
+| 357_magnum_bullets.glb **(new)** | 4 .357 Magnum rounds on a flat plate, odd units (a round ≈ 502 tall); 5.4K tris, 2 materials, 6 × 512² maps (1.0 MB, used as delivered as `props/357-magnum-bullets.glb`) | Three upright rounds plus one tilted. | **Integrated** — one upright round measured and cloned ×3 (2 lying, 1 standing) at 0.058 m, plate hidden; soft contact-shadow blobs under each round and under the revolver. |
+| fountain_pens.glb **(new)** | two pens on a 36-unit square ground plate (unitless, a pen ≈ 18); 2.2K tris, 2 materials (one with clearcoat), 4 × 1024² maps (1.0 MB, used as delivered as `props/fountain-pens.glb`) | Black fountain pens with gold nibs, one capped. | **Integrated** — plate hidden, 0.0065 scale (≈ 12 cm pens). **Parked** — not on the desk for now; manifest entry kept. |
+| aluminium_pen.glb **(new)** | 2 × 2 × 30.6 units (axis z), 734 tris, 1 material, 3 × 1024² maps (1.0 MB, used as delivered as `props/aluminium-pen.glb`) | Brushed-aluminium pen. | **Integrated** — 0.005 scale (≈ 15 cm), lies by the folder's right edge, pointing away from the camera. |
+| minecraft_creeper.glb **(new)** | 8 × 26 × 12 units, 72 tris, 1 MASK material, 64 × 32 texture (15 KB, used as delivered as `props/minecraft-creeper.glb`) | Minecraft creeper figure. Third-party franchise character — check usage rights. | **Integrated** — 0.0046 scale (≈ 12 cm), beside the plant, turned toward the camera; texture sampled unfiltered. |
+| white_fedora_hat_with_black_band.glb **(new)** | 1.45 × 0.74 × 1.9 units, 83K tris, 1 material, 3 × 2048² maps (6.7 MB; source kept in `props/fedora/`) | Felt fedora. | **Integrated** as `props/fedora.glb` (0.7 MB, 21K tris, 1024² WebP), recoloured black via base-colour factor, ~23 cm, right of the folder beside the pen. |
+| new_vegas_sheriff_badge.glb **(new)** | 4.6 × 5.2 × 0.17 units, 14K tris, 3 × 1024² maps (3 MB; source kept in `props/badge/`) | Sheriff badge from Fallout: New Vegas (third-party game IP — check usage rights). | **Integrated** as `props/sheriff-badge.glb` (0.8 MB, 7K tris), ~8 cm, face-up left of the revolver, clear of the open dossier. |
 | paper_-_3mb.glb | 3 arrangements, sheets 0.65 × 1.0 units | Neat stack, messy pile, single typed sheet. | **Tried on the desk, then removed** at the user's request. Source kept; no runtime copy. |
 | ashtray_with_cigarettes.glb | 0.14 × 0.04 × 0.17 m | (already runtime) | **Placed** on desk right. |
-| phone.glb | — | 1980s–90s push-button office phone with LCD. | **Not used** — wrong era; telephone slot reserved. |
+| phone-vintage-pushbutton.glb **(new)** | ~42 × 16 × 28 units incl. coiled cord (unitless); 12.4K tris, 4 × 2048² maps (17 MB source) | Teal push-button desk phone with handset and cord. | **Integrated** as `props/phone.glb` (1.0 MB: maps → 1024² WebP, duplicate parts merged), 16 cm handset, on the right pad in front of the creeper, angled left; body recoloured black (baseColorFactor edit in the GLB). Replaces the earlier unused phone.glb. |
 | — | — | Vintage telephone (Sketchfab "Old telephone" by dusan.lamos, `ad2b9e613711475187c06b73ba1f7720`) | **Missing locally.** Embed-only; not extracted. Slot reserved. |
 | — | — | Pen / pencil holder | **Missing.** No asset in the library. |
 
@@ -254,9 +261,9 @@ read, never written):
 
 | Runtime file | From | Change | Why |
 | --- | --- | --- | --- |
-| `props/desk-lamp.glb` (7.3 MB) | old_vintage_desk_lamp.glb | maps 4096² → 2048² | ~357 MB decoded VRAM for a 44 cm prop |
+| `props/desk-lamp.glb` (7.3 MB) | old_vintage_desk_lamp.glb | maps 4096² → 2048²; pull-chain beads split into their own mesh `Lamp1_chain` (`scripts/split-lamp-chain.mjs`, rerun after re-deriving) so they stay out of the shadow pass | ~357 MB decoded VRAM for a 44 cm prop |
 | `props/plant.glb` (5.4 MB) | paper_tablet.glb | spec/gloss → metal/rough; 112K → 29K tris | renders grey otherwise; dropped frames in 3 passes |
-| `props/handgun.glb` (0.3 MB) | sp226_airsoft_handgun.glb | map 4096² → 1024²; unlit → lit (metal 0.75, rough 0.42) | unlit glowed flat in a dim room |
+| `props/colt-python-revolver.glb` (2.1 MB) | colt_python_revolver.glb (100.6 MB, kept in `props/revolver/`, gitignored) | 9 maps 4096² → 1024² WebP; 136K → 35K tris (`scripts/optimize-glb.mjs`) | 100 MB and 9×4096² maps were unshippable. Replaces `handgun.glb`, which was removed from `public/`. |
 
 Placement is data in `assetManifest.ts`; `DeskProps.tsx` grounds each prop
 on the measured desk plane (`DESK_TOP` = 0.778 m) from its real bounding box.

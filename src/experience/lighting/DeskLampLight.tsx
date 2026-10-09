@@ -29,18 +29,18 @@ const AIM: [number, number, number] = [0.25, -0.1, 0.4];
  * same way the room wash does. Shared by the prop and the per-frame dimming:
  * the useFrame write overrides the prop every frame.
  */
-const LAMP = 8.3;
+const LAMP = 10;
 const OPEN_FRACTION = 0.3;
 
 /**
  * The scene's dominant light: warm tungsten from the desk lamp's bulb.
  * Render as a child of the lamp prop so it follows the lamp's placement.
  *
- * Decay 1.1 rather than the physical 2: the plant at the far right sits ~1.3 m
- * from the bulb against ~0.7 m for the folder, which at decay 2 is a 3.5x
- * drop and leaves it black. 1.1 narrows that to ~2x, so it falls off
- * visibly but still catches light; intensity is raised to keep the folder at
- * its level. The board gains a little from this, which is what the room wash
+ * Decay 0.9 rather than the physical 2: the plant, revolver and cartridges at
+ * the far right sit ~1.1-1.3 m from the bulb against ~0.7 m for the folder,
+ * which at decay 2 is a 3.5x drop and leaves them black. 0.9 narrows that to
+ * under 2x, so the light falls off visibly but still reaches them; intensity
+ * is raised to keep the folder close to its level. The board gains a little from this, which is what the room wash
  * is trimmed for.
  *
  * It is the desk's only shadow caster. The cone is deliberately wide with a
@@ -54,9 +54,9 @@ export function DeskLampLight() {
     canvas.width = canvas.height = 128;
     const ctx = canvas.getContext("2d")!;
     const halo = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    halo.addColorStop(0, "rgba(255,235,190,0.65)");
-    halo.addColorStop(0.18, "rgba(255,211,136,0.3)");
-    halo.addColorStop(0.45, "rgba(255,179,85,0.08)");
+    halo.addColorStop(0, "rgba(255,244,214,0.95)");
+    halo.addColorStop(0.18, "rgba(255,218,150,0.5)");
+    halo.addColorStop(0.45, "rgba(255,184,92,0.16)");
     halo.addColorStop(1, "rgba(255,179,85,0)");
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, 128, 128);
@@ -73,7 +73,7 @@ export function DeskLampLight() {
     <>
       {/* Local optical glow only: no extra light on the dossier. Depth testing
           lets the opaque shade conceal the halo from above and behind. */}
-      <sprite position={[0.027, 0.367, 0.067]} scale={[0.18, 0.18, 1]}>
+      <sprite position={[0.027, 0.367, 0.067]} scale={[0.26, 0.26, 1]}>
         <spriteMaterial
           map={glow}
           transparent
@@ -90,7 +90,7 @@ export function DeskLampLight() {
         target={target}
         color="#ffbf80"
         intensity={LAMP}
-        decay={1.1}
+        decay={0.9}
         angle={1.3}
         penumbra={1}
         castShadow

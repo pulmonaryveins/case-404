@@ -35,11 +35,8 @@ export function RoomShell() {
         <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} />
       </mesh>
 
-      {/* Temporary: side walls close the frame edges. */}
-      <mesh rotation={[0, Math.PI / 2, 0]} position={[-3.6, 1.72, -1]} receiveShadow>
-        <planeGeometry args={[7, 3.44]} />
-        <meshStandardMaterial color="#2e2c28" roughness={0.95} metalness={0} />
-      </mesh>
+      {/* Temporary: right side wall closes the frame edge (the left wall, with the
+          window, is in MoonWindow). */}
       <mesh rotation={[0, -Math.PI / 2, 0]} position={[3.6, 1.72, -1]} receiveShadow>
         <planeGeometry args={[7, 3.44]} />
         <meshStandardMaterial color="#2e2c28" roughness={0.95} metalness={0} />

@@ -329,6 +329,149 @@ export function paintPortrait(ctx: Ctx, x: number, y: number, w: number, h: numb
   ctx.restore();
 }
 
+/**
+ * Placeholder for a subject nobody has identified: a faded grey print with a
+ * featureless dark head-and-shoulders and a large typed question mark.
+ */
+function paintUnknownSubject(ctx: Ctx, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  const bg = ctx.createLinearGradient(x, y, x, y + h);
+  bg.addColorStop(0, "#8f8c82");
+  bg.addColorStop(1, "#5d5a51");
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+
+  // Flat, anonymous silhouette: no face, no hat, nothing to identify.
+  ctx.fillStyle = "rgba(34,31,27,0.9)";
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + h * 0.38, w * 0.2, h * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.1, y + h);
+  ctx.quadraticCurveTo(x + w * 0.12, y + h * 0.72, x + w * 0.5, y + h * 0.68);
+  ctx.quadraticCurveTo(x + w * 0.88, y + h * 0.72, x + w * 0.9, y + h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(222,215,196,0.92)";
+  ctx.font = `bold ${h * 0.34}px ${TYPE}`;
+  ctx.fillText("?", x + w / 2, y + h * 0.5);
+  ctx.font = `${h * 0.045}px ${TYPE}`;
+  ctx.fillStyle = "rgba(222,215,196,0.7)";
+  ctx.fillText("NO PHOTO ON FILE", x + w / 2, y + h * 0.94);
+  ctx.textAlign = "left";
+
+  const vig = ctx.createRadialGradient(
+    x + w / 2,
+    y + h / 2,
+    w * 0.3,
+    x + w / 2,
+    y + h / 2,
+    w * 0.85,
+  );
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(1, "rgba(0,0,0,0.5)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(x, y, w, h);
+  ctx.save();
+  ctx.translate(x, y);
+  grain(ctx, w, h, 612, 0.14);
+  ctx.restore();
+  ctx.restore();
+}
+
+/** Smooth value noise in [0, 1], deterministic per seed. */
+function valueNoise(seed: number) {
+  const hash = (ix: number, iy: number) => {
+    let n = (ix * 374761393 + iy * 668265263 + seed * 2147483647) | 0;
+    n = (n ^ (n >>> 13)) * 1274126177;
+    return (((n ^ (n >>> 16)) >>> 0) % 100000) / 100000;
+  };
+  return (x: number, y: number) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = x - ix;
+    const fy = y - iy;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sy = fy * fy * (3 - 2 * fy);
+    const a = hash(ix, iy) + (hash(ix + 1, iy) - hash(ix, iy)) * sx;
+    const b = hash(ix, iy + 1) + (hash(ix + 1, iy + 1) - hash(ix, iy + 1)) * sx;
+    return a + (b - a) * sy;
+  };
+}
+
+/**
+ * A real-looking, faded fingerprint: a whorl of curved ridges with natural
+ * warping, broken, uneven ink, and an irregular edge, as left by a pressed
+ * fingertip rather than a drawn graphic. Multiplied into the paper.
+ */
+function fingerprint(
+  ctx: Ctx,
+  cx: number,
+  cy: number,
+  width: number,
+  height: number,
+  rotation: number,
+  seed: number,
+  strength: number,
+) {
+  const w = Math.ceil(width);
+  const h = Math.ceil(height);
+  const patch = document.createElement("canvas");
+  patch.width = w;
+  patch.height = h;
+  const pctx = patch.getContext("2d")!;
+  const img = pctx.createImageData(w, h);
+  const noise = valueNoise(seed);
+  const fine = valueNoise(seed + 7);
+  const period = Math.max(3.2, width * 0.045); // ridge spacing in pixels
+
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const u = (i / w - 0.5) * 2;
+      const v = (j / h - 0.5) * 2;
+      const rr = Math.hypot(u * 0.95, v * 0.82);
+      // Irregular fingertip outline, softly feathered.
+      const edge = rr + (noise(u * 2.5 + 3, v * 2.5 + 1) - 0.5) * 0.35;
+      const mask = Math.max(0, Math.min(1, (1 - edge) / 0.28));
+      if (mask <= 0) continue;
+      // Whorl ridges: concentric, bent by the pad's asymmetry and slow warp.
+      const theta = Math.atan2(v, u);
+      const warp =
+        0.12 * Math.sin(4.2 * u + 1.7 * v + seed) +
+        0.09 * Math.sin(5.3 * v - 3.1 * u + seed * 1.3) +
+        0.1 * (noise(u * 1.6 + 9, v * 1.6 + 4) - 0.5);
+      const phase =
+        (rr * (width * 0.5)) / period + warp * 3 + 0.35 * Math.sin(2 * theta + 0.6) * rr * 2;
+      const ridge = 0.5 + 0.5 * Math.cos(phase * Math.PI * 2);
+      const line = Math.max(0, Math.min(1, (ridge - 0.5) / 0.28));
+      // Uneven pressure and dry patches break the ridges up.
+      const pressure = Math.max(0, Math.min(1, (noise(u * 2.2 + 20, v * 2.2 + 8) - 0.28) / 0.35));
+      const dropout = 0.55 + 0.45 * fine(i * 0.45, j * 0.45);
+      const a = mask * line * pressure * dropout;
+      const k = (j * w + i) * 4;
+      img.data[k] = 74;
+      img.data[k + 1] = 50;
+      img.data[k + 2] = 40;
+      img.data[k + 3] = Math.round(a * 255);
+    }
+  }
+  pctx.putImageData(img, 0, 0);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  ctx.globalCompositeOperation = "multiply";
+  ctx.globalAlpha = strength;
+  ctx.filter = "blur(0.6px)";
+  ctx.drawImage(patch, -w / 2, -h / 2);
+  ctx.restore();
+}
+
 function paintCaseFile(ctx: Ctx, w: number, h: number) {
   const m = w * 0.08;
   ctx.textAlign = "center";
@@ -357,7 +500,7 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
   ctx.stroke();
   ctx.restore();
 
-  // Anonymous subject photograph: a print with a white border, taped on.
+  // Photo slot for the unidentified subject: a print with a white border, taped on.
   const px = m;
   const py = h * 0.31;
   const pw = w * 0.48;
@@ -370,7 +513,7 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
   ctx.fillRect(px, py, pw, ph);
   ctx.restore();
   const bd = pw * 0.045;
-  paintPortrait(ctx, px + bd, py + bd, pw - bd * 2, ph - bd * 3);
+  paintUnknownSubject(ctx, px + bd, py + bd, pw - bd * 2, ph - bd * 3);
   ctx.fillStyle = "rgba(235,228,205,0.6)";
   ctx.fillRect(px - pw * 0.05, py - ph * 0.02, pw * 0.28, ph * 0.07);
   ctx.fillRect(px + pw * 0.77, py - ph * 0.02, pw * 0.28, ph * 0.07);
@@ -411,16 +554,10 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
     rotation: -0.035,
   });
 
-  // Fingerprint smudge by the stamp.
-  ctx.save();
-  ctx.strokeStyle = "rgba(60,40,30,0.3)";
-  ctx.lineWidth = Math.max(1, h * 0.003);
-  for (let i = 1; i <= 7; i++) {
-    ctx.beginPath();
-    ctx.ellipse(w * 0.87, h * 0.8, h * 0.012 * i, h * 0.016 * i, 0.3, 0.4, Math.PI * 1.7);
-    ctx.stroke();
-  }
-  ctx.restore();
+  // Latent prints left on the sheet by whoever handled it: one clear-ish thumb
+  // by the stamp, a fainter partial near the top corner.
+  fingerprint(ctx, w * 0.85, h * 0.845, w * 0.2, h * 0.24, 0.35, 3, 0.5);
+  fingerprint(ctx, w * 0.9, h * 0.12, w * 0.14, h * 0.17, -0.7, 9, 0.22);
 
   // Barcode + stamp along the foot of the file.
   const r = rng(77);

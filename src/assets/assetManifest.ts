@@ -95,18 +95,33 @@ export const assetManifest = {
     // taupe-charcoal so the board and desk stay the warm objects.
     color: "#514b45",
   },
+  // window.glb (optimised from the 16 MB source: maps → 1024² WebP). Authored
+  // facing +z, 1.8 x 2.56 m. Placed on the LEFT wall by MoonWindow, which also
+  // cuts the opening in the wall and aims the moonlight through it.
   window: {
     id: "window",
     url: "/models/case-404/environment/window.glb",
     category: "environment",
     preloadPriority: 1,
-    // On the back wall rather than the side wall: it reads in frame and
-    // backlights the desk silhouette instead of being lost off-camera.
-    position: [-2.15, 1.82, -4.4],
-    rotation: [0, 0, 0],
+    position: [-3.5, 1.5, -2.6],
+    rotation: [0, Math.PI / 2, 0],
     scale: 1,
-    castShadow: false,
-    receiveShadow: false,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // window-2.glb → window-2.glb via scripts/prepare-window-2.mjs: casement
+  // window turned square to the axes, centred, ~1.51 x 1.51 m, brown frames.
+  // Faces +z; MoonWindow turns it to face into the room from the left wall.
+  window2: {
+    id: "window2",
+    url: "/models/case-404/environment/window-2.glb",
+    category: "environment",
+    preloadPriority: 1,
+    position: [-3.56, 1.6, -2.3],
+    rotation: [0, Math.PI / 2, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
   },
   drawer: {
     id: "drawer",
@@ -181,14 +196,21 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
+  // phone-vintage-pushbutton.glb → phone.glb (textures 2048² → 1024² WebP,
+  // duplicate parts merged; see scripts/optimize-glb.mjs). Unitless, ~42 x 16
+  // x 28 including the coiled cord, authored upright with the keypad toward +z
+  // and the handset on the back; 0.0058 makes a ~16 cm handset. Body recoloured
+  // black (baseColorFactor in the GLB). On the right pad in front of the
+  // creeper, angled to the left so the keypad turns toward the camera. Rendered
+  // by DeskProps.
   phone: {
     id: "phone",
     url: "/models/case-404/props/phone.glb",
     category: "props",
     preloadPriority: 3,
-    position: [-0.62, 0.783, -2.08],
-    rotation: [0, 0.62, 0],
-    scale: 0.0075,
+    position: [0.62, 0.778, -1.97],
+    rotation: [0, -0.6, 0],
+    scale: 0.0058,
     castShadow: true,
     receiveShadow: true,
   },
@@ -219,22 +241,123 @@ export const assetManifest = {
     url: "/models/case-404/props/ashtray.glb",
     category: "props",
     preloadPriority: 4,
-    position: [-0.5, 0.778, -1.98],
+    position: [-0.32, 0.778, -2.26],
     rotation: [0, 0.4, 0],
     scale: 1,
     castShadow: true,
     receiveShadow: true,
   },
-  // sp226_airsoft_handgun.glb: metres (0.21 long), authored standing on its
-  // side; x -90° lays it flat. Atmosphere only — not interactive, not focal.
-  handgun: {
-    id: "handgun",
-    url: "/models/case-404/props/handgun.glb",
+  // colt_python_revolver.glb → colt-python-revolver.glb (textures 4096² → 1024²
+  // WebP, 136K → 35K tris; see scripts/optimize-glb.mjs). Metres, 0.17 long
+  // authored upright (barrel toward -z); scale 1.45 makes a ~25 cm revolver.
+  // Rolled onto its side (z +90°) and yawed so the barrel points toward the
+  // camera, angled right (mirrored for the left pad), showing its profile; set
+  // back from the desk edge. Its six chambered cartridges are hidden
+  // (closed cylinder). Atmosphere only — not interactive.
+  revolver: {
+    id: "revolver",
+    url: "/models/case-404/props/colt-python-revolver.glb",
     category: "props",
     preloadPriority: 4,
-    position: [0.62, 0.778, -1.8],
-    rotation: [-Math.PI / 2, 0.5, 0],
+    position: [-0.38, 0.778, -1.88],
+    rotation: [0, -2.3, Math.PI / 2],
+    scale: 1.45,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // 357_magnum_bullets.glb → 357-magnum-bullets.glb: four .357 Magnum rounds
+  // on a flat plate, in odd units (a round is ~502 tall). DeskProps measures
+  // one upright round, hides the plate, and lays three clones near the revolver
+  // at 0.04 m long, a real .357 cartridge beside the 25 cm revolver.
+  magnumBullets: {
+    id: "magnumBullets",
+    url: "/models/case-404/props/357-magnum-bullets.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [-0.46, 0.778, -2.04],
+    rotation: [0, 0, 0],
     scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // fountain_pens.glb → fountain-pens.glb (used as delivered, 1.0 MB): two pens
+  // lying on a flat "ground" plate, unitless (a pen is ~18 long). DeskProps hides
+  // the plate; 0.0065 makes a ~12 cm pen. Just right of the folder, in front of
+  // the phone's cord, angled a little so the pair does not look squared to the
+  // desk.
+  fountainPens: {
+    id: "fountainPens",
+    url: "/models/case-404/props/fountain-pens.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.29, 0.778, -1.95],
+    rotation: [0, 0.2, 0],
+    scale: 0.0065,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // aluminium_pen.glb → aluminium-pen.glb (used as delivered, 1.0 MB, 734 tris):
+  // a single pen 2 x 2 x 30.6 units long, axis along z; 0.005 makes a ~15 cm pen
+  // (the barrel is ~1 cm). Lies on its side by the folder's right edge, pointing
+  // away from the camera and angled a little to the right ("vertical" on screen).
+  // Rendered by DeskProps.
+  aluminiumPen: {
+    id: "aluminiumPen",
+    url: "/models/case-404/props/aluminium-pen.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.27, 0.778, -2.0],
+    rotation: [0, Math.PI - 0.6, 0],
+    scale: 0.005,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // minecraft_creeper.glb → minecraft-creeper.glb (used as delivered, 15 KB, 72
+  // tris): the creeper in Minecraft pixels, 8 x 26 x 12, with a 64x32 mask
+  // texture that DeskProps samples unfiltered so it stays crisp. 0.0046 makes a
+  // ~12 cm figure. Stands on the right pad beside the plant, behind the revolver,
+  // turned toward the camera and angled well to the left (its front is -z, so yaw
+  // π faces +z; lower values turn it further left).
+  creeper: {
+    id: "creeper",
+    url: "/models/case-404/props/minecraft-creeper.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.6, 0.778, -2.2],
+    rotation: [0, Math.PI - 0.8, 0],
+    scale: 0.0046,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // white_fedora_hat_with_black_band.glb → fedora.glb (maps → 1024² WebP,
+  // 83K → 21K tris; scripts/optimize-glb.mjs). Unitless, 1.45 x 0.74 x 1.9 and
+  // upright; 0.12 makes a ~23 cm fedora. Base colour factor set near-black in the
+  // GLB, so the white felt reads black (the band was already black). Right of the folder,
+  // beside the pen, tilted a little. Rendered by DeskProps.
+  fedora: {
+    id: "fedora",
+    url: "/models/case-404/props/fedora.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0.41, 0.778, -1.93],
+    rotation: [0, -0.5, 0],
+    scale: 0.12,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // new_vegas_sheriff_badge.glb → sheriff-badge.glb (maps → 1024² WebP, 14K → 7K
+  // tris). Unitless, 4.56 x 5.22 x 0.17, face toward +z; 0.018 makes a ~8 cm
+  // badge. Laid face-up (x -90°) just behind the revolver, clear of the open
+  // dossier's left cover (x ≳ -0.30). Third-party fan item (Fallout: New Vegas
+  // sheriff badge) — check usage rights.
+  sheriffBadge: {
+    id: "sheriffBadge",
+    url: "/models/case-404/props/sheriff-badge.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [-0.37, 0.778, -2.0],
+    rotation: [-Math.PI / 2, 0, 0.5],
+    scale: 0.018,
     castShadow: true,
     receiveShadow: true,
   },

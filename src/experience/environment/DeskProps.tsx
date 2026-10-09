@@ -1,11 +1,24 @@
-import { type ReactNode, useMemo, useEffect } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { Box3, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
+import {
+  Box3,
+  NearestFilter,
+  CanvasTexture,
+  Group,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  SRGBColorSpace,
+  Vector3,
+} from "three";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
 import { DeskSmoke } from "./DeskSmoke";
 import { DESK_TOP } from "./worldAnchors";
+
+const CHAMBERED_BULLET = /^Bullet\d+_/;
 
 /**
  * Places one desk prop from the manifest, grounded from its real bounds
@@ -40,12 +53,28 @@ function DeskProp({ id, children }: { id: AssetId; children?: ReactNode }) {
       if (o instanceof Mesh) {
         o.castShadow = asset.castShadow;
         o.receiveShadow = asset.receiveShadow;
+        // The revolver's chambered rounds sit inside a closed cylinder.
+        if (id === "revolver" && CHAMBERED_BULLET.test(o.name)) o.visible = false;
+        // The pens model ships on a flat display plate; the desk is the ground.
+        if (id === "fountainPens" && o.name.startsWith("ground")) o.visible = false;
+        // The creeper is a 64x32 pixel texture: sample it unfiltered up close.
+        if (id === "creeper") {
+          const mat = o.material as MeshStandardMaterial;
+          if (mat.map) {
+            mat.map.magFilter = NearestFilter;
+            mat.map.needsUpdate = true;
+          }
+        }
+        // The pull-chain hangs beside the bulb, so its shadow would be thrown as a
+        // huge beaded stripe across the wall. It is its own mesh in the lamp model
+        // (scripts/split-lamp-chain.mjs) so it can be left out of the shadow pass.
+        if (id === "deskLamp" && o.name.includes("chain")) o.castShadow = false;
         if (id === "deskLamp") {
           const brighten = (material: MeshStandardMaterial) => {
             if (!material.emissiveMap) return material;
             const owned = material.clone();
             // The atlas masks emission to the bulb, leaving the green shade alone.
-            owned.emissiveIntensity = Math.max(material.emissiveIntensity, 3);
+            owned.emissiveIntensity = Math.max(material.emissiveIntensity, 6);
             return owned;
           };
           o.material = Array.isArray(o.material)
@@ -74,21 +103,174 @@ function DeskProp({ id, children }: { id: AssetId; children?: ReactNode }) {
   return <primitive object={prop}>{children}</primitive>;
 }
 
-const DESK_PROPS: AssetId[] = ["ashtray", "handgun", "plant"];
+// `fountainPens` is parked: its model and manifest entry stay, it is just not
+// placed on the desk for now.
+const DESK_PROPS: AssetId[] = [
+  "ashtray",
+  "revolver",
+  "plant",
+  "aluminiumPen",
+  "creeper",
+  "phone",
+  "fedora",
+  "sheriffBadge",
+];
+
+/** Cartridge length on the desk: a real 40 mm .357 round, in proportion to the 25 cm revolver. */
+const BULLET_LENGTH = 0.04;
+const BULLET_TEMPLATE = "bullet_mesh_03";
+/** x, z, yaw, standing: three rounds just behind the revolver (toward the back of the desk). */
+const BULLETS: [number, number, number, boolean][] = [
+  [-0.47, -2.0, 0.5, false],
+  [-0.43, -2.04, -0.4, false],
+  [-0.5, -2.06, 0, true],
+];
+
+/** Soft, dark radial blob: grounds a small prop where the lamp's map can't. */
+function useBlobTexture() {
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    const g = ctx.createRadialGradient(64, 64, 6, 64, 64, 62);
+    g.addColorStop(0, "rgba(0,0,0,0.85)");
+    g.addColorStop(0.55, "rgba(0,0,0,0.35)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+    const t = new CanvasTexture(canvas);
+    t.colorSpace = SRGBColorSpace;
+    return t;
+  }, []);
+  useEffect(() => () => texture.dispose(), [texture]);
+  return texture;
+}
+
+/**
+ * A flat contact-shadow blob on the desk. `along` is the footprint's long
+ * axis length (along local x before `yaw`), `across` the short one.
+ */
+function ContactShadow({
+  at,
+  yaw,
+  along,
+  across,
+  opacity,
+  map,
+}: {
+  at: [number, number];
+  yaw: number;
+  along: number;
+  across: number;
+  opacity: number;
+  map: CanvasTexture;
+}) {
+  const material = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        map,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        toneMapped: false,
+      }),
+    [map, opacity],
+  );
+  useEffect(() => () => material.dispose(), [material]);
+  return (
+    <group position={[at[0], DESK_TOP + 0.0008, at[1]]} rotation={[0, yaw, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={2} material={material}>
+        <planeGeometry args={[along, across]} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Three .357 rounds from the bullets model, scattered behind the revolver. */
+function MagnumBullets() {
+  const { scene } = useGLTF(assetManifest.magnumBullets.url);
+  const blob = useBlobTexture();
+  const rounds = useMemo(() => {
+    let template: Mesh | undefined;
+    scene.traverse((o) => {
+      if (!template && o instanceof Mesh && o.name.startsWith(BULLET_TEMPLATE)) template = o;
+    });
+    if (!template) return [];
+    scene.updateMatrixWorld(true);
+    const box = new Box3().setFromObject(template);
+    const centre = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
+    const scale = BULLET_LENGTH / size.y;
+    // Centre the round on its own origin; the model is authored standing up.
+    const toOrigin = new Matrix4()
+      .makeTranslation(-centre.x, -centre.y, -centre.z)
+      .multiply(template.matrixWorld);
+    return BULLETS.map(([x, z, yaw, standing]) => {
+      const round = new Group();
+      round.rotation.set(0, yaw, standing ? 0 : Math.PI / 2, "YXZ");
+      round.scale.setScalar(scale);
+      const radius = (size.x / 2) * scale;
+      round.position.set(x, DESK_TOP + (standing ? BULLET_LENGTH / 2 : radius), z);
+      const mesh = new Mesh(template!.geometry, template!.material);
+      mesh.matrixAutoUpdate = false;
+      mesh.matrix.copy(toOrigin);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      round.add(mesh);
+      return { round, x, z, yaw, standing };
+    });
+  }, [scene]);
+  return (
+    <group name="magnum-bullets">
+      {rounds.map(({ round, x, z, yaw, standing }, i) => (
+        <group key={i}>
+          <primitive object={round} />
+          <ContactShadow
+            at={[x, z]}
+            yaw={yaw}
+            along={standing ? 0.03 : 0.07}
+            across={0.03}
+            opacity={0.7}
+            map={blob}
+          />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/** A soft footprint under the revolver, which lies along its yawed barrel axis. */
+function RevolverShadow() {
+  const blob = useBlobTexture();
+  const asset = assetManifest.revolver;
+  return (
+    <ContactShadow
+      at={[asset.position[0], asset.position[2]]}
+      yaw={asset.rotation[1] + Math.PI / 2}
+      along={0.34}
+      across={0.14}
+      opacity={0.75}
+      map={blob}
+    />
+  );
+}
 
 /**
  * Tip of the cigarette standing in the ashtray, in world space. Measured, not
  * eyeballed: the ashtray model's highest vertices (the standing butt) after
  * the manifest yaw and the same grounding DeskProp applies — x -0.446,
- * y 0.811, z -1.975 at the manifest position. Re-measure if the ashtray moves.
+ * y 0.811, z -2.255 at the manifest position (-0.32, -2.26). Re-measure if the ashtray moves.
  */
-const SMOKE_AT: [number, number, number] = [-0.446, 0.811, -1.975];
+const SMOKE_AT: [number, number, number] = [-0.266, 0.811, -2.255];
 
 /**
  * The working detective's desk around the CASE 404 folder: lamp at the back
- * left with the ashtray in front of it, handgun and plant to the right. The
- * back-right corner is left clear for the vintage telephone, which is
- * reserved until a licensed local model exists.
+ * left with the ashtray at its front-right, the Colt Python revolver with three
+ * loose .357 rounds on the left pad, an aluminium pen by the folder's right
+ * edge, the black push-button telephone on the right pad, and the creeper
+ * figure beside the plant.
  */
 export function DeskProps() {
   const reducedMotion = useExperienceStore((s) => s.reducedMotion);
@@ -100,6 +282,8 @@ export function DeskProps() {
       {DESK_PROPS.map((id) => (
         <DeskProp key={id} id={id} />
       ))}
+      <MagnumBullets />
+      <RevolverShadow />
       {!reducedMotion && <DeskSmoke at={SMOKE_AT} />}
     </group>
   );
