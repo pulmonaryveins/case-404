@@ -2,3 +2,45 @@
   position: fixed;
   inset: 0;
 }
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-content: center;
+  gap: 1rem;
+  justify-items: center;
+  background: var(--color-black);
+  color: var(--color-text-muted);
+  font-family: var(--font-terminal);
+  letter-spacing: 0.3em;
+  transition: opacity var(--motion-duration-slow);
+}
+
+.loader[data-done="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bar {
+  width: 12rem;
+  height: 2px;
+  background: var(--color-border);
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--color-tungsten);
+  transform-origin: left;
+  transition: transform var(--motion-duration-base);
+}
+
+.percent {
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}

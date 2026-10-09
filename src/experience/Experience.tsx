@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { CanvasErrorBoundary } from "../components/common/CanvasErrorBoundary";
 import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
+import { LoadingOverlay } from "./LoadingOverlay";
 import styles from "./Experience.module.css";
 
 /**
@@ -7,11 +9,18 @@ import styles from "./Experience.module.css";
  * canvas is fixed behind the page; the page itself scrolls (StoryController).
  */
 export function Experience() {
+  const [ready, setReady] = useState(false);
   return (
     <div className={styles.stage}>
       <CanvasErrorBoundary>
-        <ExperienceCanvas />
+        <ExperienceCanvas
+          onReady={() => {
+            performance.mark("scene-ready");
+            setReady(true);
+          }}
+        />
       </CanvasErrorBoundary>
+      <LoadingOverlay done={ready} />
     </div>
   );
 }

@@ -9,9 +9,7 @@ import { RoomShell } from "./RoomShell";
  * Opening composition: a dark room, the working desk, and the board — read
  * as one workspace from the front.
  *
- * The window on the left wall lets cool moonlight in. Filing cabinet,
- * suitcase and the evidence prop set are registered in the manifest and the
- * source library; they are simply not part of this frame. The right side is
+ * The window on the left wall lets cool moonlight in. The right side is
  * reserved for the IBM PCjr evidence station (on hold).
  */
 export function DetectiveOffice() {
