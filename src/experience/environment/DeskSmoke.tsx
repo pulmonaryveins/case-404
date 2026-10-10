@@ -84,5 +84,14 @@ export function DeskSmoke({ at }: { at: Vector3Tuple }) {
     }
   });
 
-  return <points ref={points} geometry={geometry} material={material} frustumCulled={false} />;
+  return (
+    <points
+      ref={points}
+      geometry={geometry}
+      material={material}
+      frustumCulled={false}
+      // Smoke is not a click target (Points raycast with a 1 m threshold).
+      raycast={() => null}
+    />
+  );
 }

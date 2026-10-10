@@ -6,6 +6,8 @@ import { boardIslands, type BoardPieceId } from "../surfaces/boardIslands";
 import { paintApartmentPhoto } from "../surfaces/paintDossierPhotos";
 import { createPaperBump, paintPaperFinish } from "../surfaces/paperFinish";
 import { PaperContactShadow } from "./PaperContactShadow";
+import { useFocusable } from "../camera/focus";
+import { dossierReadable } from "./dossierState";
 
 /** Unwrap the board's photo UV island into an upright print. */
 function boardPhoto(
@@ -108,6 +110,7 @@ function Polaroid({
     return toTexture(canvas);
   }, [photo, caption]);
   useEffect(() => () => print.dispose(), [print]);
+  const focus = useFocusable(dossierReadable, { label: "Inspect photo" });
   return (
     <group position={position} rotation={[0, 0, angle]}>
       <PaperContactShadow width={0.97} height={1.164} />
@@ -117,7 +120,7 @@ function Polaroid({
         <planeGeometry args={[0.97, 1.164]} />
         <meshStandardMaterial color="#e8deca" roughness={0.9} side={FrontSide} />
       </mesh>
-      <mesh position={[0, 0, 0.005]} receiveShadow castShadow>
+      <mesh position={[0, 0, 0.005]} receiveShadow castShadow {...focus}>
         <planeGeometry args={[0.965, 1.159]} />
         <meshPhysicalMaterial
           map={print}
@@ -192,6 +195,7 @@ export function DossierEvidence() {
     return [boardPhoto(atlas!, "Plane061__0"), boardPhoto(atlas!, "Plane067__0")];
   }, [scene]);
   const card = useMemo(() => paintResidenceCard(), []);
+  const focus = useFocusable(dossierReadable, { label: "Inspect record" });
   useEffect(() => () => card.dispose(), [card]);
   return (
     <group
@@ -217,7 +221,7 @@ export function DossierEvidence() {
           <planeGeometry args={[0.98, 1.317]} />
           <meshStandardMaterial color="#e7dfc7" roughness={1} side={FrontSide} />
         </mesh>
-        <mesh position={[0, 0, 0.003]} receiveShadow castShadow>
+        <mesh position={[0, 0, 0.003]} receiveShadow castShadow {...focus}>
           <planeGeometry args={[0.976, 1.3115]} />
           <meshPhysicalMaterial
             map={card}

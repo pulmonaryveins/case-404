@@ -13,4 +13,11 @@ export const storyRig = {
   dossierOpen: 0,
   /** 0 = profile pages hidden, 1 = fully revealed. */
   profileReveal: 0,
+  /** Zoom onto the archive terminal's screen: eased 0..1, and where the camera ends up. */
+  screenFocus: {
+    amount: 0,
+    on: false,
+    camera: [0, 0, 0] as Vector3Tuple,
+    target: [0, 0, 0] as Vector3Tuple,
+  },
 };

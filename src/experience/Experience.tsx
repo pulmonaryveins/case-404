@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CanvasErrorBoundary } from "../components/common/CanvasErrorBoundary";
 import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
 import { LoadingOverlay } from "./LoadingOverlay";
+import { ScreenFocusControls } from "./ScreenFocusControls";
+import { CustomCursor } from "./cursor/CustomCursor";
 import styles from "./Experience.module.css";
 
 /**
@@ -20,6 +22,8 @@ export function Experience() {
           }}
         />
       </CanvasErrorBoundary>
+      <ScreenFocusControls />
+      <CustomCursor />
       <LoadingOverlay done={ready} />
     </div>
   );

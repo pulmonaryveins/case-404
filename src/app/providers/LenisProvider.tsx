@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
 import { gsap, registerGsap, ScrollTrigger } from "../../lib/gsap";
+import { useExperienceStore } from "../../store/useExperienceStore";
 
 interface Props {
   children: ReactNode;
@@ -29,7 +30,16 @@ export function LenisProvider({ children }: Props) {
     gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
+    // The page stays put while the terminal screen is zoomed: wheel scrolls
+    // the terminal, not the story.
+    const unsubscribe = useExperienceStore.subscribe((s, prev) => {
+      if (s.screenFocused === prev.screenFocused) return;
+      if (s.screenFocused) lenis.stop();
+      else lenis.start();
+    });
+
     return () => {
+      unsubscribe();
       gsap.ticker.remove(onTick);
       lenis.destroy();
     };

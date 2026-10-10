@@ -50,7 +50,7 @@ export function ExperienceCanvas({ onReady }: { onReady: () => void }) {
       gl={{ antialias: true }}
       onCreated={({ gl }) => {
         gl.toneMapping = ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.05;
+        gl.toneMappingExposure = 0.95;
       }}
     >
       <color attach="background" args={["#0a0908"]} />

@@ -2,7 +2,7 @@ import { archiveProjects } from "../data/projects";
 import { useExperienceStore } from "../store/useExperienceStore";
 import styles from "./ArchivePicker.module.css";
 
-const GROUPS = ["Development", "UI/UX"] as const;
+const GROUPS = ["Development", "UI/UX", "Video Editing"] as const;
 
 /**
  * Readable, keyboard-reachable twin of the floppy rack: the disk labels are

@@ -12,6 +12,7 @@ import {
 } from "three";
 import type { Group } from "three";
 import { assetManifest } from "../../assets/assetManifest";
+import { useCursor } from "../cursor/cursorStore";
 import type { Project } from "../../data/projects";
 import { LABEL_H, LABEL_W, paintDiskLabel } from "../surfaces/paintArchive";
 
@@ -43,7 +44,9 @@ interface Props {
 const smooth = (a: number, b: number, t: number) => MathUtils.smoothstep(t, a, b);
 const LIFT = 0.09;
 const APPROACH = 0.14;
-const SECONDS = 1.3;
+/** Seconds the disk takes to travel into the drive. */
+export const INSERT_SECONDS = 1.3;
+const SECONDS = INSERT_SECONDS;
 
 /**
  * One project on a 3.5in floppy. Disks share the floppy GLB's geometry and
@@ -132,16 +135,21 @@ export function FloppyDisk({
         if (!interactive) return;
         e.stopPropagation();
         onSelect();
+        useCursor
+          .getState()
+          .set(inserted ? "insert" : "eject", inserted ? "Insert disk" : "Eject disk");
       }}
       onPointerOver={(e) => {
         if (!interactive) return;
         e.stopPropagation();
         hovered.current = true;
-        document.body.style.cursor = "pointer";
+        useCursor
+          .getState()
+          .set(inserted ? "eject" : "insert", inserted ? "Eject disk" : "Insert disk");
       }}
       onPointerOut={() => {
         hovered.current = false;
-        document.body.style.cursor = "";
+        useCursor.getState().clear();
       }}
     >
       <primitive object={body} />

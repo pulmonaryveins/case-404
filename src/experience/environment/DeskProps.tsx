@@ -1,11 +1,12 @@
 import { type ReactNode, useEffect, useMemo } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { Box3, NearestFilter, Group, Matrix4, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
-import { lampLit, type LampId } from "../lighting/lampState";
+import { lampLit, lampOn, toggleLamp, type LampId } from "../lighting/lampState";
+import { useCursor } from "../cursor/cursorStore";
 import { DeskSmoke } from "./DeskSmoke";
 import { ContactShadow } from "./ContactShadow";
 import { useBlobTexture } from "./useBlobTexture";
@@ -123,7 +124,27 @@ export function DeskProp({
     [prop, id],
   );
 
-  return <primitive object={prop}>{children}</primitive>;
+  // A lamp is a switch: click it to turn it on or off.
+  const switchable = lamp
+    ? {
+        onClick: (e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          toggleLamp(lamp);
+          useCursor.getState().set("switch", lampOn[lamp] ? "Lamp off" : "Lamp on");
+        },
+        onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation();
+          useCursor.getState().set("switch", lampOn[lamp] ? "Lamp off" : "Lamp on");
+        },
+        onPointerOut: () => useCursor.getState().clear(),
+      }
+    : {};
+
+  return (
+    <primitive object={prop} {...switchable}>
+      {children}
+    </primitive>
+  );
 }
 
 // `fountainPens` is parked: its model and manifest entry stay, it is just not

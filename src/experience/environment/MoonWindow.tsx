@@ -42,7 +42,7 @@ const FRAME_STRETCH = OPENING.w / 1.4;
  * window bars' shadow reaches the board and the right side as strongly as the
  * near wall, where a falling-off light left only the left wall patterned.
  */
-const MOON = 1.8;
+const MOON = 1.55;
 /**
  * How dark the moon's shadows get, 0 (none) to 1 (everything the moon does not
  * reach is left to the faint room fill, which is near black). Under 1 so the
@@ -224,7 +224,7 @@ export function MoonWindow() {
         shadow-camera-far={16}
         shadow-bias={-0.00015}
         shadow-normalBias={0.003}
-        shadow-radius={5}
+        shadow-radius={7}
         shadow-intensity={SHADOW_STRENGTH}
       />
     </group>

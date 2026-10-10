@@ -9,7 +9,8 @@ import {
 } from "three";
 import { useFrame } from "@react-three/fiber";
 import { storyRig } from "../../story/storyRig";
-import { stepLamp, type LampId } from "./lampState";
+import { DustMotes } from "./DustMotes";
+import { lampLit, stepLamp, type LampId } from "./lampState";
 
 /**
  * Bulb of the desk lamp, in the lamp model's own space. Measured from the
@@ -83,22 +84,26 @@ export function DeskLampLight({
   const [target] = useState(() => new Object3D());
   const light = useRef<SpotLight>(null);
   const halo = useRef<SpriteMaterial>(null);
+  const frames = useRef(0);
   useFrame((_, dt) => {
     const lit = stepLamp(lamp, dt);
     const open = lamp === "main" ? MathUtils.smoothstep(storyRig.dossierOpen, 0, 1) : 0;
     if (light.current) {
       light.current.intensity = LAMP * strength * lit * MathUtils.lerp(1, OPEN_FRACTION, open);
       // An unlit lamp skips its shadow pass; the light count stays fixed so
-      // switching never recompiles the room's materials.
-      light.current.shadow.autoUpdate = lit > 0.01;
+      // switching never recompiles the room's materials. Every lamp still
+      // renders its first frames: a shadow map that was never drawn is an
+      // invalid depth texture, and strict drivers reject every draw that
+      // samples it (GL_INVALID_OPERATION), blacking out the whole room.
+      light.current.shadow.autoUpdate = lit > 0.01 || frames.current++ < 3;
     }
-    if (halo.current) halo.current.opacity = lit;
+    if (halo.current) halo.current.opacity = lit * 0.75;
   });
   return (
     <>
       {/* Local optical glow only: no extra light on the dossier. Depth testing
           lets the opaque shade conceal the halo from above and behind. */}
-      <sprite position={[0.027, 0.367, 0.067]} scale={[0.26, 0.26, 1]}>
+      <sprite position={[0.027, 0.367, 0.067]} scale={[0.2, 0.2, 1]} raycast={() => null}>
         <spriteMaterial
           ref={halo}
           map={glow}
@@ -109,6 +114,14 @@ export function DeskLampLight({
           toneMapped={false}
         />
       </sprite>
+      {/* Dust caught in the beam, below and in front of the bulb. */}
+      <DustMotes
+        source={[0.06, 0.26, 0.14]}
+        min={[-0.3, 0.0, -0.12]}
+        max={[0.42, 0.32, 0.5]}
+        opacity={strength >= 1 ? 0.55 : 0.35}
+        level={() => lampLit[lamp]}
+      />
       <primitive object={target} position={AIM} />
       <spotLight
         ref={light}
@@ -126,7 +139,7 @@ export function DeskLampLight({
         shadow-camera-far={2.2}
         shadow-bias={-0.0004}
         shadow-normalBias={0.004}
-        shadow-radius={3}
+        shadow-radius={4}
         shadow-intensity={1}
       />
     </>

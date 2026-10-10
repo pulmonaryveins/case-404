@@ -8,6 +8,8 @@ export interface Project {
   tools: string[];
   /** Live link or case study. Omit until there is one. */
   link?: string;
+  /** Clip played on the archive terminal when the disk is inserted. */
+  video?: string;
 }
 
 /**
@@ -15,6 +17,9 @@ export interface Project {
  * titles, descriptions, tools and links with the real work. The first three
  * of each category are shown; the rack holds three disks per tray.
  */
+/** CC0 placeholder clip (MDN interactive-examples); swap per project for real work. */
+const SAMPLE_REEL = "/videos/sample-reel.mp4";
+
 export const projects: Project[] = [
   {
     id: "dev-1",
@@ -58,8 +63,32 @@ export const projects: Project[] = [
     description: "Placeholder description of the third UI/UX project.",
     tools: ["Figma", "Design system"],
   },
+  {
+    id: "vid-1",
+    title: "Video Project One",
+    category: "Video Editing",
+    description: "Placeholder description of the first video editing project.",
+    tools: ["Premiere Pro", "After Effects"],
+    video: SAMPLE_REEL,
+  },
+  {
+    id: "vid-2",
+    title: "Video Project Two",
+    category: "Video Editing",
+    description: "Placeholder description of the second video editing project.",
+    tools: ["Premiere Pro", "After Effects"],
+    video: SAMPLE_REEL,
+  },
+  {
+    id: "vid-3",
+    title: "Video Project Three",
+    category: "Video Editing",
+    description: "Placeholder description of the third video editing project.",
+    tools: ["Premiere Pro", "After Effects"],
+    video: SAMPLE_REEL,
+  },
 ];
 
 export const archiveProjects = projects.filter(
-  (p) => p.category === "Development" || p.category === "UI/UX",
+  (p) => p.category === "Development" || p.category === "UI/UX" || p.category === "Video Editing",
 );

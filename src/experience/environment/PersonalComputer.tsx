@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 import {
   type Matrix4,
   Mesh,
@@ -9,6 +10,7 @@ import {
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 import { PC_MODEL } from "./computerPlacement";
+import { useCursor } from "../cursor/cursorStore";
 
 const styled = new WeakSet<Object3D>();
 
@@ -40,13 +42,15 @@ interface Props {
   matrix: Matrix4;
   /** What the CRT shows. */
   screen: MeshBasicMaterial;
+  /** The CRT was clicked; undefined while it is not clickable. */
+  onScreenClick?: (e: ThreeEvent<MouseEvent>) => void;
 }
 
 /**
  * The archive computer: a 1970s terminal, with a live canvas laid over its
  * CRT and a dark slot drawn on its front panel where the floppy disks go in.
  */
-export function PersonalComputer({ matrix, screen }: Props) {
+export function PersonalComputer({ matrix, screen, onScreenClick }: Props) {
   const { scene } = useGLTF(assetManifest.archiveComputer.url);
   const model = useMemo(() => {
     styleComputer(scene);
@@ -57,7 +61,15 @@ export function PersonalComputer({ matrix, screen }: Props) {
   return (
     <group matrix={matrix} matrixAutoUpdate={false}>
       <primitive object={model} />
-      <mesh position={[glass.x, glass.y, glass.z]} material={screen}>
+      <mesh
+        position={[glass.x, glass.y, glass.z]}
+        material={screen}
+        onClick={onScreenClick}
+        onPointerOver={() => {
+          if (onScreenClick) useCursor.getState().set("inspect", "Use terminal");
+        }}
+        onPointerOut={() => useCursor.getState().clear()}
+      >
         <planeGeometry args={[glass.w, glass.h]} />
       </mesh>
       {/* The panel has no opening of its own: a dark slot, so disks can go in. */}

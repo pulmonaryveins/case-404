@@ -407,6 +407,34 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
+  // dusty_polaroid_1000_land_camera.glb -> polaroid-camera.glb (scripts/optimize-glb.mjs,
+  // 1024px WebP, full geometry; 44 MB -> 1 MB). Authored in cm (~12 x 10 x 16),
+  // lens toward +Z. On the archive desk's front-right, placed by ArchiveStation.
+  polaroidCamera: {
+    id: "polaroidCamera",
+    url: "/models/case-404/props/polaroid-camera.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.01,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // old_polaroid_photos.glb -> polaroid-photos.glb (WebP). A sheet of twelve
+  // flat polaroid quads (each ~1.23 x 1.48 units, in the XZ plane, each its own
+  // mesh). PolaroidPhotos picks three and scatters them by the camera.
+  polaroidPhotos: {
+    id: "polaroidPhotos",
+    url: "/models/case-404/props/polaroid-photos.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.072,
+    castShadow: false,
+    receiveShadow: true,
+  },
 } as const satisfies Record<string, ManifestAsset>;
 
 export type AssetId = keyof typeof assetManifest;

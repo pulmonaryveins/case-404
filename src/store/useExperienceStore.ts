@@ -17,6 +17,11 @@ interface ExperienceState {
   isExperienceReady: boolean;
   /** The archive terminal has finished booting; its disks can be used. */
   archiveOnline: boolean;
+  /** The camera is zoomed onto the archive terminal's screen, which scrolls. */
+  screenFocused: boolean;
+  /** What the close-up is on: the terminal screen (which scrolls) or a photo. */
+  focusKind: "screen" | "photo";
+  setScreenFocused: (value: boolean, kind?: "screen" | "photo") => void;
   setCurrentChapter: (chapter: ChapterId) => void;
   setActiveExperienceId: (id: string | null) => void;
   setActiveProjectId: (id: string | null) => void;
@@ -34,6 +39,9 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
   reducedMotion: false,
   isExperienceReady: false,
   archiveOnline: false,
+  screenFocused: false,
+  focusKind: "screen",
+  setScreenFocused: (value, kind = "screen") => set({ screenFocused: value, focusKind: kind }),
   setCurrentChapter: (chapter) => set({ currentChapter: chapter }),
   setActiveExperienceId: (id) => set({ activeExperienceId: id }),
   setActiveProjectId: (id) => set({ activeProjectId: id }),

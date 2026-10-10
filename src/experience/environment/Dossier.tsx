@@ -18,6 +18,8 @@ import { storyRig } from "../../story/storyRig";
 import { paintAboutPage } from "../surfaces/paintDossierPages";
 import { DossierRecords } from "./DossierRecords";
 import { DossierEvidence } from "./DossierEvidence";
+import { dossierReadable } from "./dossierState";
+import { useFocusable } from "../camera/focus";
 import { PaperContactShadow } from "./PaperContactShadow";
 import { createPaperBump } from "../surfaces/paperFinish";
 import { DossierCoverDesign } from "./DossierCoverDesign";
@@ -294,6 +296,8 @@ export function Dossier() {
     }
   });
 
+  // The profile page fills most of the frame: it is text to read.
+  const pageFocus = useFocusable(dossierReadable, { fill: 1.12, label: "Read profile" });
   return (
     <group position={asset.position} rotation={asset.rotation} scale={asset.scale}>
       <primitive object={animated.scene} />
@@ -326,6 +330,7 @@ export function Dossier() {
         material={rightMat}
         receiveShadow
         castShadow
+        {...pageFocus}
       >
         <planeGeometry args={[PAGE.w, PAGE.h]} />
       </mesh>

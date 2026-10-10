@@ -2,36 +2,28 @@ import { Vector3 } from "three";
 import { DESK_TOP } from "./worldAnchors";
 
 /**
- * The six disks lie flat on the desk in two neat stacks, Development and
- * UI/UX, side by side beside the terminal. Within a stack the first project is
- * on top and each one below steps toward the viewer, so a strip of every
- * label shows. Station frame; keep the desk's right end free for the lamp.
+ * The nine disks lie flat on the desk in three rows of three (Development,
+ * UI/UX, Video Editing) beside the terminal. Disks are 9 cm square; the pitch
+ * is wider than that, so every disk has clear desk around it and its label is
+ * fully visible. Station frame; keep the desk's right end free for the lamp.
  */
-const STACK_X = { Development: 0.04, "UI/UX": 0.19 } as const;
-const STACK_Z = -0.07;
-/** Disk thickness (1.3x) and the forward step per level down the stack. */
+const ROW_X = { Development: 0.02, "UI/UX": 0.13, "Video Editing": 0.24 } as const;
+const FIRST_Z = -0.13;
+const PITCH = 0.105;
 const THICK = 0.0045;
-const STEP = 0.05;
 
-export type StackRow = keyof typeof STACK_X;
+export type StackRow = keyof typeof ROW_X;
 
-/** Rest position (disk centre) of the disk `slot` places down its stack (0 = top). */
+/** Rest position (disk centre) of the disk `slot` places down its row (0 = back). */
 export function stackSlot(row: StackRow, slot: number): Vector3 {
-  return new Vector3(
-    STACK_X[row],
-    DESK_TOP + THICK * (2 - slot) + THICK / 2,
-    STACK_Z + slot * STEP,
-  );
+  return new Vector3(ROW_X[row], DESK_TOP + THICK / 2, FIRST_Z + slot * PITCH);
 }
 
 /**
- * A hovered disk slides out sideways, away from the other stack, staying level
- * so it passes under the disks above it. Lifting it up or forward put it over
- * its neighbours' labels in the camera's downward view.
+ * A hovered disk lifts straight up. It stays under the pointer (sliding it
+ * sideways moved it out from under the cursor and made it flicker in and out
+ * of hover) and the gaps keep it clear of its neighbours.
  */
-const POP = {
-  Development: new Vector3(-0.07, 0, 0),
-  "UI/UX": new Vector3(0.07, 0, 0),
-} as const;
+const POP = new Vector3(0, 0.03, 0);
 
-export const stackPop = (row: StackRow): Vector3 => POP[row];
+export const STACK_POP = POP;
