@@ -94,9 +94,9 @@ badge. Credit **Freepoly.org** for the IBM PCjr.
 
 ## On hold
 
-- **IBM PCjr** is no longer used: Zone B now has a 90s PC (`pc-90s.glb`, from
-  `assets-source/90s_-_00s_pc.glb` via `scripts/prepare-pc-90s.mjs`) on a second
-  desk in the back-right corner. Its author/licence still needs to go in
+- **IBM PCjr** is no longer used: Zone B now has a 1970s data terminal
+  (`computer-terminal.glb`, from `assets-source/computer_terminal.glb` via
+  `scripts/prepare-terminal.mjs`) on a second desk in the back-right corner. Its author/licence still needs to go in
   `ASSET_CREDITS.md`.
 
 ## Open items / ideas

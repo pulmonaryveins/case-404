@@ -12,6 +12,7 @@ export type CameraAnchorId =
   | "education"
   | "experience"
   | "digitalArchive"
+  | "posterWall"
   | "creativeEvidence"
   | "credentials"
   | "contact"

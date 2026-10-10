@@ -1,20 +1,23 @@
-import { useEffect, useMemo } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import {
   CanvasTexture,
   Euler,
-  Mesh,
   MeshBasicMaterial,
   Quaternion,
   SRGBColorSpace,
   Vector3,
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
-import { archiveProjects, type Project } from "../../data/projects";
+import { archiveProjects } from "../../data/projects";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { Model } from "../models/Model";
-import { paintArchiveScreen, SCREEN_H, SCREEN_W } from "../surfaces/paintArchive";
+import { paintArchiveScreen, SCREEN_H, SCREEN_W, type ScreenView } from "../surfaces/paintArchive";
 import { ContactShadow } from "./ContactShadow";
+import { stackPop, stackSlot, type StackRow } from "./diskStacks";
+import { DesignPosters } from "./DesignPosters";
+import { DeskProp } from "./DeskProps";
+import { DeskLampLight } from "../lighting/DeskLampLight";
 import { FloppyDisk, type DiskPose } from "./FloppyDisk";
 import { PersonalComputer } from "./PersonalComputer";
 import { PC_MODEL, placeComputer } from "./computerPlacement";
@@ -32,59 +35,25 @@ import { ARCHIVE_YAW, DESK_TOP, worldAnchors } from "./worldAnchors";
 const STATION_POS = worldAnchors.digitalArchive!;
 const STATION_YAW = ARCHIVE_YAW;
 
-const PC_POS = new Vector3(-0.3, DESK_TOP, -0.05);
+const PC_POS = new Vector3(-0.4, DESK_TOP, -0.03);
 const PC_FACING = 0.1;
-const RACK_POS = new Vector3(0.5, DESK_TOP, 0.05);
-/**
- * The wooden letter tray is parked for now: with it off, the disks lie flat on
- * the desk where the tray stood. Flip to bring the rack back; the disks follow.
- */
-const SHOW_RACK = false;
-/** Desk rows (no rack), in the station frame: development in front, UI/UX behind. */
-const DESK_ROW_Z = { Development: 0.1, "UI/UX": -0.05 } as const;
-const DESK_DISK_SPACING = 0.12;
-const RACK_SCALE = assetManifest.fileRack.scale;
-
-/**
- * The rack's top tray floor in the rack's own units (0.3 scale to metres),
- * measured from the mesh. The lower trays sit under it and their front lip
- * hides anything lying behind it, so all disks lie label-up on the top tray:
- * development in the front row, UI/UX behind it, both clear of the lip.
- */
-const TOP_TRAY = { y: 0.78, frontZ: 0.324 };
-const DISK_X = [-0.35, 0, 0.35];
-const DISK_YAW = [0.06, -0.05, 0.03];
-const DISK_THICK = 0.0026;
-const ROW_Z = { Development: 0.55, "UI/UX": 0.95 } as const;
-
+/** Lamp footprint centre (station frame) and yaw: its shade faces the camera. */
+const LAMP_AT: [number, number] = [0.52, -0.15];
+const LAMP_YAW = 5.8;
 const FLAT = new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, 0));
 const yawQuat = (yaw: number) => new Quaternion().setFromEuler(new Euler(0, yaw, 0));
 
 /** Redraws the CRT canvas and flags its texture for upload. */
 function repaintScreen(
   screen: { canvas: HTMLCanvasElement; map: CanvasTexture },
-  p: Project | null,
+  view: ScreenView,
 ) {
-  paintArchiveScreen(screen.canvas, p);
+  paintArchiveScreen(screen.canvas, view);
   screen.map.needsUpdate = true;
 }
 
-/** The wooden three-tier letter tray the disks sit in. */
-function FileRack() {
-  const rack = useGLTF(assetManifest.fileRack.url).scene;
-  const scene = useMemo(() => {
-    const clone = rack.clone(true);
-    clone.traverse((o) => {
-      if (o instanceof Mesh) o.castShadow = o.receiveShadow = true;
-    });
-    return clone;
-  }, [rack]);
-  return (
-    <group position={RACK_POS} scale={RACK_SCALE}>
-      <primitive object={scene} />
-    </group>
-  );
-}
+/** Seconds of boot sequence after the camera reaches the archive desk. */
+const BOOT_MS = 4200;
 
 /** Project of the disk currently in the drive, or null. */
 function useActiveProject() {
@@ -93,7 +62,7 @@ function useActiveProject() {
 }
 
 /**
- * The project archive: a 90s PC and a set of floppy disks on a
+ * The project archive: a 1970s terminal and a set of floppy disks on a
  * second desk. Selecting a disk slides it into the drive and puts its record
  * on the CRT. Static geometry; only the disks and the screen change.
  */
@@ -101,6 +70,9 @@ export function ArchiveStation() {
   const chapter = useExperienceStore((s) => s.currentChapter);
   const setActive = useExperienceStore((s) => s.setActiveProjectId);
   const active = useActiveProject();
+  const online = useExperienceStore((s) => s.archiveOnline);
+  const setOnline = useExperienceStore((s) => s.setArchiveOnline);
+  const reducedMotion = useExperienceStore((s) => s.reducedMotion);
   const interactive = chapter === "DIGITAL_ARCHIVE";
 
   const blob = useBlobTexture();
@@ -115,7 +87,42 @@ export function ArchiveStation() {
     const material = new MeshBasicMaterial({ map, toneMapped: false, color: "#d8d8d8" });
     return { canvas, map, material };
   }, []);
-  useEffect(() => repaintScreen(screen, active), [screen, active]);
+  // The terminal is off until the camera reaches it, then boots; leaving puts it
+  // back to sleep and ejects the disk.
+  const power = useRef({ mode: "off" as "off" | "boot" | "on", since: 0, last: 0 });
+  useFrame(() => {
+    const p = power.current;
+    const now = performance.now();
+    if (!interactive) {
+      if (p.mode !== "off") {
+        p.mode = "off";
+        repaintScreen(screen, { kind: "off" });
+        setOnline(false);
+        setActive(null);
+      }
+      return;
+    }
+    if (p.mode === "off") {
+      p.mode = "boot";
+      p.since = now;
+      p.last = 0;
+    }
+    if (p.mode === "boot") {
+      const t = reducedMotion ? 1 : (now - p.since) / BOOT_MS;
+      if (t >= 1) {
+        p.mode = "on";
+        setOnline(true);
+      } else if (now - p.last > 70) {
+        p.last = now;
+        repaintScreen(screen, { kind: "boot", t });
+      }
+    }
+  });
+  // Menu or the inserted disk's record once online; blank while it is off.
+  useEffect(() => {
+    if (online) repaintScreen(screen, { kind: "menu", active, projects: archiveProjects });
+    else if (power.current.mode === "off") repaintScreen(screen, { kind: "off" });
+  }, [screen, online, active]);
   useEffect(
     () => () => {
       screen.map.dispose();
@@ -128,72 +135,47 @@ export function ArchiveStation() {
     const pc = placeComputer(PC_POS, DESK_TOP, PC_FACING);
     const insertQuat = yawQuat(PC_FACING).multiply(FLAT);
     const insertCentre = pc.insertAt;
-    // Soft footprints under the case, keyboard and mouse, in the station frame.
-    const scale = assetManifest.pc90s.scale;
+    // A soft footprint under the terminal, in the station frame.
+    const scale = assetManifest.archiveComputer.scale;
     const foot = (f: { x: number; z: number; d: number; w: number }, grow: number) => {
       const at = new Vector3(f.x, PC_MODEL.min.y, f.z).applyMatrix4(pc.matrix);
-      // The footprint's wide axis is the model's z; blobs run along their local x.
+      // The footprint's wide axis is the model's x, which is a blob's local x.
       return {
         at: [at.x, at.z] as [number, number],
-        yaw: pc.yaw - Math.PI / 2,
+        yaw: pc.yaw,
         along: f.w * scale * grow,
         across: f.d * scale * grow,
       };
     };
-    const shadows = [
-      { ...foot(PC_MODEL.caseFoot, 1.12), opacity: 0.85 },
-      { ...foot(PC_MODEL.keyboardFoot, 1.2), opacity: 0.6 },
-      { ...foot(PC_MODEL.mouseFoot, 1.5), opacity: 0.5 },
-    ];
+    const shadows = [{ ...foot(PC_MODEL.caseFoot, 1.2), opacity: 0.9 }];
 
     const perRow = { Development: 0, "UI/UX": 0 };
     const disks = archiveProjects.map((project, index) => {
-      const row = project.category as keyof typeof ROW_Z;
+      const row = project.category as StackRow;
       const slot = perRow[row]++;
-      const position = SHOW_RACK
-        ? new Vector3(DISK_X[slot], TOP_TRAY.y, TOP_TRAY.frontZ - ROW_Z[row])
-            .multiplyScalar(RACK_SCALE)
-            .add(RACK_POS)
-        : new Vector3(
-            RACK_POS.x + (slot - 1) * DESK_DISK_SPACING,
-            DESK_TOP,
-            RACK_POS.z + DESK_ROW_Z[row],
-          );
-      position.y += DISK_THICK;
       const rest: DiskPose = {
-        position,
-        quaternion: yawQuat(DISK_YAW[slot]).multiply(FLAT),
+        position: stackSlot(row, slot),
+        quaternion: FLAT,
       };
       return { project, index, rest, insert: { position: insertCentre, quaternion: insertQuat } };
     });
-    return { disks, outward: pc.outward, glowAt: pc.glowAt, shadows, matrix: pc.matrix };
+    return { disks, outward: pc.outward, shadows, matrix: pc.matrix };
   }, []);
 
   return (
     <group name="archive-station" position={STATION_POS} rotation={[0, STATION_YAW, 0]}>
       <Model id="archiveDesk" />
+      <DesignPosters />
 
       <PersonalComputer matrix={poses.matrix} screen={screen.material} />
       {poses.shadows.map((shadow, i) => (
         <ContactShadow key={i} {...shadow} map={blob} />
       ))}
-      <pointLight
-        position={poses.glowAt}
-        color="#7dffb0"
-        intensity={0.05}
-        distance={0.9}
-        decay={2}
-      />
-      {/* Warm fill: the station is far from the desk lamp. No shadows. */}
-      <pointLight
-        position={[0.1, 1.25, 0.55]}
-        color="#ffb877"
-        intensity={1.8}
-        distance={1.9}
-        decay={1}
-      />
-
-      {SHOW_RACK && <FileRack />}
+      {/* The same banker's lamp as the working desk, at the right end, turned to
+          shine back across the terminal. Lit only while the camera is here. */}
+      <DeskProp id="deskLamp" lamp="archive" at={LAMP_AT} yaw={LAMP_YAW}>
+        <DeskLampLight lamp="archive" shadowSize={1024} strength={0.4} />
+      </DeskProp>
 
       {poses.disks.map(({ project, index, rest, insert }) => (
         <FloppyDisk
@@ -203,8 +185,9 @@ export function ArchiveStation() {
           rest={rest}
           insert={insert}
           outward={poses.outward}
+          pop={stackPop(project.category as StackRow)}
           inserted={active?.id === project.id}
-          interactive={interactive}
+          interactive={interactive && online}
           onSelect={() => setActive(active?.id === project.id ? null : project.id)}
         />
       ))}

@@ -75,12 +75,22 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   // Deeper-office zones: placeholders until each zone is blocked out.
   // Second desk in the back-right corner, turned ~38 degrees toward the room
   // (STATION_POS / STATION_YAW in ArchiveStation). Looks along the desk's own
-  // front normal, the PC on the left and the floppy disks on the right.
+  // front normal, the terminal on the left and the floppy disks on the right.
   digitalArchive: {
     id: "digitalArchive",
-    position: [1.86, 1.62, -1.89],
-    target: [2.64, 0.88, -2.87],
-    fov: 40,
+    // Pull back ~30% and centre slightly toward the terminal so the full
+    // casing and keyboard fit alongside the clickable floppy disks.
+    position: [1.56, 1.64, -1.8],
+    target: [2.52, 1.02, -2.96],
+    fov: 44,
+  },
+  // Square-on to the graphic-design posters above the terminal (DesignPosters),
+  // about 2 m out along the angled wall's normal.
+  posterWall: {
+    id: "posterWall",
+    position: [1.59, 1.65, -1.62],
+    target: [2.84, 1.75, -3.19],
+    fov: 44,
   },
   creativeEvidence: {
     id: "creativeEvidence",

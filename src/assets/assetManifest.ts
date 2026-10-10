@@ -34,7 +34,7 @@ export interface ManifestAsset {
  */
 export const assetManifest = {
   // Second work desk: the same desk model, to the right of the main desk,
-  // carrying the project archive (vintage PC, floppy disks, parked file rack).
+  // carrying the project archive (terminal, floppy disks, parked file rack).
   archiveDesk: {
     id: "archiveDesk",
     url: "/models/case-404/furniture/desk.glb",
@@ -47,18 +47,18 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
-  // 90s_-_00s_pc.glb -> pc-90s.glb (scripts/prepare-pc-90s.mjs: 1024px WebP, no
-  // clearcoat/specular). A textured beige tower, CRT, keyboard and mouse; ~9 cm per
-  // unit and 6.9 x 5.9 x 6.5 units, so 0.088 makes a ~0.6 m wide setup that fits the desk.
+  // computer_terminal.glb -> computer-terminal.glb (scripts/prepare-terminal.mjs: preview
+  // planes removed, 1024px WebP). A 1970s all-in-one data terminal, 1.56 x 1.08 x 1.43
+  // units; 0.46 makes it ~0.72 m wide, ~0.50 m tall, with a ~13 cm panel for the disks.
   // Placed by PersonalComputer; measurements live in computerPlacement.ts.
-  pc90s: {
-    id: "pc90s",
-    url: "/models/case-404/workstation/pc-90s.glb",
+  archiveComputer: {
+    id: "archiveComputer",
+    url: "/models/case-404/workstation/computer-terminal.glb",
     category: "workstation",
     preloadPriority: 4,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    scale: 0.088,
+    scale: 0.4,
     castShadow: true,
     receiveShadow: true,
   },
@@ -83,7 +83,8 @@ export const assetManifest = {
     preloadPriority: 4,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    scale: 1,
+    // 1.3x life size (a 9 cm disk becomes ~12 cm) so the labels can be read.
+    scale: 1.3,
     castShadow: true,
     receiveShadow: true,
   },
@@ -134,6 +135,41 @@ export const assetManifest = {
     // Source colour map is a flat olive green; swapped for a neutral warm
     // taupe-charcoal so the board and desk stay the warm objects.
     color: "#514b45",
+  },
+  // Graphic-design wall posters via scripts/prepare-posters.mjs: flat, facing +Z,
+  // centred, back on z = 0. The artwork is placeholder until the real posters arrive.
+  posterPortrait: {
+    id: "posterPortrait",
+    url: "/models/case-404/environment/posters/poster-portrait.glb",
+    category: "environment",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: false,
+    receiveShadow: true,
+  },
+  posterSquare: {
+    id: "posterSquare",
+    url: "/models/case-404/environment/posters/poster-square.glb",
+    category: "environment",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: false,
+    receiveShadow: true,
+  },
+  posterLandscape: {
+    id: "posterLandscape",
+    url: "/models/case-404/environment/posters/poster-landscape.glb",
+    category: "environment",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: false,
+    receiveShadow: true,
   },
   // window-2.glb → window-2.glb via scripts/prepare-window-2.mjs: casement
   // window turned square to the axes, centred, ~1.51 x 1.51 m, brown frames.

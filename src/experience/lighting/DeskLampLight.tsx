@@ -1,7 +1,15 @@
 import { useRef, useState, useMemo, useEffect } from "react";
-import { AdditiveBlending, CanvasTexture, MathUtils, Object3D, type SpotLight } from "three";
+import {
+  AdditiveBlending,
+  CanvasTexture,
+  MathUtils,
+  Object3D,
+  type SpotLight,
+  type SpriteMaterial,
+} from "three";
 import { useFrame } from "@react-three/fiber";
 import { storyRig } from "../../story/storyRig";
+import { stepLamp, type LampId } from "./lampState";
 
 /**
  * Bulb of the desk lamp, in the lamp model's own space. Measured from the
@@ -48,7 +56,16 @@ const OPEN_FRACTION = 0.3;
  * instead of drawing a hard circle; `focus` keeps the 2048 shadow map on the
  * part of that cone that actually has shadows worth resolving.
  */
-export function DeskLampLight() {
+export function DeskLampLight({
+  lamp = "main",
+  shadowSize = 2048,
+  strength = 1,
+}: {
+  lamp?: LampId;
+  shadowSize?: number;
+  /** Share of the peak intensity; the archive lamp is kept lower so paper labels do not blow out. */
+  strength?: number;
+}) {
   const glow = useMemo(() => {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 128;
@@ -65,9 +82,17 @@ export function DeskLampLight() {
   useEffect(() => () => glow.dispose(), [glow]);
   const [target] = useState(() => new Object3D());
   const light = useRef<SpotLight>(null);
-  useFrame(() => {
-    const open = MathUtils.smoothstep(storyRig.dossierOpen, 0, 1);
-    if (light.current) light.current.intensity = LAMP * MathUtils.lerp(1, OPEN_FRACTION, open);
+  const halo = useRef<SpriteMaterial>(null);
+  useFrame((_, dt) => {
+    const lit = stepLamp(lamp, dt);
+    const open = lamp === "main" ? MathUtils.smoothstep(storyRig.dossierOpen, 0, 1) : 0;
+    if (light.current) {
+      light.current.intensity = LAMP * strength * lit * MathUtils.lerp(1, OPEN_FRACTION, open);
+      // An unlit lamp skips its shadow pass; the light count stays fixed so
+      // switching never recompiles the room's materials.
+      light.current.shadow.autoUpdate = lit > 0.01;
+    }
+    if (halo.current) halo.current.opacity = lit;
   });
   return (
     <>
@@ -75,6 +100,7 @@ export function DeskLampLight() {
           lets the opaque shade conceal the halo from above and behind. */}
       <sprite position={[0.027, 0.367, 0.067]} scale={[0.26, 0.26, 1]}>
         <spriteMaterial
+          ref={halo}
           map={glow}
           transparent
           blending={AdditiveBlending}
@@ -94,7 +120,7 @@ export function DeskLampLight() {
         angle={1.3}
         penumbra={1}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowSize, shadowSize]}
         shadow-focus={0.8}
         shadow-camera-near={0.03}
         shadow-camera-far={2.2}

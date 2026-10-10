@@ -14,20 +14,27 @@ import { CatmullRomCurve3, Vector3 } from "three";
  * for two camera moves and the folder opening; 800 made the same journey
  * feel like it was being paid out rather than travelled.
  */
-const STAGE_VH = 850;
+const STAGE_VH = 1290;
 const SCRUB_SECONDS = 0.45;
 
 const debug = import.meta.env.DEV && new URLSearchParams(window.location.search).has("story");
 
 /** Timeline length in timeline seconds; chapters are read off `p * END`. */
-const END = 1.45;
+const END = 2.2;
 
-function chapterAt(p: number): ChapterId {
-  const time = p * END;
+function chapterAtTime(time: number): ChapterId {
   if (time < 0.16) return "CASE_OPENED";
   if (time < 0.5) return "EVIDENCE_BOARD";
   if (time < 1.1) return "SUBJECT_PROFILE";
-  return "DIGITAL_ARCHIVE";
+  if (time < 1.95) return "DIGITAL_ARCHIVE";
+  return "GRAPHIC_DESIGN";
+}
+
+const chapterAt = (p: number) => chapterAtTime(p * END);
+
+/** Reduced motion has four jumps, not a timeline; map its scroll to a chapter time. */
+function reducedChapter(p: number): ChapterId {
+  return chapterAtTime(p < 0.75 ? p * 1.45 : p < 0.9 ? 1.5 : 2.1);
 }
 
 function applyAnchor(id: CameraAnchorId) {
@@ -54,8 +61,7 @@ export function StoryController() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     store.setReducedMotion(reduced);
 
-    const setChapter = (p: number) => {
-      const next = chapterAt(p);
+    const setChapter = (p: number, next = chapterAt(p)) => {
       if (useExperienceStore.getState().currentChapter !== next) {
         useExperienceStore.getState().setCurrentChapter(next);
       }
@@ -82,10 +88,12 @@ export function StoryController() {
                 ? "caseFile"
                 : p < 0.75
                   ? "dossierOpen"
-                  : "digitalArchive",
+                  : p < 0.9
+                    ? "digitalArchive"
+                    : "posterWall",
           );
           storyRig.dossierOpen = storyRig.profileReveal = p >= 0.5 && p < 0.75 ? 1 : 0;
-          setChapter(p);
+          setChapter(p, reducedChapter(p));
           showDebug(p);
         },
       });
@@ -154,6 +162,8 @@ export function StoryController() {
     // Read the open dossier, then close it and cross to the archive desk.
     tl.to(storyRig, { dossierOpen: 0, profileReveal: 0, duration: 0.18 }, 1.0);
     travel(["dossierOpen", "digitalArchive"], 1.0, 0.45);
+    // Dwell at the terminal for the disks, then pan up to the poster wall.
+    travel(["digitalArchive", "posterWall"], 1.75, 0.4);
     tl.set({}, {}, END);
 
     return () => {

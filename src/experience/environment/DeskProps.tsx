@@ -1,13 +1,22 @@
 import { type ReactNode, useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { Box3, NearestFilter, Group, Matrix4, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
+import { lampLit, type LampId } from "../lighting/lampState";
 import { DeskSmoke } from "./DeskSmoke";
 import { ContactShadow } from "./ContactShadow";
 import { useBlobTexture } from "./useBlobTexture";
 import { DESK_TOP } from "./worldAnchors";
+
+type Bulb = { material: MeshStandardMaterial; peak: number };
+
+/** Scales a lamp's emissive bulb materials to `level` (0 to 1). */
+function setBulbGlow(bulbs: Bulb[], level: number) {
+  for (const b of bulbs) b.material.emissiveIntensity = b.peak * level;
+}
 
 const CHAMBERED_BULLET = /^Bullet\d+_/;
 
@@ -20,24 +29,40 @@ const CHAMBERED_BULLET = /^Bullet\d+_/;
  * `children` are parented to the prop in the model's own space (e.g. the
  * lamp's light at its bulb), so they follow wherever the prop is placed.
  */
-function DeskProp({ id, children }: { id: AssetId; children?: ReactNode }) {
+export function DeskProp({
+  id,
+  children,
+  at,
+  yaw,
+  lamp,
+}: {
+  id: AssetId;
+  children?: ReactNode;
+  /** Footprint centre x/z in the parent frame, instead of the manifest's. */
+  at?: [number, number];
+  /** Yaw in place of the manifest's. */
+  yaw?: number;
+  /** Which lamp this prop is, so its bulb glows only while that lamp is lit. */
+  lamp?: LampId;
+}) {
   const asset = assetManifest[id];
   const { scene } = useGLTF(asset.url);
 
-  const prop = useMemo(() => {
+  const { prop, bulbs } = useMemo(() => {
+    const bulbs: Bulb[] = [];
     const placed = new Group();
     placed.add(scene.clone(true));
     const [rx, ry, rz] = asset.rotation;
-    placed.rotation.set(rx, ry, rz, "YXZ");
+    placed.rotation.set(rx, yaw ?? ry, rz, "YXZ");
     placed.scale.setScalar(asset.scale);
     placed.updateMatrixWorld(true);
 
     const box = new Box3().setFromObject(placed);
     const centre = box.getCenter(new Vector3());
     placed.position.set(
-      asset.position[0] - centre.x,
+      (at?.[0] ?? asset.position[0]) - centre.x,
       DESK_TOP - box.min.y,
-      asset.position[2] - centre.z,
+      (at?.[1] ?? asset.position[2]) - centre.z,
     );
 
     placed.traverse((o) => {
@@ -66,6 +91,7 @@ function DeskProp({ id, children }: { id: AssetId; children?: ReactNode }) {
             const owned = material.clone();
             // The atlas masks emission to the bulb, leaving the green shade alone.
             owned.emissiveIntensity = Math.max(material.emissiveIntensity, 6);
+            bulbs.push({ material: owned, peak: owned.emissiveIntensity });
             return owned;
           };
           o.material = Array.isArray(o.material)
@@ -74,8 +100,14 @@ function DeskProp({ id, children }: { id: AssetId; children?: ReactNode }) {
         }
       }
     });
-    return placed;
-  }, [scene, asset, id]);
+    return { prop: placed, bulbs };
+  }, [scene, asset, id, at, yaw]);
+
+  // The bulb goes dark with its light.
+  useFrame(() => {
+    if (!lamp) return;
+    setBulbGlow(bulbs, lampLit[lamp]);
+  });
 
   useEffect(
     () => () => {
@@ -207,7 +239,7 @@ export function DeskProps() {
   const reducedMotion = useExperienceStore((s) => s.reducedMotion);
   return (
     <group name="desk-props">
-      <DeskProp id="deskLamp">
+      <DeskProp id="deskLamp" lamp="main">
         <DeskLampLight />
       </DeskProp>
       {DESK_PROPS.map((id) => (

@@ -33,6 +33,8 @@ interface Props {
   insert: DiskPose;
   /** Unit vector pointing out of the drive slot, toward the viewer. */
   outward: Vector3;
+  /** Offset a hovered disk slides by, in the station frame. */
+  pop: Vector3;
   inserted: boolean;
   interactive: boolean;
   onSelect: () => void;
@@ -54,6 +56,7 @@ export function FloppyDisk({
   rest,
   insert,
   outward,
+  pop,
   inserted,
   interactive,
   onSelect,
@@ -117,13 +120,14 @@ export function FloppyDisk({
       dt,
     );
     g.position.copy(c);
-    g.position.y += hover.current * 0.012;
+    g.position.addScaledVector(pop, hover.current);
     g.quaternion.copy(rest.quaternion).slerp(insert.quaternion, smooth(0.2, 0.7, u));
   });
 
   return (
     <group
       ref={group}
+      scale={assetManifest.floppy.scale}
       onClick={(e) => {
         if (!interactive) return;
         e.stopPropagation();

@@ -12,6 +12,7 @@ const GROUPS = ["Development", "UI/UX"] as const;
 export function ArchivePicker() {
   const chapter = useExperienceStore((s) => s.currentChapter);
   const activeId = useExperienceStore((s) => s.activeProjectId);
+  const online = useExperienceStore((s) => s.archiveOnline);
   const setActive = useExperienceStore((s) => s.setActiveProjectId);
   const visible = chapter === "DIGITAL_ARCHIVE";
 
@@ -28,7 +29,8 @@ export function ArchivePicker() {
                 type="button"
                 className={styles.disk}
                 aria-pressed={activeId === p.id}
-                tabIndex={visible ? 0 : -1}
+                tabIndex={visible && online ? 0 : -1}
+                disabled={!online}
                 onClick={() => setActive(activeId === p.id ? null : p.id)}
               >
                 {p.title}

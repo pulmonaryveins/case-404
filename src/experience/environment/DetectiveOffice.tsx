@@ -3,6 +3,7 @@ import { DeskProps } from "./DeskProps";
 import { ArchiveStation } from "./ArchiveStation";
 import { Dossier } from "./Dossier";
 import { EvidenceBoard } from "./EvidenceBoard";
+import { MoonFill } from "./MoonFill";
 import { MoonWindow } from "./MoonWindow";
 import { RoomShell } from "./RoomShell";
 
@@ -18,6 +19,7 @@ export function DetectiveOffice() {
     <group name="detective-office">
       <RoomShell />
       <MoonWindow />
+      <MoonFill />
 
       <group name="main-desk">
         <Model id="desk" />

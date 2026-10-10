@@ -12,7 +12,7 @@ export function OfficeLighting() {
       {/* Neutral-cool night fill, kept low so the lamp reads as the source:
           cool from above, deep charcoal from the floor, so corners and shadow
           interiors stay dark grey rather than crushing to black. */}
-      <hemisphereLight args={["#8e97a6", "#2b2724", 1.22]} />
+      <hemisphereLight args={["#8e97a6", "#2b2724", 0.95]} />
 
       {/* Grounding: soft occlusion under the desk feet, dense at contact and
           fading outward. Static scene, so it renders once (frames={1}). */}
