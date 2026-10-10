@@ -33,6 +33,60 @@ export interface ManifestAsset {
  * are never modified — all normalization is transform-level.
  */
 export const assetManifest = {
+  // Second work desk: the same desk model, to the right of the main desk,
+  // carrying the project archive (vintage PC, floppy disks, parked file rack).
+  archiveDesk: {
+    id: "archiveDesk",
+    url: "/models/case-404/furniture/desk.glb",
+    category: "furniture",
+    preloadPriority: 4,
+    // Local to the station group (ArchiveStation places and turns the group).
+    position: [0, 0, 0],
+    rotation: [0, Math.PI / 2 + 0.035, 0],
+    scale: 0.375,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // 90s_-_00s_pc.glb -> pc-90s.glb (scripts/prepare-pc-90s.mjs: 1024px WebP, no
+  // clearcoat/specular). A textured beige tower, CRT, keyboard and mouse; ~9 cm per
+  // unit and 6.9 x 5.9 x 6.5 units, so 0.088 makes a ~0.6 m wide setup that fits the desk.
+  // Placed by PersonalComputer; measurements live in computerPlacement.ts.
+  pc90s: {
+    id: "pc90s",
+    url: "/models/case-404/workstation/pc-90s.glb",
+    category: "workstation",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.088,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // Three-tier wooden letter tray, authored 1.15 x 0.94 x 2.27: scale 0.3 makes
+  // each tray ~35 cm wide, enough for three floppy disks side by side.
+  fileRack: {
+    id: "fileRack",
+    url: "/models/case-404/furniture/file-rack.glb",
+    category: "furniture",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.3,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // 3.5in floppy, already in metres (9 x 9 x 0.5 cm). Front face is +Z.
+  floppy: {
+    id: "floppy",
+    url: "/models/case-404/workstation/floppy-disk.glb",
+    category: "workstation",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
   desk: {
     id: "desk",
     url: "/models/case-404/furniture/desk.glb",

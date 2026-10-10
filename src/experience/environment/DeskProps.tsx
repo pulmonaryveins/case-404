@@ -1,21 +1,12 @@
 import { type ReactNode, useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import {
-  Box3,
-  NearestFilter,
-  CanvasTexture,
-  Group,
-  Matrix4,
-  Mesh,
-  MeshBasicMaterial,
-  MeshStandardMaterial,
-  SRGBColorSpace,
-  Vector3,
-} from "three";
+import { Box3, NearestFilter, Group, Matrix4, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
 import { DeskSmoke } from "./DeskSmoke";
+import { ContactShadow } from "./ContactShadow";
+import { useBlobTexture } from "./useBlobTexture";
 import { DESK_TOP } from "./worldAnchors";
 
 const CHAMBERED_BULLET = /^Bullet\d+_/;
@@ -127,68 +118,6 @@ const BULLETS: [number, number, number, boolean][] = [
   [-0.43, -2.11, -0.4, false],
   [-0.5, -2.13, 0, true],
 ];
-
-/** Soft, dark radial blob: grounds a small prop where the lamp's map can't. */
-function useBlobTexture() {
-  const texture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 128;
-    const ctx = canvas.getContext("2d")!;
-    const g = ctx.createRadialGradient(64, 64, 6, 64, 64, 62);
-    g.addColorStop(0, "rgba(0,0,0,0.85)");
-    g.addColorStop(0.55, "rgba(0,0,0,0.35)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 128, 128);
-    const t = new CanvasTexture(canvas);
-    t.colorSpace = SRGBColorSpace;
-    return t;
-  }, []);
-  useEffect(() => () => texture.dispose(), [texture]);
-  return texture;
-}
-
-/**
- * A flat contact-shadow blob on the desk. `along` is the footprint's long
- * axis length (along local x before `yaw`), `across` the short one.
- */
-function ContactShadow({
-  at,
-  yaw,
-  along,
-  across,
-  opacity,
-  map,
-}: {
-  at: [number, number];
-  yaw: number;
-  along: number;
-  across: number;
-  opacity: number;
-  map: CanvasTexture;
-}) {
-  const material = useMemo(
-    () =>
-      new MeshBasicMaterial({
-        map,
-        transparent: true,
-        opacity,
-        depthWrite: false,
-        polygonOffset: true,
-        polygonOffsetFactor: -2,
-        toneMapped: false,
-      }),
-    [map, opacity],
-  );
-  useEffect(() => () => material.dispose(), [material]);
-  return (
-    <group position={[at[0], DESK_TOP + 0.0008, at[1]]} rotation={[0, yaw, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={2} material={material}>
-        <planeGeometry args={[along, across]} />
-      </mesh>
-    </group>
-  );
-}
 
 /** Three .357 rounds from the bullets model, scattered behind the revolver. */
 function MagnumBullets() {

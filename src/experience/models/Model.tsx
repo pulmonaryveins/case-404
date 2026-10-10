@@ -5,6 +5,7 @@ import { assetManifest, type AssetId } from "../../assets/assetManifest";
 
 interface Props {
   id: AssetId;
+  castShadow?: boolean;
 }
 
 /**
@@ -14,7 +15,7 @@ interface Props {
  * The scene is cloned per instance so two components never mutate the same
  * cached GLTF graph; materials/geometry stay shared via useGLTF's cache.
  */
-export function Model({ id }: Props) {
+export function Model({ id, castShadow }: Props) {
   const asset = assetManifest[id];
   const { scene } = useGLTF(asset.url);
   const cloned = useMemo(() => scene.clone(true), [scene]);
@@ -24,7 +25,7 @@ export function Model({ id }: Props) {
   useLayoutEffect(() => {
     cloned.traverse((child) => {
       if (child instanceof Mesh) {
-        child.castShadow = asset.castShadow;
+        child.castShadow = castShadow ?? asset.castShadow;
         child.receiveShadow = asset.receiveShadow;
         if (color) {
           // Shared cached material: every instance of this asset gets the same
@@ -36,7 +37,7 @@ export function Model({ id }: Props) {
         }
       }
     });
-  }, [cloned, asset.castShadow, asset.receiveShadow, color]);
+  }, [cloned, asset.castShadow, asset.receiveShadow, castShadow, color]);
 
   return (
     <primitive

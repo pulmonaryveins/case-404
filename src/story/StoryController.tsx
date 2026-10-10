@@ -14,15 +14,20 @@ import { CatmullRomCurve3, Vector3 } from "three";
  * for two camera moves and the folder opening; 800 made the same journey
  * feel like it was being paid out rather than travelled.
  */
-const STAGE_VH = 600;
+const STAGE_VH = 850;
 const SCRUB_SECONDS = 0.45;
 
 const debug = import.meta.env.DEV && new URLSearchParams(window.location.search).has("story");
 
+/** Timeline length in timeline seconds; chapters are read off `p * END`. */
+const END = 1.45;
+
 function chapterAt(p: number): ChapterId {
-  if (p < 0.16) return "CASE_OPENED";
-  if (p < 0.5) return "EVIDENCE_BOARD";
-  return "SUBJECT_PROFILE";
+  const time = p * END;
+  if (time < 0.16) return "CASE_OPENED";
+  if (time < 0.5) return "EVIDENCE_BOARD";
+  if (time < 1.1) return "SUBJECT_PROFILE";
+  return "DIGITAL_ARCHIVE";
 }
 
 function applyAnchor(id: CameraAnchorId) {
@@ -70,8 +75,16 @@ export function StoryController() {
         start: "top top",
         end: "bottom bottom",
         onUpdate: ({ progress: p }) => {
-          applyAnchor(p < 0.33 ? "roomOverview" : p < 0.66 ? "caseFile" : "dossierOpen");
-          storyRig.dossierOpen = storyRig.profileReveal = p < 0.66 ? 0 : 1;
+          applyAnchor(
+            p < 0.25
+              ? "roomOverview"
+              : p < 0.5
+                ? "caseFile"
+                : p < 0.75
+                  ? "dossierOpen"
+                  : "digitalArchive",
+          );
+          storyRig.dossierOpen = storyRig.profileReveal = p >= 0.5 && p < 0.75 ? 1 : 0;
           setChapter(p);
           showDebug(p);
         },
@@ -138,7 +151,10 @@ export function StoryController() {
     // blank plaster for most of the descent.
     travel(["caseFile", "leaveBoard", "subjectProfile", "dossierOpen"], 0.48, 0.42);
     tl.to(storyRig, { dossierOpen: 1, profileReveal: 1, duration: 0.22 }, 0.74);
-    tl.set({}, {}, 1);
+    // Read the open dossier, then close it and cross to the archive desk.
+    tl.to(storyRig, { dossierOpen: 0, profileReveal: 0, duration: 0.18 }, 1.0);
+    travel(["dossierOpen", "digitalArchive"], 1.0, 0.45);
+    tl.set({}, {}, END);
 
     return () => {
       tl.scrollTrigger?.kill();

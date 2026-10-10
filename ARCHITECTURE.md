@@ -54,9 +54,11 @@ teleporting between unrelated scenes where travel can carry the transition.
   dossier, a few papers, telephone, desk lamp, pens, cigarette. Never on
   the desk: project disks, merch, certificates, scattered evidence markers,
   posters, a computer.
-- **Zone B — Digital Archive.** IBM PCjr (official Sketchfab embed only —
-  see `assets-source/case-404/workstation/computer/ibm-pcjr-sketchfab.md`),
-  plus archive disks/drives. Separate workstation deeper in the office,
+- **Zone B — Digital Archive.** A 90s beige PC (`pc-90s.glb`, prepared with
+  `scripts/prepare-pc-90s.mjs`; it replaced an earlier IBM PCjr and a flat-coloured
+  PC) plus floppy disks, one per project. A second desk
+  (same model as the main one) turned ~38° in the back-right corner, with an
+  angled wall behind it (`ArchiveStation`, `RoomShell`). Separate workstation deeper in the office,
   **not** on the main desk. Holds **Development, UI/UX, Video Editing**
   only. Interaction concept: dark computer → disk/drive selected → boot →
   terminal → ACCESS GRANTED → archive (`> DEVELOPMENT  > UI / UX  > VIDEO
@@ -384,7 +386,7 @@ only worth adopting if production asset weight actually demands it later.
 - **Phase 3** — evidence board / CASE 404 content.
 - **Phase 4** — scroll choreography + cinematic camera travel.
 - **Phase 5** — dossier / About / Education / Experience.
-- **Phase 6** — Digital Archive (IBM PCjr embed; Development, UI/UX, Video).
+- **Phase 6** — Digital Archive (90s PC and floppy disks; Development, UI/UX, Video).
 - **Phase 7** — Creative Evidence (posters, merch) + Credential Evidence
   (needs user's certificate-holder asset) + contact.
 - **Phase 8** — case solved.

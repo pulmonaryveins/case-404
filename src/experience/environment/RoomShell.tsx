@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Mesh, RepeatWrapping, type MeshStandardMaterial } from "three";
 import { Model } from "../models/Model";
+import { ARCHIVE_YAW, worldAnchors } from "./worldAnchors";
 
 const FLOOR_URL = "/models/case-404/environment/architecture/floors/dark-wood-floor.glb";
 const FLOOR_SIZE = 12;
@@ -35,6 +36,9 @@ export function RoomShell() {
         <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} />
       </mesh>
 
+      <CornerWall />
+      <CornerWall side="left" />
+
       {/* Temporary: right side wall closes the frame edge (the left wall, with the
           window, is in MoonWindow). */}
       <mesh rotation={[0, -Math.PI / 2, 0]} position={[3.6, 1.72, -1]} receiveShadow>
@@ -46,6 +50,49 @@ export function RoomShell() {
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 3.44, -1.5]}>
         <planeGeometry args={[12, 12]} />
         <meshStandardMaterial color="#1d1917" roughness={1} metalness={0} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * An angled wall across the back-right corner, parallel to the archive desk's
+ * back edge (6 cm behind it), so the desk sits flush against a wall instead of
+ * floating in front of a corner. Two plaster modules, as on the back wall; its
+ * ends run into the back wall and the right wall. Built in the back wall's
+ * own frame (front face at local z -3.80) and then turned and moved.
+ */
+const DESK_HALF_DEPTH = 0.416;
+const DESK_WALL_GAP = 0.06;
+/** Slides the wall along itself so it spans corner to corner evenly. */
+const CORNER_SHIFT = 0.08;
+
+function CornerWall({ side = "right" }: { side?: "left" | "right" }) {
+  const mirror = side === "left" ? -1 : 1;
+  const station = worldAnchors.digitalArchive!;
+  const n = [Math.sin(ARCHIVE_YAW), Math.cos(ARCHIVE_YAW)];
+  const along = [n[1], -n[0]];
+  const back = DESK_HALF_DEPTH + DESK_WALL_GAP;
+  // A point on the wall's front face, then the group origin that puts the
+  // module frame's front plane (local z -3.80) there.
+  const cx = station[0] - n[0] * back + along[0] * CORNER_SHIFT;
+  const cz = station[2] - n[1] * back + along[1] * CORNER_SHIFT;
+  return (
+    <group
+      name={`${side}-corner-wall`}
+      position={[mirror * (cx + 3.8 * n[0]), 0, cz + 3.8 * n[1]]}
+      rotation={[0, mirror * ARCHIVE_YAW, 0]}
+    >
+      {[-0.5, 0.5].map((i) => (
+        <group key={i} position={[i * WALL_MODULE_WIDTH, 0, 0]}>
+          {/* Left corner is a shadow receiver, not an occluder: retain the
+              existing moon/window projection through the original opening. */}
+          <Model id="plasterWall" castShadow={side === "right"} />
+        </group>
+      ))}
+      <mesh position={[0, 0.07, -3.79]} castShadow={side === "right"} receiveShadow>
+        <boxGeometry args={[2 * WALL_MODULE_WIDTH, 0.14, 0.02]} />
+        <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} />
       </mesh>
     </group>
   );

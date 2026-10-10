@@ -73,11 +73,14 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     fov: DEFAULT_CAMERA.fov,
   },
   // Deeper-office zones: placeholders until each zone is blocked out.
+  // Second desk in the back-right corner, turned ~38 degrees toward the room
+  // (STATION_POS / STATION_YAW in ArchiveStation). Looks along the desk's own
+  // front normal, the PC on the left and the floppy disks on the right.
   digitalArchive: {
     id: "digitalArchive",
-    position: [-2, 1.4, 2],
-    target: [-2, 1, 0],
-    fov: DEFAULT_CAMERA.fov,
+    position: [1.86, 1.62, -1.89],
+    target: [2.64, 0.88, -2.87],
+    fov: 40,
   },
   creativeEvidence: {
     id: "creativeEvidence",

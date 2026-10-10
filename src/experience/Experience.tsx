@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CanvasErrorBoundary } from "../components/common/CanvasErrorBoundary";
 import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
+import { ArchivePicker } from "./ArchivePicker";
 import { LoadingOverlay } from "./LoadingOverlay";
 import styles from "./Experience.module.css";
 
@@ -20,6 +21,7 @@ export function Experience() {
           }}
         />
       </CanvasErrorBoundary>
+      <ArchivePicker />
       <LoadingOverlay done={ready} />
     </div>
   );

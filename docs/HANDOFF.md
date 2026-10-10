@@ -94,12 +94,10 @@ badge. Credit **Freepoly.org** for the IBM PCjr.
 
 ## On hold
 
-- **IBM PCjr evidence station** (right side of the room, Zone B). Reviewed:
-  downloadable copy is in `assets-source/case-404/workstation/computer/ibm-pcjr.glb`;
-  a 37k-tri preview is at `public/models/case-404/workstation/ibm-pcjr.glb` but is
-  **not placed**. Confirmed customisable per material (case, keyboard, cables) and
-  the CRT screen takes a canvas texture (needs planar UVs and a vertical flip).
-  Model is tagged NoAI. Confirm the download licence first.
+- **IBM PCjr** is no longer used: Zone B now has a 90s PC (`pc-90s.glb`, from
+  `assets-source/90s_-_00s_pc.glb` via `scripts/prepare-pc-90s.mjs`) on a second
+  desk in the back-right corner. Its author/licence still needs to go in
+  `ASSET_CREDITS.md`.
 
 ## Open items / ideas
 

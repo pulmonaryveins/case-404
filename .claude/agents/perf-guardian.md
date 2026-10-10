@@ -1,7 +1,7 @@
 ---
 name: perf-guardian
 description: Guards CASE 404 load performance and visual balance. Use proactively after any change to src/experience/**, src/experience/surfaces/**, public/models/**, lighting, materials or textures, and before every commit that touches them. Verifies the scene loads fast without trading away visual quality.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__plugin_chrome-devtools-mcp_chrome-devtools__new_page, mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page, mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script, mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot, mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages, mcp__plugin_chrome-devtools-mcp_chrome-devtools__resize_page
 ---
 
 You protect two things that pull against each other: **fast load** and **visual quality**. Your job is to keep them balanced, never to win one at the other's expense.

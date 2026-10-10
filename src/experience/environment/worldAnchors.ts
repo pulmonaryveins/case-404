@@ -33,11 +33,18 @@ export type WorldAnchorId =
  */
 export const DESK_TOP = 0.778;
 
+/**
+ * Turn of the archive desk (and the corner wall behind it), radians about Y.
+ * Negative turns its front from +Z toward the room's centre (-X). Keep in
+ * sync with the `digitalArchive` camera anchor.
+ */
+export const ARCHIVE_YAW = -0.67;
+
 export const worldAnchors: Record<WorldAnchorId, Vector3Tuple | null> = {
   mainDesk: [0.05, 0, -2.05],
   evidenceBoard: [0, 1.46, -3.74],
   dossier: [0.52, 0.782, -1.85],
-  digitalArchive: null,
+  digitalArchive: [2.5, 0, -2.85],
   creativeEvidence: null,
   credentials: null,
   contact: null,

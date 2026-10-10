@@ -1,5 +1,6 @@
 import { Model } from "../models/Model";
 import { DeskProps } from "./DeskProps";
+import { ArchiveStation } from "./ArchiveStation";
 import { Dossier } from "./Dossier";
 import { EvidenceBoard } from "./EvidenceBoard";
 import { MoonWindow } from "./MoonWindow";
@@ -10,7 +11,7 @@ import { RoomShell } from "./RoomShell";
  * as one workspace from the front.
  *
  * The window on the left wall lets cool moonlight in. The right side is
- * reserved for the IBM PCjr evidence station (on hold).
+ * taken by the archive desk, turned in the back-right corner.
  */
 export function DetectiveOffice() {
   return (
@@ -23,6 +24,8 @@ export function DetectiveOffice() {
         <Dossier />
         <DeskProps />
       </group>
+
+      <ArchiveStation />
 
       <group name="evidence-board">
         <EvidenceBoard />
