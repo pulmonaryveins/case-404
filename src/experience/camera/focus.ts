@@ -67,11 +67,16 @@ export function useFocusable(enabled: () => boolean, options?: FocusOptions) {
   const aspect = useThree((s) => s.size.width / s.size.height);
   return {
     onClick: (e: ThreeEvent<MouseEvent>) => {
-      if (!enabled()) return;
+      // Already in a close-up: let the click through, it zooms back out.
+      if (!enabled() || useExperienceStore.getState().screenFocused) return;
       e.stopPropagation();
       useCursor.getState().clear();
       focusOnFlat(e.object, camera, aspect, options);
     },
-    ...hoverCursor("inspect", options?.label ?? "Inspect", enabled),
+    ...hoverCursor(
+      "inspect",
+      options?.label ?? "Inspect",
+      () => enabled() && !useExperienceStore.getState().screenFocused,
+    ),
   };
 }

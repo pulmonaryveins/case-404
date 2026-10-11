@@ -18,13 +18,15 @@ import { storyRig } from "../../story/storyRig";
 import { Model } from "../models/Model";
 import { paintArchiveScreen, SCREEN_H, SCREEN_W, type ScreenView } from "../surfaces/paintArchive";
 import { ContactShadow } from "./ContactShadow";
-import { STACK_POP, stackSlot, type StackRow } from "./diskStacks";
+import { DiskRack } from "./DiskRack";
+import { rackSlot, type RackColumn } from "./diskRackLayout";
 import { DesignPosters } from "./DesignPosters";
 import { DeskProp } from "./DeskProps";
 import { DeskLampLight } from "../lighting/DeskLampLight";
 import { FloppyDisk, INSERT_SECONDS, type DiskPose } from "./FloppyDisk";
 import { PersonalComputer } from "./PersonalComputer";
 import { PolaroidPhotos } from "./PolaroidPhotos";
+import { PowerButton } from "./PowerButton";
 import { PC_MODEL, placeComputer } from "./computerPlacement";
 import { useBlobTexture } from "./useBlobTexture";
 import { ARCHIVE_YAW, DESK_TOP, worldAnchors } from "./worldAnchors";
@@ -59,6 +61,60 @@ function repaintScreen(
   const max = paintArchiveScreen(screen.canvas, view, scroll);
   screen.map.needsUpdate = true;
   return max;
+}
+
+/** Length of the CRT switch-off. */
+const SHUTDOWN_MS = 1100;
+
+/**
+ * One frame of a CRT switching off, drawn over the last picture: the image
+ * squeezes to a bright horizontal line, the line shrinks to a dot, and the
+ * dot fades, as the tube's beam collapses.
+ */
+function paintShutdown(
+  screen: { canvas: HTMLCanvasElement; map: CanvasTexture },
+  last: HTMLCanvasElement,
+  t: number,
+) {
+  const ctx = screen.canvas.getContext("2d")!;
+  const W = SCREEN_W;
+  const H = SCREEN_H;
+  const cx = W / 2;
+  const cy = H / 2;
+  const easeIn = (x: number) => x * x * x;
+  ctx.save();
+  ctx.fillStyle = "#020403";
+  ctx.fillRect(0, 0, W, H);
+  if (t < 0.45) {
+    const k = easeIn(t / 0.45);
+    const h = Math.max(4, H * (1 - k));
+    const w = W * (1 - 0.06 * k);
+    ctx.drawImage(last, cx - w / 2, cy - h / 2, w, h);
+    // The picture brightens as the beam's energy concentrates.
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.7 * k;
+    ctx.fillStyle = "#9effc8";
+    ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
+  } else if (t < 0.75) {
+    const k = easeIn((t - 0.45) / 0.3);
+    const w = Math.max(8, W * 0.94 * (1 - k));
+    ctx.fillStyle = "rgba(120, 255, 180, 0.35)";
+    ctx.fillRect(cx - w / 2, cy - 7, w, 14);
+    ctx.fillStyle = "#eefff4";
+    ctx.fillRect(cx - w / 2, cy - 2, w, 4);
+  } else {
+    const k = (t - 0.75) / 0.25;
+    const a = 1 - k;
+    const r = 22 * (1 - 0.5 * k);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, `rgba(245, 255, 248, ${a})`);
+    g.addColorStop(0.35, `rgba(120, 255, 180, ${0.6 * a})`);
+    g.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+  }
+  ctx.restore();
+  screen.map.needsUpdate = true;
 }
 
 /** The terminal's scroll, in canvas px: where it is, where it is heading, how far it can go. */
@@ -171,11 +227,48 @@ export function ArchiveStation() {
     return { canvas, map, material };
   }, []);
   // The terminal is off until the camera reaches it, then boots; leaving puts it
-  // back to sleep and ejects the disk.
-  const power = useRef({ mode: "off" as "off" | "boot" | "on", since: 0, last: 0 });
+  // back to sleep and ejects the disk. The red power button switches it off
+  // (with the CRT collapse) and on again; switched off, it stays off, even
+  // when the camera leaves and comes back, until it is switched on.
+  const power = useRef({
+    mode: "off" as "off" | "boot" | "on" | "shutdown",
+    since: 0,
+    last: 0,
+    userOff: false,
+    picture: null as HTMLCanvasElement | null,
+  });
+  const togglePower = () => {
+    const p = power.current;
+    if (p.mode === "shutdown") return;
+    if (p.mode === "off") {
+      p.userOff = false; // boots on the next frame
+      return;
+    }
+    p.userOff = true;
+    p.mode = "shutdown";
+    p.since = performance.now();
+    // Keep the last picture to collapse.
+    const copy = document.createElement("canvas");
+    copy.width = SCREEN_W;
+    copy.height = SCREEN_H;
+    copy.getContext("2d")!.drawImage(screen.canvas, 0, 0);
+    p.picture = copy;
+    setOnline(false);
+    setActive(null);
+    if (useExperienceStore.getState().screenFocused) setFocused(false);
+  };
   useFrame(() => {
     const p = power.current;
     const now = performance.now();
+    if (p.mode === "shutdown") {
+      const t = reducedMotion ? 1 : (now - p.since) / SHUTDOWN_MS;
+      if (t >= 1 || !p.picture) {
+        p.mode = "off";
+        p.picture = null;
+        repaintScreen(screen, { kind: "off" });
+      } else paintShutdown(screen, p.picture, t);
+      return;
+    }
     if (!interactive) {
       if (p.mode !== "off") {
         p.mode = "off";
@@ -187,6 +280,7 @@ export function ArchiveStation() {
       return;
     }
     if (p.mode === "off") {
+      if (p.userOff) return;
       p.mode = "boot";
       p.since = now;
       p.last = 0;
@@ -351,7 +445,11 @@ export function ArchiveStation() {
 
   const poses = useMemo(() => {
     const pc = placeComputer(PC_POS, DESK_TOP, PC_FACING);
-    const insertQuat = yawQuat(PC_FACING).multiply(FLAT);
+    // Turned half round in its own plane, as it stands in the rack, so the
+    // disk does not spin about its face on the way to the drive.
+    const insertQuat = yawQuat(PC_FACING)
+      .multiply(FLAT)
+      .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI)));
     const insertCentre = pc.insertAt;
     // A soft footprint under the terminal, in the station frame.
     const scale = assetManifest.archiveComputer.scale;
@@ -369,12 +467,8 @@ export function ArchiveStation() {
 
     const perRow = { Development: 0, "UI/UX": 0, "Video Editing": 0 };
     const disks = archiveProjects.map((project, index) => {
-      const row = project.category as StackRow;
-      const slot = perRow[row]++;
-      const rest: DiskPose = {
-        position: stackSlot(row, slot),
-        quaternion: FLAT,
-      };
+      const row = project.category as RackColumn;
+      const rest: DiskPose = rackSlot(row, perRow[row]++);
       return { project, index, rest, insert: { position: insertCentre, quaternion: insertQuat } };
     });
     return { disks, outward: pc.outward, shadows, matrix: pc.matrix };
@@ -391,6 +485,19 @@ export function ArchiveStation() {
         screen={screen.material}
         onScreenClick={interactive && online && !focused ? zoomToScreen : undefined}
       />
+      <group matrix={poses.matrix} matrixAutoUpdate={false}>
+        <PowerButton
+          at={PC_MODEL.power}
+          level={() => (power.current.mode === "on" || power.current.mode === "boot" ? 1 : 0)}
+          enabled={() =>
+            interactive &&
+            power.current.mode !== "shutdown" &&
+            !useExperienceStore.getState().screenFocused
+          }
+          label={() => (power.current.mode === "off" ? "Power on" : "Power off")}
+          onPress={togglePower}
+        />
+      </group>
       {poses.shadows.map((shadow, i) => (
         <ContactShadow key={i} {...shadow} map={blob} />
       ))}
@@ -401,6 +508,7 @@ export function ArchiveStation() {
           around it. */}
       <DeskProp id="polaroidCamera" at={POLAROID_AT} yaw={-0.5} />
       <PolaroidPhotos interactive={interactive} />
+      <DiskRack />
       <DeskProp id="deskLamp" lamp="archive" at={LAMP_AT} yaw={LAMP_YAW}>
         <DeskLampLight lamp="archive" shadowSize={1024} strength={0.35} />
       </DeskProp>
@@ -413,7 +521,6 @@ export function ArchiveStation() {
           rest={rest}
           insert={insert}
           outward={poses.outward}
-          pop={STACK_POP}
           inserted={active?.id === project.id}
           interactive={interactive && online}
           onSelect={() => setActive(active?.id === project.id ? null : project.id)}

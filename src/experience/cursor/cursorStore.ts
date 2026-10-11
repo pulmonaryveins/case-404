@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
 /** What the pointer is over, so the cursor can show what a click will do. */
-export type CursorKind = "default" | "inspect" | "switch" | "insert" | "eject" | "select";
+export type CursorKind =
+  "default" | "inspect" | "zoomOut" | "switch" | "insert" | "eject" | "select";
 
 interface CursorState {
   kind: CursorKind;

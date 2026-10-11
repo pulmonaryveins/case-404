@@ -25,6 +25,12 @@ export const PC_MODEL = {
    */
   door: { x: 0.6045, frontZ: 0.4069 },
   slot: { y: 0.6, w: 0.27, h: 0.016 },
+  /**
+   * The red power light on the case front, below the screen and right of
+   * centre. Painted into the texture: located from its red pixels (UV 0.880,
+   * 0.304) and mapped through the mesh to this point.
+   */
+  power: { x: 0.2701, y: 0.3179, z: 0.3846 },
   /** Footprint on the desk: centre and size (w along x, d along z). */
   caseFoot: { x: 0.0735, z: 0.261, w: 1.561, d: 1.434 },
 };

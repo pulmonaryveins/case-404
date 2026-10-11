@@ -34,8 +34,6 @@ interface Props {
   insert: DiskPose;
   /** Unit vector pointing out of the drive slot, toward the viewer. */
   outward: Vector3;
-  /** Offset a hovered disk slides by, in the station frame. */
-  pop: Vector3;
   inserted: boolean;
   interactive: boolean;
   onSelect: () => void;
@@ -59,7 +57,6 @@ export function FloppyDisk({
   rest,
   insert,
   outward,
-  pop,
   inserted,
   interactive,
   onSelect,
@@ -74,8 +71,6 @@ export function FloppyDisk({
   }, [scene]);
   const group = useRef<Group>(null);
   const t = useRef(0);
-  const hover = useRef(0);
-  const hovered = useRef(false);
 
   const label = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -116,14 +111,7 @@ export function FloppyDisk({
     c.copy(rest.position).lerp(a, smooth(0, 0.3, u));
     c.lerp(b, smooth(0.3, 0.7, u));
     c.lerp(insert.position, smooth(0.7, 1, u));
-    hover.current = MathUtils.damp(
-      hover.current,
-      hovered.current && interactive && u === 0 ? 1 : 0,
-      12,
-      dt,
-    );
     g.position.copy(c);
-    g.position.addScaledVector(pop, hover.current);
     g.quaternion.copy(rest.quaternion).slerp(insert.quaternion, smooth(0.2, 0.7, u));
   });
 
@@ -142,18 +130,20 @@ export function FloppyDisk({
       onPointerOver={(e) => {
         if (!interactive) return;
         e.stopPropagation();
-        hovered.current = true;
         useCursor
           .getState()
           .set(inserted ? "eject" : "insert", inserted ? "Eject disk" : "Insert disk");
       }}
-      onPointerOut={() => {
-        hovered.current = false;
-        useCursor.getState().clear();
-      }}
+      onPointerOut={() => useCursor.getState().clear()}
     >
       <primitive object={body} />
-      <mesh position={[LABEL.x, LABEL.y, LABEL.z + 0.0003]} material={label}>
+      {/* The rack stands disks turned half round (label to the top); turn the
+          label back so its text reads upright. */}
+      <mesh
+        position={[LABEL.x, LABEL.y, LABEL.z + 0.0003]}
+        rotation={[0, 0, Math.PI]}
+        material={label}
+      >
         <planeGeometry args={[LABEL.w, LABEL.h]} />
       </mesh>
     </group>
