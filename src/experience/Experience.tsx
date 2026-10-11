@@ -3,6 +3,7 @@ import { CanvasErrorBoundary } from "../components/common/CanvasErrorBoundary";
 import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { ScreenFocusControls } from "./ScreenFocusControls";
+import { SceneNav } from "./SceneNav";
 import { CustomCursor } from "./cursor/CustomCursor";
 import styles from "./Experience.module.css";
 
@@ -23,6 +24,7 @@ export function Experience() {
         />
       </CanvasErrorBoundary>
       <ScreenFocusControls />
+      <SceneNav />
       <CustomCursor />
       <LoadingOverlay done={ready} />
     </div>

@@ -132,8 +132,9 @@ function useRackWood() {
     mat.roughnessMap = own(mat.roughnessMap);
     mat.metalnessMap = own(mat.metalnessMap);
     mat.aoMap = null;
-    // The boards are very dark; lift them to a warm walnut close to the desks.
-    mat.color.setRGB(2.4, 1.75, 1.25);
+    // The boards are very dark; lift them a little, to a dark walnut that sits
+    // with the desk under the same light (a stronger lift glowed beside it).
+    mat.color.setRGB(1.35, 0.98, 0.72);
     mat.roughness = 0.85;
     return mat;
   }, [scene]);
@@ -219,6 +220,7 @@ export function DiskRack() {
       bumpMap: bump,
       bumpScale: 0.0015,
       roughness: 0.92,
+      color: "#a39d90",
     });
     return { map, bump, material };
   }, []);

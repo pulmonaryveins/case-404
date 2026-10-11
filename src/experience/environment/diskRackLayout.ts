@@ -24,7 +24,7 @@ export const COLUMN_TAGS: Record<RackColumn, string> = {
 };
 
 /** Where the rack's front-centre sits on the desk (station frame). */
-export const RACK_AT = new Vector3(0.17, DESK_TOP, 0.04);
+export const RACK_AT = new Vector3(0.17, DESK_TOP, -0.01);
 
 /** Disk: the floppy model is 9 cm square, 4 mm thick, shown at its manifest scale. */
 export const DISK = 0.09 * assetManifest.floppy.scale;

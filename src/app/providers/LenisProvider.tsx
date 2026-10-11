@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
 import { gsap, registerGsap, ScrollTrigger } from "../../lib/gsap";
 import { useExperienceStore } from "../../store/useExperienceStore";
+import { storyNav } from "../../story/storyNav";
 
 interface Props {
   children: ReactNode;
@@ -21,6 +22,7 @@ export function LenisProvider({ children }: Props) {
       wheelMultiplier: 1,
       smoothWheel: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     });
+    storyNav.lenis = lenis;
     // ScrollTrigger reads Lenis's smoothed scroll, not raw wheel input.
     lenis.on("scroll", ScrollTrigger.update);
 
@@ -42,6 +44,7 @@ export function LenisProvider({ children }: Props) {
       unsubscribe();
       gsap.ticker.remove(onTick);
       lenis.destroy();
+      if (storyNav.lenis === lenis) storyNav.lenis = null;
     };
   }, []);
 

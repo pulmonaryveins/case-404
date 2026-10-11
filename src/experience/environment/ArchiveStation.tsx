@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { PointLight, SpotLight } from "three";
+import { useEffect, useMemo, useRef } from "react";
+import type { PointLight } from "three";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import {
   CanvasTexture,
   Euler,
   MathUtils,
-  Object3D,
   MeshBasicMaterial,
   Quaternion,
   SRGBColorSpace,
@@ -27,6 +26,7 @@ import { FloppyDisk, INSERT_SECONDS, type DiskPose } from "./FloppyDisk";
 import { PersonalComputer } from "./PersonalComputer";
 import { PolaroidPhotos } from "./PolaroidPhotos";
 import { PowerButton } from "./PowerButton";
+import { WallE } from "./WallE";
 import { PC_MODEL, placeComputer } from "./computerPlacement";
 import { useBlobTexture } from "./useBlobTexture";
 import { ARCHIVE_YAW, DESK_TOP, worldAnchors } from "./worldAnchors";
@@ -46,7 +46,11 @@ const PC_POS = new Vector3(-0.4, DESK_TOP, -0.03);
 const PC_FACING = 0.1;
 /** Lamp footprint centre (station frame) and yaw: its shade faces the camera. */
 const LAMP_AT: [number, number] = [0.52, -0.15];
-const LAMP_YAW = 5.8;
+// The shade faces the camera, a little to the left. The light is aimed further
+// left than the shade faces (in the lamp's own space: less to the right, more
+// forward), so it still reaches the disk rack and the terminal.
+const LAMP_YAW = 5.5;
+const LAMP_AIM: [number, number, number] = [0.02, -0.12, 0.4];
 /** Polaroid camera footprint centre (station frame). */
 const POLAROID_AT: [number, number] = [0.62, 0.07];
 const FLAT = new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, 0));
@@ -65,6 +69,14 @@ function repaintScreen(
 
 /** Length of the CRT switch-off. */
 const SHUTDOWN_MS = 1100;
+
+/**
+ * Shortest gap between screen repaints while it scrolls, plays a clip or
+ * switches off. Every repaint re-uploads the whole 1024 x 683 screen texture
+ * to the GPU; ~30 a second is smooth on a CRT and half the cost of every frame.
+ */
+const PAINT_MS = 33;
+const paintClock = { last: 0 };
 
 /**
  * One frame of a CRT switching off, drawn over the last picture: the image
@@ -136,29 +148,17 @@ const KEY_STEP = 90;
 /** Seconds of boot sequence after the camera reaches the archive desk. */
 const BOOT_MS = 4200;
 
-/** Chapters where the camera is at the archive desk or its poster wall. */
-const AT_ARCHIVE = ["DIGITAL_ARCHIVE", "GRAPHIC_DESIGN"];
-const KEY = 1.1;
 const SCREEN_GLOW = 0.3;
 
 /**
- * Desk lighting: a soft, shadowless warm key from in front and above, and a
- * faint phosphor-green spill from the CRT. The key fades in only while the
- * camera is here, so this corner does not outshine the main desk in the
- * opening shot; the green spill exists only while the terminal is on.
- * Both keep a fixed light count (intensity 0, never unmounted) so switching
- * never recompiles the room's materials.
+ * Desk lighting: a faint phosphor-green spill from the CRT, which exists only
+ * while the terminal is on. It keeps a fixed light count (intensity 0, never
+ * unmounted) so switching never recompiles the room's materials.
  */
 function StationLights() {
-  const key = useRef<SpotLight>(null);
   const glow = useRef<PointLight>(null);
-  const [target] = useState(() => new Object3D());
   useFrame((_, dt) => {
-    const { currentChapter, archiveOnline } = useExperienceStore.getState();
-    if (key.current) {
-      const to = AT_ARCHIVE.includes(currentChapter) ? KEY : 0;
-      key.current.intensity = MathUtils.damp(key.current.intensity, to, 2, dt);
-    }
+    const { archiveOnline } = useExperienceStore.getState();
     if (glow.current) {
       const to = archiveOnline ? SCREEN_GLOW : 0;
       glow.current.intensity = MathUtils.damp(glow.current.intensity, to, 3, dt);
@@ -166,17 +166,6 @@ function StationLights() {
   });
   return (
     <>
-      <primitive object={target} position={[0.05, DESK_TOP, -0.05]} />
-      <spotLight
-        ref={key}
-        position={[0.1, 1.45, 1.1]}
-        target={target}
-        color="#ffd9aa"
-        intensity={0}
-        decay={0}
-        angle={0.75}
-        penumbra={1}
-      />
       <pointLight
         ref={glow}
         position={[PC_POS.x - 0.1, DESK_TOP + 0.45, PC_POS.z + 0.45]}
@@ -266,7 +255,10 @@ export function ArchiveStation() {
         p.mode = "off";
         p.picture = null;
         repaintScreen(screen, { kind: "off" });
-      } else paintShutdown(screen, p.picture, t);
+      } else if (now - p.last >= PAINT_MS) {
+        p.last = now;
+        paintShutdown(screen, p.picture, t);
+      }
       return;
     }
     if (!interactive) {
@@ -360,7 +352,14 @@ export function ArchiveStation() {
     terminalScroll.current = MathUtils.damp(terminalScroll.current, terminalScroll.target, 14, dt);
     if (Math.abs(terminalScroll.current - terminalScroll.target) < 0.3)
       terminalScroll.current = terminalScroll.target;
-    if (!online || (!playing && terminalScroll.current === before)) return;
+    const moved = terminalScroll.current !== before;
+    if (!online || (!playing && !moved)) return;
+    // Throttled, except the frame the scroll comes to rest on, so it never
+    // stops a step short.
+    const now = performance.now();
+    const resting = !playing && terminalScroll.current === terminalScroll.target;
+    if (now - paintClock.last < PAINT_MS && !resting) return;
+    paintClock.last = now;
     terminalScroll.max = repaintScreen(
       screen,
       { kind: "menu", active, projects: archiveProjects, video: playing ? el : undefined },
@@ -471,7 +470,11 @@ export function ArchiveStation() {
       const rest: DiskPose = rackSlot(row, perRow[row]++);
       return { project, index, rest, insert: { position: insertCentre, quaternion: insertQuat } };
     });
-    return { disks, outward: pc.outward, shadows, matrix: pc.matrix };
+    // Top of the terminal's case, where Wall-E stands.
+    const top = new Vector3(PC_MODEL.topSpot.x, PC_MODEL.max.y, PC_MODEL.topSpot.z).applyMatrix4(
+      pc.matrix,
+    );
+    return { disks, outward: pc.outward, shadows, matrix: pc.matrix, top };
   }, []);
 
   return (
@@ -509,8 +512,9 @@ export function ArchiveStation() {
       <DeskProp id="polaroidCamera" at={POLAROID_AT} yaw={-0.5} />
       <PolaroidPhotos interactive={interactive} />
       <DiskRack />
+      <WallE at={poses.top} yaw={PC_FACING - 0.5} />
       <DeskProp id="deskLamp" lamp="archive" at={LAMP_AT} yaw={LAMP_YAW}>
-        <DeskLampLight lamp="archive" shadowSize={1024} strength={0.35} />
+        <DeskLampLight lamp="archive" shadowSize={1024} strength={0.6} aim={LAMP_AIM} />
       </DeskProp>
 
       {poses.disks.map(({ project, index, rest, insert }) => (

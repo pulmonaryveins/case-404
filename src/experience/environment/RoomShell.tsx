@@ -1,17 +1,16 @@
 import { useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import {
-  type BufferGeometry,
   CylinderGeometry,
   DoubleSide,
   Mesh,
+  MeshStandardMaterial,
   PlaneGeometry,
   RepeatWrapping,
-  type MeshStandardMaterial,
 } from "three";
-import { assetManifest } from "../../assets/assetManifest";
 import { Model } from "../models/Model";
 import { ARCHIVE_YAW, worldAnchors } from "./worldAnchors";
+import { plasterUVs, usePlaster } from "./plaster";
 
 const FLOOR_URL = "/models/case-404/environment/architecture/floors/dark-wood-floor.glb";
 const FLOOR_SIZE = 12;
@@ -40,10 +39,7 @@ export function RoomShell() {
 
       {/* Temporary: painted skirting board along the back wall (none of the
           architecture assets includes one). */}
-      <mesh position={[0, 0.07, -3.79]} castShadow receiveShadow>
-        <boxGeometry args={[7.2, 0.14, 0.02]} />
-        <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} />
-      </mesh>
+      <Skirting length={7.2} />
 
       <CornerWall />
       <CornerWall side="left" />
@@ -95,47 +91,9 @@ function CornerWall({ side = "right" }: { side?: "left" | "right" }) {
           <Model id="plasterWall" castShadow={side === "right"} />
         </group>
       ))}
-      <mesh position={[0, 0.07, -3.79]} castShadow={side === "right"} receiveShadow>
-        <boxGeometry args={[2 * WALL_MODULE_WIDTH, 0.14, 0.02]} />
-        <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} />
-      </mesh>
+      <Skirting length={2 * WALL_MODULE_WIDTH} castShadow={side === "right"} />
     </group>
   );
-}
-
-/**
- * The plaster modules' UV layout, measured from the GLB's front face: one
- * texture repeat per metre, with u running UP the wall and v ALONG it
- * (rotated against the usual layout). Surfaces built in code remap their
- * plain 0..1 UVs to match, so the grain is the same size and direction as on
- * the modules. Getting this backwards stretched the grain ~10x and the curves
- * read as smooth paint.
- */
-function plasterUVs(geometry: BufferGeometry, w: number, h: number) {
-  const uv = geometry.attributes.uv;
-  for (let i = 0; i < uv.count; i++) {
-    const along = uv.getX(i) * w;
-    const up = uv.getY(i) * h;
-    uv.setXY(i, up, along);
-  }
-  return geometry;
-}
-
-/** The plaster modules' own material, double-sided, for the walls built in code. */
-function usePlaster() {
-  const { materials } = useGLTF(assetManifest.plasterWall.url);
-  const plaster = useMemo(() => {
-    // Model gives the modules the manifest colour (map dropped) when they
-    // mount, which can be after this clone: apply it here too, or these
-    // surfaces keep the GLB's raw dark-green base colour.
-    const m = (Object.values(materials)[0] as MeshStandardMaterial).clone();
-    m.map = null;
-    m.color.set(assetManifest.plasterWall.color);
-    m.side = DoubleSide;
-    return m;
-  }, [materials]);
-  useEffect(() => () => plaster.dispose(), [plaster]);
-  return plaster;
 }
 
 /**
@@ -161,7 +119,45 @@ function RightWall() {
 /** Radius of the rounded inside corners where the angled walls meet the room. */
 const FILLET_RADIUS = 0.35;
 const ROOM_HEIGHT = 3.44;
-const SKIRTING = { height: 0.14, depth: 0.02 };
+/**
+ * Skirting: the board (`height` tall, standing `depth` off the wall) and a thin
+ * cap along its top that stands a little further out, so the baseboard reads
+ * as a distinct trim line with an edge that catches the light, instead of
+ * blending into the wall above it.
+ */
+const SKIRTING = { height: 0.14, depth: 0.02, capHeight: 0.014, capOut: 0.012 };
+/** One dark glossy paint for every run (the walls and their rounded corners). */
+const skirtingMaterial = new MeshStandardMaterial({
+  color: "#1c1a16",
+  roughness: 0.42,
+  metalness: 0,
+  side: DoubleSide,
+});
+
+/** A straight run of skirting in the wall module frame (front face at z -3.80). */
+function Skirting({ length, castShadow = true }: { length: number; castShadow?: boolean }) {
+  const out = SKIRTING.depth + SKIRTING.capOut;
+  return (
+    <>
+      <mesh
+        position={[0, SKIRTING.height / 2, -3.8 + SKIRTING.depth / 2]}
+        material={skirtingMaterial}
+        castShadow={castShadow}
+        receiveShadow
+      >
+        <boxGeometry args={[length, SKIRTING.height, SKIRTING.depth]} />
+      </mesh>
+      <mesh
+        position={[0, SKIRTING.height + SKIRTING.capHeight / 2, -3.8 + out / 2]}
+        material={skirtingMaterial}
+        castShadow={castShadow}
+        receiveShadow
+      >
+        <boxGeometry args={[length, SKIRTING.capHeight, out]} />
+      </mesh>
+    </>
+  );
+}
 
 /** A wall's front face as a plane in XZ: inward normal (into the room) and offset. */
 interface WallPlane {
@@ -248,7 +244,18 @@ function CornerFillets() {
         f.start,
         f.length,
       );
-      return { centre: f.centre, wall, skirting };
+      const cap = skirt - SKIRTING.capOut;
+      const capGeometry = new CylinderGeometry(
+        cap,
+        cap,
+        SKIRTING.capHeight,
+        12,
+        1,
+        true,
+        f.start,
+        f.length,
+      );
+      return { centre: f.centre, wall, skirting, capGeometry };
     });
   }, []);
 
@@ -257,6 +264,7 @@ function CornerFillets() {
       for (const c of coves) {
         c.wall.dispose();
         c.skirting.dispose();
+        c.capGeometry.dispose();
       }
     },
     [coves],
@@ -264,7 +272,7 @@ function CornerFillets() {
 
   return (
     <group name="corner-fillets">
-      {coves.map(({ centre, wall, skirting }, i) => (
+      {coves.map(({ centre, wall, skirting, capGeometry }, i) => (
         <group key={i} position={[centre[0], 0, centre[1]]}>
           <mesh
             geometry={wall}
@@ -272,9 +280,18 @@ function CornerFillets() {
             position={[0, ROOM_HEIGHT / 2, 0]}
             receiveShadow
           />
-          <mesh geometry={skirting} position={[0, SKIRTING.height / 2, 0]} receiveShadow>
-            <meshStandardMaterial color="#26241f" roughness={0.6} metalness={0} side={DoubleSide} />
-          </mesh>
+          <mesh
+            geometry={skirting}
+            material={skirtingMaterial}
+            position={[0, SKIRTING.height / 2, 0]}
+            receiveShadow
+          />
+          <mesh
+            geometry={capGeometry}
+            material={skirtingMaterial}
+            position={[0, SKIRTING.height + SKIRTING.capHeight / 2, 0]}
+            receiveShadow
+          />
         </group>
       ))}
     </group>

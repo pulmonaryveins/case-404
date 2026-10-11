@@ -21,6 +21,9 @@ export type ScreenView =
 
 type Ctx = CanvasRenderingContext2D;
 
+/** Where the fixed header band ends; the body scrolls beneath it. */
+const BODY_TOP = 124;
+
 function wrap(ctx: Ctx, text: string, x: number, y: number, maxW: number, lineH: number) {
   let line = "";
   for (const word of text.split(" ")) {
@@ -43,17 +46,44 @@ function glow(ctx: Ctx) {
 }
 
 function header(ctx: Ctx) {
-  glow(ctx);
-  ctx.font = `bold 36px ${MONO}`;
-  ctx.fillText("EDEN DATA SYSTEMS / CASE 404 ARCHIVE", 60, 84);
-  ctx.fillRect(60, 104, SCREEN_W - 120, 3);
+  ctx.shadowBlur = 0;
+  const { canvas } = layer("header", SCREEN_W, BODY_TOP, (c) => {
+    glow(c);
+    c.font = `bold 36px ${MONO}`;
+    c.fillText("EDEN DATA SYSTEMS / CASE 404 ARCHIVE", 60, 84);
+    c.fillRect(60, 104, SCREEN_W - 120, 3);
+  });
+  ctx.drawImage(canvas, 0, 0);
 }
 
-/** Scanlines, once per frame: cheap and sells the tube. */
+/**
+ * Small pieces that never change, drawn once and then copied: canvas text with a
+ * shadow blur is expensive, and the screen repaints many times a second while
+ * it boots, reads a disk, scrolls or plays a clip.
+ */
+const cache = new Map<string, { canvas: HTMLCanvasElement; end: number }>();
+
+function layer(key: string, w: number, h: number, paint: (ctx: Ctx) => number | void) {
+  let hit = cache.get(key);
+  if (!hit) {
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const end = paint(canvas.getContext("2d")!) ?? h;
+    hit = { canvas, end };
+    cache.set(key, hit);
+  }
+  return hit;
+}
+
+/** Scanlines: sells the tube. One cached overlay instead of 170 rects a paint. */
 function scanlines(ctx: Ctx) {
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "rgba(0,0,0,0.1)";
-  for (let y = 0; y < SCREEN_H; y += 4) ctx.fillRect(0, y, SCREEN_W, 2);
+  const { canvas } = layer("scanlines", SCREEN_W, SCREEN_H, (c) => {
+    c.fillStyle = "rgba(0,0,0,0.1)";
+    for (let y = 0; y < SCREEN_H; y += 4) c.fillRect(0, y, SCREEN_W, 2);
+  });
+  ctx.drawImage(canvas, 0, 0);
 }
 
 /** The CRT warming up: a bright line that opens into the picture. */
@@ -116,9 +146,6 @@ function paintInserted(ctx: Ctx, project: Project, t: number) {
   ctx.strokeRect(60, y + 70, SCREEN_W - 120, 36);
   ctx.fillRect(66, y + 76, (SCREEN_W - 132) * Math.min(1, t), 24);
 }
-
-/** Where the fixed header band ends; the body scrolls beneath it. */
-const BODY_TOP = 124;
 
 function paintMenu(ctx: Ctx, projects: Project[]) {
   ctx.font = `bold 60px ${MONO}`;
@@ -215,15 +242,14 @@ function paintFileDetails(ctx: Ctx, project: Project, top: number) {
   return y + 130;
 }
 
-/** A video disk: the clip playing on the tube, tinted to the phosphor. */
-function paintVideo(ctx: Ctx, project: Project, video: HTMLVideoElement) {
-  const x = 60;
-  const y = 140;
-  const w = SCREEN_W - 120;
-  const h = 420;
+/** The video window on a video disk's page (page coordinates). */
+const VIDEO = { x: 60, y: 140, w: SCREEN_W - 120, h: 420 };
+
+/** The clip's current frame, tinted to the phosphor, and its progress bar. */
+function paintVideoFrame(ctx: Ctx, video: HTMLVideoElement, scroll: number) {
+  const { x, w, h } = VIDEO;
+  const y = VIDEO.y - scroll;
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "#000";
-  ctx.fillRect(x, y, w, h);
   if (video.videoWidth) {
     const k = Math.min(w / video.videoWidth, h / video.videoHeight);
     const vw = video.videoWidth * k;
@@ -236,15 +262,22 @@ function paintVideo(ctx: Ctx, project: Project, video: HTMLVideoElement) {
     ctx.fillRect(dx, dy, vw, vh);
     ctx.globalCompositeOperation = "source-over";
   }
+  const p = video.duration ? video.currentTime / video.duration : 0;
+  ctx.fillStyle = PHOSPHOR;
+  ctx.fillRect(x, y + h + 18, w * p, 6);
+}
+
+/** A video disk's page, without the clip: the window, the empty bar and the text. */
+function paintVideo(ctx: Ctx, project: Project) {
+  const { x, y, w, h } = VIDEO;
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(x, y, w, h);
   ctx.strokeStyle = PHOSPHOR;
   ctx.lineWidth = 3;
   ctx.strokeRect(x, y, w, h);
-  // Progress bar.
-  const p = video.duration ? video.currentTime / video.duration : 0;
   ctx.fillStyle = DIM;
   ctx.fillRect(x, y + h + 18, w, 6);
-  ctx.fillStyle = PHOSPHOR;
-  ctx.fillRect(x, y + h + 18, w * p, 6);
   glow(ctx);
   ctx.font = `bold 34px ${MONO}`;
   ctx.fillText(project.title.toUpperCase(), 60, 640);
@@ -261,13 +294,46 @@ function paintVideo(ctx: Ctx, project: Project, video: HTMLVideoElement) {
   return paintFileDetails(ctx, project, ty + 30);
 }
 
+/** Tallest scrolling page any disk needs, with room to spare. */
+const PAGE_MAX = 2600;
+
+/**
+ * The page on screen, painted once into one reused tall canvas: only the
+ * current page is kept (a canvas per disk would hold ~100 MB), and a new one
+ * is painted when a disk goes in or comes out.
+ */
+const page = { key: "", canvas: null as HTMLCanvasElement | null, end: 0 };
+
+function pageFor(key: string, paint: (ctx: Ctx) => number) {
+  if (!page.canvas) {
+    page.canvas = document.createElement("canvas");
+    page.canvas.width = SCREEN_W;
+    page.canvas.height = PAGE_MAX;
+  }
+  if (page.key !== key) {
+    const c = page.canvas.getContext("2d")!;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, SCREEN_W, PAGE_MAX);
+    c.save();
+    page.end = paint(c);
+    c.restore();
+    page.key = key;
+  }
+  return page as { canvas: HTMLCanvasElement; end: number };
+}
+
 /**
  * Paints the CRT's current contents. The header stays put and the body
  * scrolls by `scroll` px; returns how far it can scroll.
+ *
+ * Each page (the menu, each disk's record) is painted once into its own tall
+ * canvas and then copied at the scroll offset, so scrolling and video frames
+ * cost a few copies, not dozens of blurred text draws.
  */
 export function paintArchiveScreen(canvas: HTMLCanvasElement, view: ScreenView, scroll = 0) {
   const ctx = canvas.getContext("2d")!;
   const bg = view.kind === "off" ? "#020403" : "#04120a";
+  ctx.shadowBlur = 0;
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
   if (view.kind === "off") return 0;
@@ -285,18 +351,20 @@ export function paintArchiveScreen(canvas: HTMLCanvasElement, view: ScreenView, 
     return 0;
   }
 
-  glow(ctx);
-  ctx.save();
-  ctx.translate(0, -scroll);
-  let end: number;
-  if (view.active?.video && view.video) end = paintVideo(ctx, view.active, view.video);
-  else if (view.active) end = paintRecord(ctx, view.active);
-  else end = paintMenu(ctx, view.projects);
-  ctx.restore();
+  const active = view.active;
+  const isVideo = !!active?.video;
+  const current = pageFor(active?.id ?? "menu", (c) => {
+    glow(c);
+    if (active && isVideo) return paintVideo(c, active);
+    if (active) return paintRecord(c, active);
+    return paintMenu(c, view.projects);
+  });
+  const end = current.end;
+  ctx.drawImage(current.canvas, 0, -scroll);
+  if (isVideo && view.video) paintVideoFrame(ctx, view.video, scroll);
 
   const max = Math.max(0, end - SCREEN_H);
   // Header band over whatever scrolled beneath it.
-  ctx.shadowBlur = 0;
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, SCREEN_W, BODY_TOP);
   header(ctx);
@@ -312,11 +380,13 @@ export function paintArchiveScreen(canvas: HTMLCanvasElement, view: ScreenView, 
     if (scroll < max - 4) {
       ctx.fillStyle = bg;
       ctx.fillRect(0, SCREEN_H - 40, SCREEN_W, 40);
-      glow(ctx);
-      ctx.font = `bold 24px ${MONO}`;
-      ctx.textAlign = "right";
-      ctx.fillText("SCROLL DOWN v", SCREEN_W - 50, SCREEN_H - 12);
-      ctx.textAlign = "left";
+      const hint = layer("hint", SCREEN_W, 40, (c) => {
+        glow(c);
+        c.font = `bold 24px ${MONO}`;
+        c.textAlign = "right";
+        c.fillText("SCROLL DOWN v", SCREEN_W - 50, 28);
+      });
+      ctx.drawImage(hint.canvas, 0, SCREEN_H - 40);
     }
   }
   scanlines(ctx);

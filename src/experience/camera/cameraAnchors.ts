@@ -92,6 +92,26 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     target: [2.84, 1.75, -3.19],
     fov: 44,
   },
+  // Crossing from the poster wall to the left side: back across the room,
+  // turning toward the merch corner on the way to the arrival shot.
+  merchApproach: {
+    id: "merchApproach",
+    position: [0.1, 1.6, -1.2],
+    target: [-1.5, 1.2, -3.0],
+    fov: DEFAULT_CAMERA.fov,
+  },
+  // The merch corner: the digital archive shot, mirrored. The camera looks
+  // square-on at the left angled wall (straight along its normal), 2.2 m out,
+  // as the archive shot does at the computer desk. The cabinet is flush to the
+  // middle of that wall and the mannequin to its right, both whole in the
+  // frame from a narrow 1.6:1 window to a wide 2.15:1 one. As in the archive
+  // shot, the wall's rounded ends sit near the frame's edges.
+  merchCorner: {
+    id: "merchCorner",
+    position: [-0.97, 1.5, -1.32],
+    target: [-2.15, 0.8, -3.1],
+    fov: DEFAULT_CAMERA.fov,
+  },
   creativeEvidence: {
     id: "creativeEvidence",
     position: [2, 1.4, 2],

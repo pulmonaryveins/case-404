@@ -80,6 +80,12 @@ export function CustomCursor() {
     const trail = { x: -100, y: -100 };
     let frame = 0;
     let lastTarget: EventTarget | null = null;
+    let hidden = false;
+    const setHidden = (value: boolean) => {
+      if (hidden === value) return;
+      hidden = value;
+      root.current?.setAttribute("data-hidden", String(value));
+    };
     let lastScene = 0;
 
     // The ring trails the dot. The loop runs only while it is catching up,
@@ -100,9 +106,12 @@ export function CustomCursor() {
       // The dot follows the pointer immediately, not a frame later.
       if (dot.current) dot.current.style.transform = `translate3d(${at.x}px, ${at.y}px, 0)`;
       if (!frame) frame = requestAnimationFrame(tick);
+      // Any movement means the pointer is in the page: show the cursor again
+      // (not only when the element under it changes, which left it hidden
+      // after leaving and re-entering over the same element).
+      setHidden(false);
       if (e.target !== lastTarget) {
         lastTarget = e.target;
-        root.current?.setAttribute("data-hidden", "false");
         const control = (e.target as Element | null)?.closest?.(
           "button:not(:disabled), a[href], [role='button'], input, select, textarea",
         );
@@ -111,7 +120,15 @@ export function CustomCursor() {
     };
     const onDown = () => root.current?.setAttribute("data-pressed", "true");
     const onUp = () => root.current?.setAttribute("data-pressed", "false");
-    const onLeave = () => root.current?.setAttribute("data-hidden", "true");
+    // Hide only when the pointer really leaves the page, not when it moves
+    // between elements or onto the canvas.
+    const onLeave = (e: PointerEvent) => {
+      if (!e.relatedTarget) setHidden(true);
+    };
+    const onEnter = () => setHidden(false);
+    // The native cursor is hidden while this one draws; if the page loses
+    // focus mid-drag, show it again rather than leave neither.
+    const onBlur = () => root.current?.setAttribute("data-pressed", "false");
 
     // Every pointer move over the canvas makes the scene raycast against its
     // meshes to find hover targets, many times per frame. A laptop cannot
@@ -130,6 +147,8 @@ export function CustomCursor() {
     window.addEventListener("pointerdown", onDown, { capture: true });
     window.addEventListener("pointerup", onUp, { capture: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
+    document.documentElement.addEventListener("pointerenter", onEnter);
+    window.addEventListener("blur", onBlur);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove, { capture: true });
@@ -137,6 +156,8 @@ export function CustomCursor() {
       window.removeEventListener("pointerdown", onDown, { capture: true });
       window.removeEventListener("pointerup", onUp, { capture: true });
       document.documentElement.removeEventListener("pointerleave", onLeave);
+      document.documentElement.removeEventListener("pointerenter", onEnter);
+      window.removeEventListener("blur", onBlur);
       document.documentElement.classList.remove("has-custom-cursor");
     };
   }, [enabled]);

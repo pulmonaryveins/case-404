@@ -435,6 +435,100 @@ export const assetManifest = {
     castShadow: false,
     receiveShadow: true,
   },
+  // wall-eanimated.glb -> wall-e.glb (scripts/prepare-walle.mjs: eyes' transmission dropped,
+  // 16k triangles, 1024px WebP; 18 MB -> 2.2 MB). Authored ~4.4 wide x 4.5 tall, +Z forward,
+  // one 10 s node-animation clip. 0.025 makes a ~11 cm toy. Placed by WallE.
+  wallE: {
+    id: "wallE",
+    url: "/models/case-404/props/wall-e.glb",
+    category: "props",
+    preloadPriority: 4,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.025,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // carpet_iranian.glb -> carpet.glb (scripts/optimize-glb.mjs, 1024px WebP colour,
+  // normal and roughness; 5.6 MB -> 0.6 MB). One flat quad, 74.4 x 100 units in
+  // XZ. 0.04 makes a ~3.0 x 4.0 m room rug; turned a quarter so its long side
+  // runs across the room, under the main desk and well out toward the camera.
+  // Lifted 3 mm off the floor so the two planes never z-fight. Placed and
+  // toned to the room's light by Carpet.
+  carpet: {
+    id: "carpet",
+    url: "/models/case-404/environment/carpet.glb",
+    category: "environment",
+    preloadPriority: 3,
+    position: [0.05, 0.003, -1.55],
+    rotation: [0, Math.PI / 2, 0],
+    scale: 0.04,
+    castShadow: false,
+    receiveShadow: true,
+  },
+  // file_cabinet.glb -> file-cabinet.glb (1024px WebP; 4.1 MB -> 0.18 MB). Four
+  // drawers as separate meshes (pull along +X). Placed, scaled and opened by
+  // MerchCorner, which reads only the url.
+  fileCabinet: {
+    id: "fileCabinet",
+    url: "/models/case-404/furniture/file-cabinet.glb",
+    category: "furniture",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // mannequin_female_torso_stand.glb -> mannequin.glb (512px WebP, a background
+  // piece; 4.7 MB -> ~0.2 MB). Metres, 1.53 m tall, origin at the stand's foot.
+  // Against the back wall, left of the board and the desk: in the opening shot
+  // it stands in the wall space between the window's shadow and the board. Its
+  // front is the model's -X (the bust), turned out into the room, a touch
+  // toward the merch camera.
+  mannequin: {
+    id: "mannequin",
+    url: "/models/case-404/props/mannequin.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [-1.45, 0, -3.45],
+    rotation: [0, 1.7, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // case_boxes.glb -> case-boxes.glb (six 4096px PNGs -> 512px WebP, a
+  // background piece kept inside the texture budget; 110 MB -> ~0.4 MB). Four evidence boxes with lids, metres, 1.75 x 1.05 footprint. Along
+  // the left wall under the window (sill ~0.9 m; the stack is 0.58 m), long
+  // side down the wall; the position offsets the model's own centre.
+  caseBoxes: {
+    id: "caseBoxes",
+    url: "/models/case-404/props/case-boxes.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [-2.965, 0.012, -0.568],
+    rotation: [0, Math.PI / 2, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // wall_lamp.glb -> wall-lamp.glb (1499 triangles, no textures). A picture light:
+  // a bar 369 wide with a glowing strip under it, on a long support arm. Only
+  // the bar is shown (WallLamp drops the arm and switch), so it is mounted flat
+  // to the wall: at 0.0024 it is a ~0.89 m bar, 4.4 cm deep, 5.7 cm tall. The
+  // origin puts the bar's back face at the back wall (z -3.80) and its
+  // underside ~5 cm above the board's top edge. Gray metal, by WallLamp.
+  wallLamp: {
+    id: "wallLamp",
+    url: "/models/case-404/props/wall-lamp.glb",
+    category: "props",
+    preloadPriority: 2,
+    position: [-0.05, 2.2, -3.776],
+    rotation: [0, 0, 0],
+    scale: 0.0024,
+    castShadow: true,
+    receiveShadow: true,
+  },
 } as const satisfies Record<string, ManifestAsset>;
 
 export type AssetId = keyof typeof assetManifest;

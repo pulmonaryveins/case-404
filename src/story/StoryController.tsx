@@ -6,6 +6,7 @@ import type { CameraAnchorId } from "../experience/camera/cameraTypes";
 import { profile } from "../data/profile";
 import { caseFile } from "../data/evidenceBoard";
 import { storyRig } from "./storyRig";
+import { STORY_END } from "./storyNav";
 import type { ChapterId } from "./storyTypes";
 import { CatmullRomCurve3, Vector3 } from "three";
 
@@ -14,28 +15,39 @@ import { CatmullRomCurve3, Vector3 } from "three";
  * for two camera moves and the folder opening; 800 made the same journey
  * feel like it was being paid out rather than travelled.
  */
-const STAGE_VH = 1290;
+const STAGE_VH = 2000;
 const SCRUB_SECONDS = 0.45;
 
 const debug = import.meta.env.DEV && new URLSearchParams(window.location.search).has("story");
 
 /** Timeline length in timeline seconds; chapters are read off `p * END`. */
-const END = 2.2;
+const END = STORY_END;
 
 function chapterAtTime(time: number): ChapterId {
   if (time < 0.16) return "CASE_OPENED";
   if (time < 0.5) return "EVIDENCE_BOARD";
   if (time < 1.1) return "SUBJECT_PROFILE";
   if (time < 1.95) return "DIGITAL_ARCHIVE";
-  return "GRAPHIC_DESIGN";
+  if (time < 2.35) return "GRAPHIC_DESIGN";
+  return "MERCH";
 }
 
 const chapterAt = (p: number) => chapterAtTime(p * END);
 
 /** Reduced motion has four jumps, not a timeline; map its scroll to a chapter time. */
-function reducedChapter(p: number): ChapterId {
-  return chapterAtTime(p < 0.75 ? p * 1.45 : p < 0.9 ? 1.5 : 2.1);
-}
+/**
+ * Reduced motion: no travel, one still view per band of the scroll. Shared by
+ * the anchor jumps, the chapter and the dossier state.
+ */
+const REDUCED: { until: number; anchor: CameraAnchorId; chapter: ChapterId }[] = [
+  { until: 0.2, anchor: "roomOverview", chapter: "CASE_OPENED" },
+  { until: 0.4, anchor: "caseFile", chapter: "EVIDENCE_BOARD" },
+  { until: 0.6, anchor: "dossierOpen", chapter: "SUBJECT_PROFILE" },
+  { until: 0.77, anchor: "digitalArchive", chapter: "DIGITAL_ARCHIVE" },
+  { until: 0.92, anchor: "posterWall", chapter: "GRAPHIC_DESIGN" },
+  { until: Infinity, anchor: "merchCorner", chapter: "MERCH" },
+];
+const reducedBand = (p: number) => REDUCED.find((b) => p < b.until)!;
 
 function applyAnchor(id: CameraAnchorId) {
   const a = cameraAnchors[id];
@@ -81,19 +93,10 @@ export function StoryController() {
         start: "top top",
         end: "bottom bottom",
         onUpdate: ({ progress: p }) => {
-          applyAnchor(
-            p < 0.25
-              ? "roomOverview"
-              : p < 0.5
-                ? "caseFile"
-                : p < 0.75
-                  ? "dossierOpen"
-                  : p < 0.9
-                    ? "digitalArchive"
-                    : "posterWall",
-          );
-          storyRig.dossierOpen = storyRig.profileReveal = p >= 0.5 && p < 0.75 ? 1 : 0;
-          setChapter(p, reducedChapter(p));
+          const band = reducedBand(p);
+          applyAnchor(band.anchor);
+          storyRig.dossierOpen = storyRig.profileReveal = band.anchor === "dossierOpen" ? 1 : 0;
+          setChapter(p, band.chapter);
           showDebug(p);
         },
       });
@@ -164,6 +167,11 @@ export function StoryController() {
     travel(["dossierOpen", "digitalArchive"], 1.0, 0.45);
     // Dwell at the terminal for the disks, then pan up to the poster wall.
     travel(["digitalArchive", "posterWall"], 1.75, 0.4);
+    // A beat on the posters, then back across the room to the left side: the
+    // merch cabinet and the mannequin.
+    travel(["posterWall", "merchApproach", "merchCorner"], 2.35, 0.65);
+    // Hold on the merch corner (the timeline runs on to END): arriving needs
+    // no precision, and the drawers get a still scene to be opened in.
     tl.set({}, {}, END);
 
     return () => {
@@ -174,7 +182,7 @@ export function StoryController() {
 
   return (
     <>
-      <div ref={stage} style={{ height: `${STAGE_VH}vh` }}>
+      <div ref={stage} data-story-stage style={{ height: `${STAGE_VH}vh` }}>
         {/* Screen-reader copy of what the scene shows: the board's case
             file, then the dossier's identity and ABOUT record. */}
         <section className="sr-only" aria-label="Case file">

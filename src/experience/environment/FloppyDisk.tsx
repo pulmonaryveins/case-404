@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { meshBounds, useGLTF } from "@react-three/drei";
 import {
   CanvasTexture,
   MathUtils,
@@ -65,7 +65,12 @@ export function FloppyDisk({
   const body = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((o) => {
-      if (o instanceof Mesh) o.castShadow = o.receiveShadow = true;
+      if (o instanceof Mesh) {
+        o.castShadow = o.receiveShadow = true;
+        // Hover and click test the disk's box, not its ~5k triangles: nine of
+        // them were tested on every pointer move over the desk.
+        o.raycast = meshBounds;
+      }
     });
     return clone;
   }, [scene]);
@@ -82,7 +87,10 @@ export function FloppyDisk({
     map.anisotropy = 8;
     return new MeshStandardMaterial({
       map,
-      roughness: 0.85,
+      // Aged paper, not print white: standing in the rack the labels face the
+      // desk's key light square on and read brighter than anything around them.
+      color: "#a39d90",
+      roughness: 0.9,
       polygonOffset: true,
       polygonOffsetFactor: -2,
     });

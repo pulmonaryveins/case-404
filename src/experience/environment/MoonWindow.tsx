@@ -2,17 +2,20 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import {
-  DoubleSide,
+  CanvasTexture,
   MathUtils,
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  PerspectiveCamera,
   Shape,
   ShapeGeometry,
   type SpotLight,
+  Vector3,
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 import { storyRig } from "../../story/storyRig";
+import { usePlaster } from "./plaster";
 
 /** Left wall plane: x of the wall, and the centre/size of the 7 x 3.44 m slab. */
 const WALL = { x: -3.6, centreY: 1.72, centreZ: -1, width: 7, height: 3.44 } as const;
@@ -32,8 +35,16 @@ const WIN = { z: -0.3, y: 1.6 } as const;
 const MOON_AT = [-4.3, 1.85, 0.62] as const;
 const MOON_AIM = [-1.4, 1.2, -3.4] as const;
 const OPENING = { w: 1.75, h: 1.4 } as const;
-/** Faint cool fill in the back-left corner (see the pointLight in MoonWindow). */
-const BOUNCE = { position: [-1.7, 1.9, -2.1], intensity: 0.12, distance: 5.5 } as const;
+/** Far edge (toward the back wall) of the real opening, z on the wall plane. */
+const WIN_FAR_EDGE_Z = WIN.z - OPENING.w / 2;
+/**
+ * Cool fill in the back-left corner (see the pointLight in MoonWindow): the
+ * moonlight bounced off the floor and walls. It sits in front of the left
+ * angled wall, which the moon itself can't reach (the window's own wall
+ * shadows most of it), so that wall, the merch cabinet and the mannequin
+ * carry the moonlight instead of falling to black.
+ */
+const BOUNCE = { position: [-2.5, 1.8, -2.2], intensity: 0.32, distance: 4 } as const;
 /** Stretch of the 1.4 m window frame model along the wall, to match OPENING.w. */
 const FRAME_STRETCH = OPENING.w / 1.4;
 /**
@@ -117,6 +128,105 @@ function ShadowBars() {
   );
 }
 
+/**
+ * The moon's light continued past the window's far edge. Only the real
+ * opening lets moonlight in, so the left angled wall, beyond the window's
+ * far edge, sat in the window wall's own shadow: no light and no bar
+ * shadows there, while the wall beside the board showed the full pattern. In
+ * a room this size the window pane would read as running on. This is that
+ * pane: a second moon spot, from the same place, whose beam is a picture of
+ * a window (lit panes, bars and a crosspiece) instead of a shadow map, so
+ * the pattern carries on across the corner wall, the cabinet and the
+ * mannequin without another shadow pass.
+ */
+const EXT = {
+  /** Where the extended pane runs on the wall plane (z), and its height (y). */
+  z0: -2.95,
+  z1: WIN_FAR_EDGE_Z,
+  y0: 0.95,
+  y1: 2.3,
+  /** Beam half-angle (rad): wide enough for the pane, narrow enough to keep the picture sharp. */
+  angle: 0.46,
+  /** Vertical bars on the extension (z on the wall plane). */
+  bars: [-1.62, -2.12, -2.62],
+  /** Bar width at the wall plane; the landing wall is ~1.3x the moon's distance beyond it. */
+  barWidth: 0.05,
+  cross: { y: CROSS_Y, thick: 0.045 },
+} as const;
+const EXT_AIM = new Vector3(...MOON_AT).add(new Vector3(0.7, -0.28, -2.7).multiplyScalar(2));
+
+/** The pane as the moon sees it: white where light gets through, black on bars and outside. */
+function extensionPicture(size = 512) {
+  const cam = new PerspectiveCamera(MathUtils.radToDeg(EXT.angle * 2), 1, 0.1, 30);
+  cam.position.set(...MOON_AT);
+  cam.lookAt(EXT_AIM);
+  cam.updateMatrixWorld(true);
+  const px = (x: number, y: number, z: number) => {
+    const p = new Vector3(x, y, z).project(cam);
+    return [(p.x * 0.5 + 0.5) * size, (1 - (p.y * 0.5 + 0.5)) * size] as const;
+  };
+  const quad = (ctx: CanvasRenderingContext2D, z0: number, z1: number, y0: number, y1: number) => {
+    const pts = [px(WALL.x, y0, z0), px(WALL.x, y0, z1), px(WALL.x, y1, z1), px(WALL.x, y1, z0)];
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    ctx.fill();
+  };
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, size, size);
+  // Soft edges, as the real moon's shadows have (shadow-radius).
+  ctx.filter = "blur(2.5px)";
+  ctx.fillStyle = "#fff";
+  quad(ctx, EXT.z0, EXT.z1, EXT.y0, EXT.y1);
+  ctx.fillStyle = "#000";
+  for (const z of EXT.bars) {
+    quad(ctx, z - EXT.barWidth / 2, z + EXT.barWidth / 2, EXT.y0 - 0.1, EXT.y1 + 0.1);
+  }
+  quad(
+    ctx,
+    EXT.z0 - 0.1,
+    EXT.z1 + 0.1,
+    EXT.cross.y - EXT.cross.thick / 2,
+    EXT.cross.y + EXT.cross.thick / 2,
+  );
+  const map = new CanvasTexture(canvas);
+  map.anisotropy = 4;
+  return map;
+}
+
+function MoonExtension() {
+  const light = useRef<SpotLight>(null);
+  const [target] = useState(() => new Object3D());
+  const map = useMemo(() => extensionPicture(), []);
+  useEffect(() => () => map.dispose(), [map]);
+  useFrame(() => {
+    const open = MathUtils.smoothstep(storyRig.dossierOpen, 0, 1);
+    // What the main moon's shadow leaves unlit, topped up: the pane is
+    // full moonlight, the surrounding wall keeps its shadowed share.
+    if (light.current)
+      light.current.intensity = MOON * SHADOW_STRENGTH * MathUtils.lerp(1, OPEN_FRACTION, open);
+  });
+  return (
+    <>
+      <primitive object={target} position={EXT_AIM} />
+      <spotLight
+        ref={light}
+        position={MOON_AT}
+        target={target}
+        map={map}
+        color="#a5bce8"
+        intensity={MOON * SHADOW_STRENGTH}
+        angle={EXT.angle}
+        penumbra={0}
+        decay={0}
+      />
+    </>
+  );
+}
+
 export function MoonWindow() {
   const { scene: windowScene } = useGLTF(assetManifest.window2.url);
   const frame = useMemo(() => windowScene.clone(true), [windowScene]);
@@ -139,8 +249,18 @@ export function MoonWindow() {
       .lineTo(cx + OPENING.w / 2, cy - OPENING.h / 2)
       .closePath();
     shape.holes.push(hole);
-    return new ShapeGeometry(shape);
+    const geometry = new ShapeGeometry(shape);
+    // Plaster grain, as the other walls have it: one repeat per metre, u up the
+    // wall and v along it. ShapeGeometry's own UVs are the shape's x and y
+    // (metres from the wall's centre), so shift them to run from the floor and
+    // the wall's far end.
+    const uv = geometry.attributes.uv;
+    for (let i = 0; i < uv.count; i++) {
+      uv.setXY(i, uv.getY(i) + hh, uv.getX(i) + hw);
+    }
+    return geometry;
   }, []);
+  const plaster = usePlaster();
   useEffect(() => () => wall.dispose(), [wall]);
 
   useLayoutEffect(() => {
@@ -177,7 +297,7 @@ export function MoonWindow() {
         castShadow
         receiveShadow
       >
-        <meshStandardMaterial color="#2e2c28" roughness={0.95} metalness={0} side={DoubleSide} />
+        <primitive object={plaster} attach="material" />
       </mesh>
       <ShadowBars />
       <primitive
@@ -208,6 +328,7 @@ export function MoonWindow() {
         decay={1.5}
       />
 
+      <MoonExtension />
       <primitive object={target} position={MOON_AIM} />
       <spotLight
         ref={light}

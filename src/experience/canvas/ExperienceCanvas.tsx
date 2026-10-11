@@ -1,7 +1,7 @@
 import { Suspense, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { ACESFilmicToneMapping } from "three";
+import { ACESFilmicToneMapping, type Material, type Mesh, Texture } from "three";
 import { DPR_RANGE, DEFAULT_CAMERA } from "../../lib/three";
 import { cameraAnchors } from "../camera/cameraAnchors";
 import { CameraRig } from "../camera/CameraRig";
@@ -22,8 +22,33 @@ const debugControls =
  */
 function FirstFrames({ onReady }: { onReady: () => void }) {
   const frames = useRef(0);
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
   useFrame(() => {
-    if (++frames.current === 4) onReady();
+    frames.current++;
+    // While the overlay is still up: compile every material and upload every
+    // texture in the scene, including the archive desk's (rack, disks,
+    // polaroids, Wall-E), which are out of view at the start. Otherwise that
+    // work lands the first time the camera turns to them, as a hitch.
+    // gl.compile is synchronous; compileAsync is not used (see above).
+    if (frames.current === 1) {
+      gl.compile(scene, camera);
+      const seen = new Set<Texture>();
+      scene.traverse((o) => {
+        const material = (o as Mesh).material as Material | Material[] | undefined;
+        if (!material) return;
+        for (const m of Array.isArray(material) ? material : [material]) {
+          for (const value of Object.values(m)) {
+            if (value instanceof Texture && !seen.has(value)) {
+              seen.add(value);
+              gl.initTexture(value);
+            }
+          }
+        }
+      });
+    }
+    if (frames.current === 4) onReady();
   });
   return null;
 }

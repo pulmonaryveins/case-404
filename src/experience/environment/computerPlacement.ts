@@ -31,6 +31,12 @@ export const PC_MODEL = {
    * 0.304) and mapped through the mesh to this point.
    */
   power: { x: 0.2701, y: 0.3179, z: 0.3846 },
+  /**
+   * A spot on the flat top of the case, for a prop: the top is level at max.y
+   * (x -0.66..0.81, z -0.46..0.43), so this is the model-frame point to stand
+   * on, the middle of the top.
+   */
+  topSpot: { x: 0.07, z: -0.015 },
   /** Footprint on the desk: centre and size (w along x, d along z). */
   caseFoot: { x: 0.0735, z: 0.261, w: 1.561, d: 1.434 },
 };

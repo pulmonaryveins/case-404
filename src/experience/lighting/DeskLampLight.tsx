@@ -10,7 +10,7 @@ import {
 import { useFrame } from "@react-three/fiber";
 import { storyRig } from "../../story/storyRig";
 import { DustMotes } from "./DustMotes";
-import { lampLit, stepLamp, type LampId } from "./lampState";
+import { LAMP_COLOUR, lampLit, stepLamp, type LampId } from "./lampState";
 
 /**
  * Bulb of the desk lamp, in the lamp model's own space. Measured from the
@@ -38,19 +38,21 @@ const AIM: [number, number, number] = [0.25, -0.1, 0.4];
  * same way the room wash does. Shared by the prop and the per-frame dimming:
  * the useFrame write overrides the prop every frame.
  */
-const LAMP = 10;
+const LAMP = 7.5;
 const OPEN_FRACTION = 0.3;
 
 /**
  * The scene's dominant light: warm tungsten from the desk lamp's bulb.
  * Render as a child of the lamp prop so it follows the lamp's placement.
  *
- * Decay 0.9 rather than the physical 2: the plant, revolver and cartridges at
- * the far right sit ~1.1-1.3 m from the bulb against ~0.7 m for the folder,
- * which at decay 2 is a 3.5x drop and leaves them black. 0.9 narrows that to
- * under 2x, so the light falls off visibly but still reaches them; intensity
- * is raised to keep the folder close to its level. The board gains a little from this, which is what the room wash
- * is trimmed for.
+ * Decay 1.5, between the physical 2 and the 0.9 it had. At 0.9 the desk was lit
+ * almost evenly from the lamp to its far edge, with no pool of light: the
+ * far props sat within 2x of the folder, and the lamp read as a wash rather
+ * than a lamp. At 1.5 the pool under the shade is clearly the brightest part
+ * and the light thins toward the edges, as a banker's lamp does, while the
+ * plant, revolver and cartridges ~1.1-1.3 m away still get a dim share
+ * (about 2x down from the folder; at the full decay 2 they went black).
+ * Intensity is set to keep the folder close to its level.
  *
  * It is the desk's only shadow caster. The cone is deliberately wide with a
  * fully feathered edge, so the light pools softly across most of the desktop
@@ -61,8 +63,11 @@ export function DeskLampLight({
   lamp = "main",
   shadowSize = 2048,
   strength = 1,
+  aim = AIM,
 }: {
   lamp?: LampId;
+  /** Where the light points, in the lamp's own space (default: down and forward along the shade). */
+  aim?: [number, number, number];
   shadowSize?: number;
   /** Share of the peak intensity; the archive lamp is kept lower so paper labels do not blow out. */
   strength?: number;
@@ -122,14 +127,14 @@ export function DeskLampLight({
         opacity={strength >= 1 ? 0.55 : 0.35}
         level={() => lampLit[lamp]}
       />
-      <primitive object={target} position={AIM} />
+      <primitive object={target} position={aim} />
       <spotLight
         ref={light}
         position={BULB}
         target={target}
-        color="#ffbf80"
+        color={LAMP_COLOUR}
         intensity={LAMP}
-        decay={0.9}
+        decay={1.5}
         angle={1.3}
         penumbra={1}
         castShadow

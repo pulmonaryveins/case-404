@@ -10,8 +10,8 @@ body {
 }
 
 html {
-  scrollbar-width: thin;
-  scrollbar-color: #3a3430 transparent;
+  /* The native scrollbar is replaced by the scene rail (SceneNav). */
+  scrollbar-width: none;
 }
 
 body {
@@ -42,4 +42,8 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
