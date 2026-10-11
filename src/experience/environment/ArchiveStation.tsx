@@ -16,6 +16,7 @@ import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
 import { Model } from "../models/Model";
 import { paintArchiveScreen, SCREEN_H, SCREEN_W, type ScreenView } from "../surfaces/paintArchive";
+import { AchievementShelf } from "./AchievementShelf";
 import { ContactShadow } from "./ContactShadow";
 import { DiskRack } from "./DiskRack";
 import { rackSlot, type RackColumn } from "./diskRackLayout";
@@ -482,6 +483,8 @@ export function ArchiveStation() {
       <Model id="archiveDesk" />
       <StationLights />
       <DesignPosters />
+      {/* Centred on the wall, under the posters (whose rows centre on x 0). */}
+      <AchievementShelf x={0} />
 
       <PersonalComputer
         matrix={poses.matrix}

@@ -24,7 +24,8 @@ export function Experience() {
         />
       </CanvasErrorBoundary>
       <ScreenFocusControls />
-      <SceneNav />
+      {/* No scroll rail until the scene is on screen. */}
+      <SceneNav hidden={!ready} />
       <CustomCursor />
       <LoadingOverlay done={ready} />
     </div>

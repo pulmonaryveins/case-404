@@ -54,3 +54,15 @@ is technical, not a licence clearance; each still needs its listing checked):
 
 Modified derivatives are built by `scripts/derive-desk-props.mjs` (the revolver by `scripts/optimize-glb.mjs`); if a
 licence turns out to forbid modification, rebuild those as unchanged copies.
+
+## Archive shelf and back-wall paintings
+
+Licence and author read from each GLB's `asset.extras` (Sketchfab export).
+Check the listings before production all the same.
+
+| Source file | Author | Source | Licence | Runtime file | Modified |
+| --- | --- | --- | --- | --- | --- |
+| single_wood_shelf.glb | Sousinho (https://sketchfab.com/sousinho) | https://sketchfab.com/3d-models/single-wood-shelf-afae35c4c8204b84a85cfcaea30b36d7 | CC-BY-4.0, attribution required | props/wood-shelf.glb | Yes: maps 4096 → 512 WebP |
+| diploma_frame.glb | DrewA (https://sketchfab.com/DrewA) | https://sketchfab.com/3d-models/diploma-frame-9030281e7df84ca8b544c2acaa3688a0 | CC-BY-4.0, attribution required | props/diploma-frame.glb | Yes: maps 2048 → 512 WebP; certificate painted over at runtime |
+| free_medieval_paintings_pack.glb | yowi (https://sketchfab.com/Yowisa) | https://sketchfab.com/3d-models/free-medieval-paintings-pack-011c2e7851574651a91320698cfde4ae | Sketchfab Standard | props/paintings.glb | Yes: 2 of 23 paintings kept (cuadro_8, cuadro_12), atlas repacked 1024² → 512×256 WebP |
+| kms_bismarck_battleship.glb | Muhamad Mirza Arrafi (https://sketchfab.com/nazidefenseforceofficial) | https://sketchfab.com/3d-models/kms-bismarck-battleship-b6e5641126a248f39e37a0bf60663fe0 | CC-BY-4.0, attribution required | props/kms-bismarck.glb | Yes: maps up to 1024 → 256 WebP, 93K → 58K tris |

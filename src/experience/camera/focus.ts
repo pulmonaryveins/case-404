@@ -20,6 +20,13 @@ interface FocusOptions {
   kind?: "screen" | "photo";
   /** Cursor label while hovering the item. */
   label?: string;
+  /**
+   * "top" (default) looks straight down on a flat item; "front" looks at an
+   * upright one (a frame, a model) from in front of it, along `front`.
+   */
+  view?: "top" | "front";
+  /** What to frame, in place of the clicked mesh (e.g. the whole model). */
+  target?: () => Object3D | null;
 }
 
 /**
@@ -52,6 +59,37 @@ export function focusOnFlat(
   useExperienceStore.getState().setScreenFocused(true, kind);
 }
 
+/**
+ * Flies the camera to look at an upright item (a framed certificate, a model
+ * on a shelf) from in front of it, a little above its middle: far enough back
+ * that both its width (along the wall) and its height fit the frame.
+ */
+export function focusFromFront(
+  object: Object3D,
+  camera: Camera,
+  aspect: number,
+  { fill = 1.4, front = new Vector3(0, 0, 1), kind = "photo" }: FocusOptions = {},
+) {
+  object.updateWorldMatrix(true, true);
+  box.setFromObject(object);
+  const centre = box.getCenter(new Vector3());
+  box.getSize(size);
+  const fov = "fov" in camera ? (camera.fov as number) : 40;
+  const tan = Math.tan(MathUtils.degToRad(fov / 2));
+  // The item may stand at any yaw: its world box's footprint diagonal is a
+  // (generous) stand-in for its width.
+  const width = Math.hypot(size.x, size.z) * fill;
+  const height = size.y * fill;
+  const dist = Math.max(height / 2 / tan, width / 2 / (tan * aspect));
+  const at = centre
+    .clone()
+    .addScaledVector(front.clone().setY(0).normalize(), dist)
+    .addScaledVector(UP, dist * 0.12);
+  at.toArray(storyRig.screenFocus.camera);
+  centre.toArray(storyRig.screenFocus.target);
+  useExperienceStore.getState().setScreenFocused(true, kind);
+}
+
 /** World direction of an object's local +Z (its parent's "front"). */
 export function frontOf(object: Object3D | null) {
   const q = object?.getWorldQuaternion(new Quaternion()) ?? new Quaternion();
@@ -71,7 +109,9 @@ export function useFocusable(enabled: () => boolean, options?: FocusOptions) {
       if (!enabled() || useExperienceStore.getState().screenFocused) return;
       e.stopPropagation();
       useCursor.getState().clear();
-      focusOnFlat(e.object, camera, aspect, options);
+      const item = options?.target?.() ?? e.object;
+      if (options?.view === "front") focusFromFront(item, camera, aspect, options);
+      else focusOnFlat(item, camera, aspect, options);
     },
     ...hoverCursor(
       "inspect",

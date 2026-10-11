@@ -2,8 +2,8 @@ import { Model } from "../models/Model";
 import type { AssetId } from "../../assets/assetManifest";
 
 /**
- * The graphic-design wall: a neat scatter of posters hung above the terminal on the angled
- * wall, in the archive station's frame. The wall's front face is 0.476 m behind
+ * The graphic-design wall: a neat scatter of posters hung high on the angled
+ * wall, above the achievements shelf over the terminal (AchievementShelf), in the archive station's frame. The wall's front face is 0.476 m behind
  * the station centre (desk half-depth plus the gap, see RoomShell); `x` runs
  * along the wall, `y` is the poster centre above the floor. The artwork is
  * placeholder, swapped later by replacing the poster GLBs.
@@ -15,16 +15,16 @@ const L = 0.57;
 const Q = 0.6;
 const POSTERS: { id: AssetId; x: number; y: number; roll: number; scale: number }[] = [
   // Upper row
-  { id: "posterPortrait", x: -0.6, y: 1.99, roll: 0.03, scale: P },
-  { id: "posterLandscape", x: -0.28, y: 2.04, roll: -0.02, scale: L },
-  { id: "posterSquare", x: 0.02, y: 1.98, roll: 0.02, scale: Q },
-  { id: "posterPortrait", x: 0.3, y: 2.01, roll: -0.025, scale: P },
-  { id: "posterLandscape", x: 0.62, y: 1.97, roll: 0.02, scale: L },
+  { id: "posterPortrait", x: -0.6, y: 2.38, roll: 0.03, scale: P },
+  { id: "posterLandscape", x: -0.28, y: 2.43, roll: -0.02, scale: L },
+  { id: "posterSquare", x: 0.02, y: 2.37, roll: 0.02, scale: Q },
+  { id: "posterPortrait", x: 0.3, y: 2.4, roll: -0.025, scale: P },
+  { id: "posterLandscape", x: 0.62, y: 2.36, roll: 0.02, scale: L },
   // Lower row
-  { id: "posterSquare", x: -0.55, y: 1.57, roll: -0.02, scale: Q },
-  { id: "posterPortrait", x: -0.25, y: 1.55, roll: 0.02, scale: P },
-  { id: "posterLandscape", x: 0.1, y: 1.53, roll: 0.015, scale: L },
-  { id: "posterSquare", x: 0.45, y: 1.56, roll: -0.02, scale: Q },
+  { id: "posterSquare", x: -0.55, y: 2, roll: -0.02, scale: Q },
+  { id: "posterPortrait", x: -0.25, y: 1.98, roll: 0.02, scale: P },
+  { id: "posterLandscape", x: 0.1, y: 1.96, roll: 0.015, scale: L },
+  { id: "posterSquare", x: 0.45, y: 1.99, roll: -0.02, scale: Q },
 ];
 
 export function DesignPosters() {

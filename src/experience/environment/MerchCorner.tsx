@@ -17,6 +17,7 @@ import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
 import { useCursor } from "../cursor/cursorStore";
 import { Model } from "../models/Model";
+import { CaseBoxes } from "./CaseBoxes";
 
 /* ------------------------------------------------------------------ */
 /* Placement (world space, metres)                                      */
@@ -40,6 +41,8 @@ const CABINETS = [
 ];
 /** The model is ~1 unit tall; 1.3 makes a real four-drawer cabinet (~1.28 m). */
 const CABINET_SCALE = 1.3;
+/** The cabinet body's top, model units (file-cabinet.glb bounds). */
+const BODY_TOP = 0.756;
 
 /**
  * Measured from file-cabinet.glb (model frame, after its own root turn): the
@@ -441,8 +444,8 @@ function FileCabinet({ at, yaw, drawers }: { at: Vector3; yaw: number; drawers: 
 /* ------------------------------------------------------------------ */
 
 /**
- * The left side of the office: the merch file cabinet, a mannequin for the
- * tees and a stack of evidence boxes under the window.
+ * The left side of the office: the merch file cabinets, a mannequin for the
+ * tees, and evidence boxes on the cabinets and stacked beside them.
  */
 export function MerchCorner() {
   return (
@@ -451,7 +454,7 @@ export function MerchCorner() {
         <FileCabinet key={i} at={c.at} yaw={c.yaw} drawers={c.drawers} />
       ))}
       <Model id="mannequin" />
-      <Model id="caseBoxes" />
+      <CaseBoxes cabinets={CABINETS} top={(BODY_TOP - BODY.floor) * CABINET_SCALE} />
     </group>
   );
 }

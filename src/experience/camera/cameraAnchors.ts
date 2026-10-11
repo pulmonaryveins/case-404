@@ -84,12 +84,14 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     target: [2.52, 1.02, -2.96],
     fov: 44,
   },
-  // Square-on to the graphic-design posters above the terminal (DesignPosters),
-  // about 2 m out along the angled wall's normal.
+  // Square-on to the angled wall above the terminal, about 2 m out along its
+  // normal: the achievements shelf (AchievementShelf, 1.50-1.73 m) and the
+  // graphic-design posters over it (DesignPosters, up to ~2.57 m), the frame
+  // centred between them.
   posterWall: {
     id: "posterWall",
-    position: [1.59, 1.65, -1.62],
-    target: [2.84, 1.75, -3.19],
+    position: [1.59, 1.85, -1.62],
+    target: [2.84, 2.05, -3.19],
     fov: 44,
   },
   // Crossing from the poster wall to the left side: back across the room,

@@ -80,7 +80,8 @@ const ICONS: Record<string, ReactNode> = {
  * there. Scroll position is written to CSS variables and text directly, so
  * scrolling never re-renders React.
  */
-export function SceneNav() {
+/** `hidden`: kept out of sight (e.g. while the scene is still loading). */
+export function SceneNav({ hidden = false }: { hidden?: boolean }) {
   const chapter = useExperienceStore((s) => s.currentChapter);
   const focused = useExperienceStore((s) => s.screenFocused);
   const reduced = useExperienceStore((s) => s.reducedMotion);
@@ -127,7 +128,7 @@ export function SceneNav() {
       ref={rail}
       className={styles.rail}
       aria-label="Scenes"
-      data-hidden={focused}
+      data-hidden={focused || hidden}
       data-scrolling="false"
       data-start="true"
     >

@@ -485,22 +485,25 @@ export const assetManifest = {
   // Against the back wall, left of the board and the desk: in the opening shot
   // it stands in the wall space between the window's shadow and the board. Its
   // front is the model's -X (the bust), turned out into the room, a touch
-  // toward the merch camera.
+  // toward the merch camera. Beside cabinet A, ~13 cm off its side, behind
+  // its front so the drawers clear it.
   mannequin: {
     id: "mannequin",
     url: "/models/case-404/props/mannequin.glb",
     category: "props",
     preloadPriority: 3,
-    position: [-1.45, 0, -3.45],
-    rotation: [0, 1.7, 0],
+    position: [-1.85, 0, -3.5],
+    // Turned to face the camera: 2.05 faces the opening shot, 1.95 the merch
+    // shot; 2.0 is square to both within 3 degrees.
+    rotation: [0, 2.0, 0],
     scale: 1,
     castShadow: true,
     receiveShadow: true,
   },
   // case_boxes.glb -> case-boxes.glb (six 4096px PNGs -> 512px WebP, a
-  // background piece kept inside the texture budget; 110 MB -> ~0.4 MB). Four evidence boxes with lids, metres, 1.75 x 1.05 footprint. Along
-  // the left wall under the window (sill ~0.9 m; the stack is 0.58 m), long
-  // side down the wall; the position offsets the model's own centre.
+  // background piece kept inside the texture budget; 110 MB -> ~0.4 MB). Six evidence boxes (three with lids), metres. Taken
+  // apart by CaseBoxes, which reads only the url, and restacked on and beside
+  // the merch cabinets.
   caseBoxes: {
     id: "caseBoxes",
     url: "/models/case-404/props/case-boxes.glb",
@@ -526,6 +529,68 @@ export const assetManifest = {
     position: [-0.05, 2.2, -3.776],
     rotation: [0, 0, 0],
     scale: 0.0024,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // single_wood_shelf.glb -> wood-shelf.glb (88 triangles, maps 4096 -> 512).
+  // A 1.71 m plank, 10.5 cm tall and 21 cm deep: its top face at y 0.016,
+  // its back at z 0. At 0.6, a ~1 m shelf, stretched to 1.47 m along its
+  // length by AchievementShelf, over the archive terminal (station frame).
+  woodShelf: {
+    id: "woodShelf",
+    url: "/models/case-404/props/wood-shelf.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.6,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // diploma_frame.glb -> diploma-frame.glb (76 triangles, maps 2048 -> 512).
+  // A wooden frame ~9.7 x 8 mm as authored, leaning back ~14 degrees; at 21
+  // about 20 x 17 cm. AchievementShelf stands four on the shelf, each with a
+  // painted certificate over the frame's own artwork.
+  diplomaFrame: {
+    id: "diplomaFrame",
+    url: "/models/case-404/props/diploma-frame.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 21,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // free_medieval_paintings_pack.glb -> paintings.glb: two of the 23
+  // paintings kept (cuadro_8, Bosch's crowd, 1.04 x 1 m; cuadro_12,
+  // robed monks in a landscape, 1.07 x 1 m) and the atlas repacked to the
+  // gold frame strip and their two pictures (1024 -> 512 x 256). Each is
+  // picked out by node name and hung by MedievalPaintings.
+  medievalPaintings: {
+    id: "medievalPaintings",
+    url: "/models/case-404/props/paintings.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // kms_bismarck_battleship.glb -> kms-bismarck.glb (maps up to 1024 -> 256
+  // WebP, the most the texture budget allows; 93K -> 58K tris; see
+  // scripts/optimize-glb.mjs). 3.4 x 6.0 x 25.1 units, full hull to the keel,
+  // length along z; at 0.0215 a 0.54 m model, about 13 cm tall to the mast
+  // tops, a little longer than its plinth. On its plinth in the middle of the achievements shelf (ShipDisplay).
+  kmsBismarck: {
+    id: "kmsBismarck",
+    url: "/models/case-404/props/kms-bismarck.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.0215,
     castShadow: true,
     receiveShadow: true,
   },
