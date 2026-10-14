@@ -35,11 +35,14 @@ export function DetectiveOffice() {
           square) and have no cut-off radius, which showed as a curved edge
           across the desk and floor. The spot is the lamp's own light on the
           board; the soft point is its spill round the room. */}
+      {/* Set back 0.37 m from the board (it was 0.22) so its light falls more
+          evenly across the board instead of a hot spot at the centre, and about
+          half as bright there as before. */}
       <LampSpot
         lamp="wall"
-        at={[-0.05, 2.12, -3.55]}
+        at={[-0.05, 2.15, -3.4]}
         aim={[-0.05, 1.45, -3.77]}
-        intensity={2.9}
+        intensity={2}
         angle={1.3}
         distance={0}
         decay={2}
@@ -51,7 +54,7 @@ export function DetectiveOffice() {
       <LampPoint
         lamp="wall"
         at={[-0.05, 2.4, -1.9]}
-        intensity={3.2}
+        intensity={2.2}
         distance={0}
         decay={2}
         dimWithDossier

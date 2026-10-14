@@ -44,7 +44,7 @@ const WIN_FAR_EDGE_Z = WIN.z - OPENING.w / 2;
  * shadows most of it), so that wall, the merch cabinet and the mannequin
  * carry the moonlight instead of falling to black.
  */
-const BOUNCE = { position: [-2.5, 1.8, -2.2], intensity: 0.32, distance: 4 } as const;
+const BOUNCE = { position: [-2.5, 1.8, -2.2], intensity: 0.27, distance: 4 } as const;
 /** Stretch of the 1.4 m window frame model along the wall, to match OPENING.w. */
 const FRAME_STRETCH = OPENING.w / 1.4;
 /**
@@ -57,9 +57,10 @@ const MOON = 1.55;
 /**
  * How dark the moon's shadows get, 0 (none) to 1 (everything the moon does not
  * reach is left to the faint room fill, which is near black). Under 1 so the
- * window bars read as shadow, not black holes, on the left wall.
+ * window bars read as shadow, not black holes, on the left wall; at 0.55 they
+ * washed out under the lamps' spill, so the pattern no longer showed.
  */
-const SHADOW_STRENGTH = 0.55;
+const SHADOW_STRENGTH = 0.8;
 const OPEN_FRACTION = 0.3;
 
 /**
@@ -80,6 +81,16 @@ const BAR_HEIGHT = OPENING.h + 0.1;
 /** The horizontal bar is cut into tapered pieces; this many along the opening. */
 const CROSS_PIECES = 20;
 const CROSS_Y = 1.75;
+/**
+ * A second, upper bar, whose shadow runs across the top of the moonlit wall:
+ * from high on the left angled wall, over the board's top edge, down to the
+ * right angled wall above the terminal (as seen from the opening shot). Traced
+ * back from there to the moon, it crosses the window plane on a straight line,
+ * slightly tilted: y = UPPER.y + UPPER.slope * (z - UPPER.z), about 2.14 m at
+ * the opening's far edge and 1.84 m near its front edge.
+ */
+const UPPER = { z: 0.28, y: 1.833, slope: -0.234 } as const;
+const upperY = (z: number) => UPPER.y + UPPER.slope * (z - UPPER.z);
 
 /**
  * Stretch of a bar's shadow: a ray from the moon that crosses the window at
@@ -109,6 +120,10 @@ function ShadowBars() {
     const z = WIN.z - half + (i + 0.5) * pieceLen;
     return { z, thick: Math.max(0.012, BAR_SHADOW / (1 + stretch(z))) };
   });
+  // The upper bar: the same tapered pieces, set on its tilted line and turned
+  // to follow it.
+  const upperTilt = Math.atan(-UPPER.slope);
+  const upper = cross.map((b) => ({ ...b, y: upperY(b.z) }));
   const material = <meshBasicMaterial colorWrite={false} depthWrite={false} />;
   return (
     <group name="shadow-bars" position={[WALL.x + 0.01, WIN.y, 0]}>
@@ -121,6 +136,17 @@ function ShadowBars() {
       {cross.map((b, i) => (
         <mesh key={`c${i}`} position={[0, CROSS_Y - WIN.y, b.z]} castShadow>
           <boxGeometry args={[0.03, b.thick, pieceLen * 1.02]} />
+          {material}
+        </mesh>
+      ))}
+      {upper.map((b, i) => (
+        <mesh
+          key={`u${i}`}
+          position={[0, b.y - WIN.y, b.z]}
+          rotation={[upperTilt, 0, 0]}
+          castShadow
+        >
+          <boxGeometry args={[0.03, b.thick, pieceLen * 1.04]} />
           {material}
         </mesh>
       ))}
@@ -192,6 +218,17 @@ function extensionPicture(size = 512) {
     EXT.cross.y - EXT.cross.thick / 2,
     EXT.cross.y + EXT.cross.thick / 2,
   );
+  // The upper bar's line, carried on across the extension's pane.
+  const upperQuad = [
+    px(WALL.x, upperY(EXT.z0 - 0.1) - EXT.cross.thick / 2, EXT.z0 - 0.1),
+    px(WALL.x, upperY(EXT.z1 + 0.1) - EXT.cross.thick / 2, EXT.z1 + 0.1),
+    px(WALL.x, upperY(EXT.z1 + 0.1) + EXT.cross.thick / 2, EXT.z1 + 0.1),
+    px(WALL.x, upperY(EXT.z0 - 0.1) + EXT.cross.thick / 2, EXT.z0 - 0.1),
+  ];
+  ctx.beginPath();
+  upperQuad.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  ctx.closePath();
+  ctx.fill();
   const map = new CanvasTexture(canvas);
   map.anisotropy = 4;
   return map;

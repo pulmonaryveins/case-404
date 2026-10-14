@@ -14,7 +14,9 @@ export function OfficeLighting() {
       {/* Neutral-cool night fill, kept low so the lamp reads as the source:
           cool from above, deep charcoal from the floor, so corners and shadow
           interiors stay dark grey rather than crushing to black. */}
-      <hemisphereLight args={["#8e97a6", "#2b2724", 0.75]} />
+      {/* 0.75 -> 0.58: shadows read as shadow rather than grey haze, while the
+          desk front and floor keep some form. */}
+      <hemisphereLight args={["#8e97a6", "#2b2724", 0.58]} />
 
       {/* Which lamps are lit for the current chapter. */}
       <LampStory />

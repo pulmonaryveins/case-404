@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Mesh, MeshStandardMaterial, type Object3D } from "three";
+import { BufferAttribute, Mesh, MeshStandardMaterial, type Object3D } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { useCursor } from "../cursor/cursorStore";
@@ -11,8 +11,36 @@ import { LAMP_COLOUR, lampOn, stepLamp, toggleLamp } from "../lighting/lampState
 const LEFT_OUT = new Set(["Support_Metal_0", "Switch_Plastic_0"]);
 
 /**
- * The wall light over the board: the lamp's bar alone, in dark metal like the
- * file cabinet, with its
+ * Where the board's brown weave (the cork's colour) lies, clean of the baked
+ * shadows, in its texture atlas: a strip at u 0.034-0.141, v 0.652-0.681
+ * (x 70-290, y 1335-1395 of 2048). Its aspect, 3.7 : 1, is the lamp's bar
+ * (370 x 24 units, 15 : 1) stretched along the weave, which runs lengthwise.
+ */
+const WEAVE = { u: 0.034, du: 0.107, v: 0.652, dv: 0.029 };
+
+/**
+ * A copy of the bar's geometry with UVs laid flat on the weave strip: along
+ * its length (x) for u, up its height (y) for v. The model has none of its own.
+ */
+function weaveUVs(source: Mesh["geometry"]) {
+  const geometry = source.clone();
+  geometry.computeBoundingBox();
+  const { min, max } = geometry.boundingBox!;
+  const pos = geometry.getAttribute("position");
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const x = (pos.getX(i) - min.x) / (max.x - min.x);
+    const y = (pos.getY(i) - min.y) / (max.y - min.y);
+    uv[i * 2] = WEAVE.u + x * WEAVE.du;
+    uv[i * 2 + 1] = WEAVE.v + (1 - y) * WEAVE.dv;
+  }
+  geometry.setAttribute("uv", new BufferAttribute(uv, 2));
+  return geometry;
+}
+
+/**
+ * The wall light over the board: the lamp's bar alone, textured and shaded
+ * with the board's own material (its brown weave, from the board model), with its
  * underside glowing while it is on, fixed flat against the wall. The model
  * came with a long support arm standing out from the wall; without it the bar
  * would float, so it is mounted directly: the bar's back face is at the wall
@@ -22,13 +50,21 @@ const LEFT_OUT = new Set(["Support_Metal_0", "Switch_Plastic_0"]);
 export function WallLamp() {
   const asset = assetManifest.wallLamp;
   const { scene } = useGLTF(asset.url);
+  const { scene: boardScene } = useGLTF(assetManifest.investigationBoard.url);
 
   const { lamp, metal, strip } = useMemo(() => {
-    // Dark gunmetal, the colour the merch file cabinet renders in: a dark
-    // body with a little metal for the sheen (with no environment map to
-    // reflect, more metal would go black) and a satin finish, so the lamp's
-    // own light does not glare on it.
-    const metal = new MeshStandardMaterial({ color: "#2b2d2f", metalness: 0.3, roughness: 0.48 });
+    // The board's own material, cloned: the same texture maps (shared, so
+    // no extra texture memory) and the same shading, so the bar reads as cut
+    // from the same stuff. The board model itself is not changed.
+    let boardMaterial: MeshStandardMaterial | null = null;
+    boardScene.traverse((o) => {
+      if (!boardMaterial && o instanceof Mesh && (o.material as MeshStandardMaterial).map) {
+        boardMaterial = o.material as MeshStandardMaterial;
+      }
+    });
+    const metal = boardMaterial
+      ? (boardMaterial as MeshStandardMaterial).clone()
+      : new MeshStandardMaterial({ color: "#6b3a22", roughness: 0.55 });
     let strip: MeshStandardMaterial | null = null;
     const copy = scene.clone(true);
     const drop: Object3D[] = [];
@@ -38,8 +74,10 @@ export function WallLamp() {
       o.castShadow = true;
       o.receiveShadow = true;
       const name = (o.material as MeshStandardMaterial).name;
-      if (name === "Metal") o.material = metal;
-      else if (name === "Emissive") {
+      if (name === "Metal") {
+        o.material = metal;
+        if (metal.map) o.geometry = weaveUVs(o.geometry);
+      } else if (name === "Emissive") {
         const m = (o.material as MeshStandardMaterial).clone();
         m.color.set("#fff0d6");
         m.emissive.set(LAMP_COLOUR);
@@ -51,7 +89,7 @@ export function WallLamp() {
     });
     drop.forEach((o) => o.removeFromParent());
     return { lamp: copy, metal, strip: strip as MeshStandardMaterial | null };
-  }, [scene]);
+  }, [scene, boardScene]);
 
   // The strip's material, held in a ref so the frame loop can switch it.
   const glow = useRef<MeshStandardMaterial | null>(null);
@@ -63,6 +101,17 @@ export function WallLamp() {
       strip?.dispose();
     };
   }, [metal, strip]);
+  // The cloned bar geometry is ours; the cached scene's own is left alone.
+  useEffect(
+    () => () => {
+      lamp.traverse((o) => {
+        if (o instanceof Mesh && o.material === metal && o.geometry.getAttribute("uv")) {
+          o.geometry.dispose();
+        }
+      });
+    },
+    [lamp, metal],
+  );
 
   useFrame((_, dt) => {
     const lit = stepLamp("wall", dt);
