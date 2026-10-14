@@ -2,7 +2,8 @@ import { ContactShadows } from "@react-three/drei";
 import { LampStory } from "./LampStory";
 
 /**
- * Room light. The sources are the wall light over the board (WallLamp), the
+ * Room light. The sources are the two wall sconces beside the board
+ * (WallSconces, their light in DetectiveOffice), the
  * desk lamps (DeskLampLight, parented to each lamp prop; LampStory says when
  * each is lit) and the moonlight through the window (MoonWindow). This file
  * adds nothing but a low hemisphere fill, so shadows stay dark grey rather than

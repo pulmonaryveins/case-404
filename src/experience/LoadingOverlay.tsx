@@ -5,8 +5,8 @@ import styles from "./LoadingOverlay.module.css";
 /** What the office is doing, by how far the load has got. */
 const STEPS: [number, string][] = [
   [0, "Unlocking the office"],
-  [15, "Dusting the desk for prints"],
-  [35, "Pinning evidence to the board"],
+  [15, "Dusting for prints"],
+  [35, "Pinning the evidence"],
   [55, "Developing the photographs"],
   [75, "Booting the archive terminal"],
   [90, "Switching on the lamps"],
@@ -14,11 +14,11 @@ const STEPS: [number, string][] = [
 
 /**
  * Covers the canvas until the scene has actually drawn (`done`), then fades
- * out: the CASE 404 file under a desk lamp, with a red string running between
- * two pins as the evidence comes in. When the scene is ready, the file's cover
- * swings open on its spine and the lamplight swells as the screen fades
- * (LoadingOverlay.module.css). useProgress is not monotonic (it hits 100%
- * between batches), so the string only ever moves forward.
+ * out. Kept as plain as the rest of the interface: the file's name, and a
+ * progress line drawn like the scene rail on the right (thin track, tungsten
+ * fill, a small knob riding it), with what is loading and how far it is.
+ * useProgress is not monotonic (it hits 100% between batches), so the line
+ * only ever moves forward.
  */
 export function LoadingOverlay({ done }: { done: boolean }) {
   const { progress } = useProgress();
@@ -30,48 +30,24 @@ export function LoadingOverlay({ done }: { done: boolean }) {
   const step = done ? "Case opened" : STEPS.filter(([from]) => pct >= from).at(-1)![1];
 
   return (
-    <div className={styles.loader} data-done={done} aria-hidden={done} role="status">
-      <div className={styles.glow} aria-hidden />
-      <div className={styles.grain} aria-hidden />
-
-      <article className={styles.file}>
-        <span className={styles.tab}>404</span>
-        <header className={styles.header}>
-          <span className={styles.kicker}>Missing Persons Bureau</span>
-          <h1 className={styles.title}>
-            Case File <b>№ 404</b>
-          </h1>
-        </header>
-
-        <dl className={styles.fields}>
-          <div>
-            <dt>Subject</dt>
-            <dd>Unknown</dd>
-          </div>
-          <div>
-            <dt>Status</dt>
-            <dd>{done ? "Open" : "Under review"}</dd>
-          </div>
-        </dl>
-
-        <div className={styles.string} aria-hidden>
-          <i className={styles.pin} />
-          <span className={styles.line}>
-            <span style={{ transform: `scaleX(${pct / 100})` }} />
-          </span>
-          <i className={styles.pin} data-lit={pct >= 100} />
+    <div
+      className={styles.loader}
+      data-done={done}
+      aria-hidden={done}
+      role="status"
+      style={{ "--progress": pct / 100 } as React.CSSProperties}
+    >
+      <div className={styles.panel}>
+        <span className={styles.name}>Case 404</span>
+        <div className={styles.track} aria-hidden>
+          <span className={styles.fill} />
+          <span className={styles.knob} />
         </div>
-
         <p className={styles.status}>
-          <span className={styles.step}>
-            {step}
-            <span className={styles.caret} aria-hidden>
-              …
-            </span>
-          </span>
-          <span className={styles.percent}>{String(pct).padStart(3, "0")}%</span>
+          <span>{step}</span>
+          <span className={styles.percent}>{pct}%</span>
         </p>
-      </article>
+      </div>
     </div>
   );
 }

@@ -12,11 +12,10 @@ import {
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 import { certificates, type Certificate } from "../../data/certificates";
-import { useExperienceStore } from "../../store/useExperienceStore";
-import { frontOf, useFocusable } from "../camera/focus";
 import { Model } from "../models/Model";
 import { paintCertificate } from "../surfaces/paintCertificate";
 import { ShipDisplay } from "./ShipDisplay";
+import { useWallInspect } from "./wallInspect";
 
 /**
  * The achievements: a wooden shelf on the angled wall just above the archive
@@ -60,28 +59,9 @@ const SHEET = new PlaneGeometry(PANEL.w, PANEL.h);
  */
 const CERT_PX: [number, number] = [384, 301];
 
-/** The shelf's pieces can be inspected while the camera is on this wall. */
-const inspectable = () => useExperienceStore.getState().currentChapter === "GRAPHIC_DESIGN";
-
-/**
- * Click-to-inspect for one piece on the shelf: the camera comes square-on to
- * the wall (the station frame's +z, toward the room) and frames the piece.
- */
-function useInspect(target: () => Group | null, label: string, fill: number) {
-  return useFocusable(inspectable, {
-    view: "front",
-    target,
-    label,
-    fill,
-    get front() {
-      return frontOf(target()?.parent ?? null);
-    },
-  });
-}
-
 function Diploma({ cert, x, yaw }: { cert: Certificate; x: number; yaw: number }) {
   const group = useRef<Group>(null);
-  const inspect = useInspect(() => group.current, "Inspect certificate", 1.6);
+  const inspect = useWallInspect(() => group.current, "Inspect certificate", 1.6);
   const asset = assetManifest.diplomaFrame;
   const { scene } = useGLTF(asset.url);
 
@@ -135,7 +115,7 @@ function Diploma({ cert, x, yaw }: { cert: Certificate; x: number; yaw: number }
 export function AchievementShelf({ x }: { x: number }) {
   const shelfY = SHELF_TOP - SHELF_MODEL_TOP * assetManifest.woodShelf.scale;
   const ship = useRef<Group>(null);
-  const inspectShip = useInspect(() => ship.current, "Inspect model", 1.3);
+  const inspectShip = useWallInspect(() => ship.current, "Inspect model", 1.3);
   return (
     <group name="achievement-shelf" position={[x, 0, 0]}>
       <group

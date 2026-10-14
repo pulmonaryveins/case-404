@@ -62,19 +62,7 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
-  // Three-tier wooden letter tray, authored 1.15 x 0.94 x 2.27: scale 0.3 makes
-  // each tray ~35 cm wide, enough for three floppy disks side by side.
-  fileRack: {
-    id: "fileRack",
-    url: "/models/case-404/furniture/file-rack.glb",
-    category: "furniture",
-    preloadPriority: 4,
-    position: [0, 0, 0],
-    rotation: [0, 0, 0],
-    scale: 0.3,
-    castShadow: true,
-    receiveShadow: true,
-  },
+
   // 3.5in floppy, already in metres (9 x 9 x 0.5 cm). Front face is +Z.
   floppy: {
     id: "floppy",
@@ -515,23 +503,23 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
-  // wall_lamp.glb -> wall-lamp.glb (1499 triangles, no textures). A picture light:
-  // a bar 369 wide with a glowing strip under it, on a long support arm. Only
-  // the bar is shown (WallLamp drops the arm and switch), so it is mounted flat
-  // to the wall: at 0.0024 it is a ~0.89 m bar, 4.4 cm deep, 5.7 cm tall. The
-  // origin puts the bar's back face at the back wall (z -3.80) and its
-  // underside ~5 cm above the board's top edge. Gray metal, by WallLamp.
-  wallLamp: {
-    id: "wallLamp",
-    url: "/models/case-404/props/wall-lamp.glb",
+  // wall_lamp232.glb -> wall-sconce.glb (2806 triangles; colour 512, the other
+  // maps 256, plus a glow mask of the glass shades taken from the colour map;
+  // built by a one-off script). A brass twin-arm sconce with two bell-glass
+  // shades opening downward: 2 units wide (z), 1 tall, back plate at +x. At
+  // 0.22 a 44 cm sconce. WallSconces hangs two, one either side of the board.
+  wallSconce: {
+    id: "wallSconce",
+    url: "/models/case-404/props/wall-sconce.glb",
     category: "props",
     preloadPriority: 2,
-    position: [-0.05, 2.2, -3.776],
+    position: [0, 0, 0],
     rotation: [0, 0, 0],
-    scale: 0.0024,
+    scale: 0.22,
     castShadow: true,
     receiveShadow: true,
   },
+
   // single_wood_shelf.glb -> wood-shelf.glb (88 triangles, maps 4096 -> 512).
   // A 1.71 m plank, 10.5 cm tall and 21 cm deep: its top face at y 0.016,
   // its back at z 0. At 0.6, a ~1 m shelf, stretched to 1.47 m along its
@@ -591,6 +579,22 @@ export const assetManifest = {
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: 0.0215,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // realistic_m1_garand_updated.glb -> m1-garand.glb (9.2K tris; colour maps
+  // 4096/2048 -> 1024, normal and metal/rough -> 512; room made by removing
+  // the unused file-rack.glb). 853 units long: muzzle at -z, butt at +z, up
+  // +y, right side (operating rod) at +x. At 0.0013 a real 1.1 m rifle, hung
+  // above the evidence board facing left by RifleDisplay.
+  m1Garand: {
+    id: "m1Garand",
+    url: "/models/case-404/props/m1-garand.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.0013,
     castShadow: true,
     receiveShadow: true,
   },

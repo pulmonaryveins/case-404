@@ -2,7 +2,8 @@ import { Model } from "../models/Model";
 import { DeskProps } from "./DeskProps";
 import { ArchiveStation } from "./ArchiveStation";
 import { Carpet } from "./Carpet";
-import { WallLamp } from "./WallLamp";
+import { RifleDisplay } from "./RifleDisplay";
+import { WallSconces } from "./WallSconces";
 import { LampPoint, LampSpot } from "./LampSpot";
 import { MerchCorner } from "./MerchCorner";
 import { Dossier } from "./Dossier";
@@ -28,37 +29,54 @@ export function DetectiveOffice() {
       {/* Rug on the floor, under the main desk. */}
       <Carpet />
       <MerchCorner />
-      {/* The wall light: one lamp over the board, flat to the wall (on from the
-          start), and its light. */}
-      <WallLamp />
-      {/* Both of its lights fall off with distance as real light does (inverse
-          square) and have no cut-off radius, which showed as a curved edge
-          across the desk and floor. The spot is the lamp's own light on the
-          board; the soft point is its spill round the room. */}
-      {/* Set back 0.37 m from the board (it was 0.22) so its light falls more
-          evenly across the board instead of a hot spot at the centre, and about
-          half as bright there as before. */}
+      {/* The wall lights: a brass twin sconce either side of the board (on
+          from the start, switched together, click either one). */}
+      <WallSconces />
+      {/* An M1 Garand on two brass pegs above the board, as a display piece. */}
+      <RifleDisplay />
+      {/* Its picture light: a narrow soft spot from just above and in front,
+          switched with the wall lamps, so the rifle reads instead of sitting
+          as a silhouette above the board. Shadowless. */}
       <LampSpot
         lamp="wall"
-        at={[-0.05, 2.15, -3.4]}
-        aim={[-0.05, 1.45, -3.77]}
-        intensity={2}
-        angle={1.3}
+        at={[0, 2.6, -3.3]}
+        aim={[0, 2.22, -3.74]}
+        intensity={0.8}
+        angle={0.55}
         distance={0}
         decay={2}
       />
-      {/* Its spill: a neutral, gently warm fill from above the front of the
-          room, level with the middle, so it reaches the fronts of the cabinets
-          on the left and the computer on the right (both face into the room),
-          and the desk, rather than a warm hot spot near the wall. */}
-      <LampPoint
-        lamp="wall"
-        at={[-0.05, 2.4, -1.9]}
-        intensity={2.2}
-        distance={0}
-        decay={2}
-        dimWithDossier
-      />
+      {/* Each sconce's light: a raking spot on its half of the board, from
+          just above and in front of the sconce (light from right at the wall
+          would only graze it), and a soft spill out over its side of the room:
+          the merch cabinets and mannequin on the left, the computer, shelf and
+          design posters on the right, and between them the desk. All fall off
+          as real light does (inverse square), with no cut-off radius (that
+          showed as a curved edge across the desk and floor), and are dark
+          when the lamps are off, leaving the moonlight and its window shadows
+          as they were. */}
+      {([-1, 1] as const).map((side) => (
+        <group key={side}>
+          <LampSpot
+            lamp="wall"
+            at={[side * 1.0, 2.1, -3.2]}
+            aim={[side * 0.55, 1.45, -3.77]}
+            intensity={2.2}
+            angle={1.0}
+            distance={0}
+            decay={2}
+          />
+          <LampPoint
+            lamp="wall"
+            at={[side * 1.4, 2.35, -2.5]}
+            // A little more on the left, where the cabinet fronts face away.
+            intensity={side < 0 ? 1.8 : 1.5}
+            distance={0}
+            decay={2}
+            dimWithDossier
+          />
+        </group>
+      ))}
 
       <group name="main-desk">
         <Model id="desk" />
