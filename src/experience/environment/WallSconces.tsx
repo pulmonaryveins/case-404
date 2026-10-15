@@ -6,6 +6,7 @@ import { assetManifest } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { useCursor } from "../cursor/cursorStore";
 import { LAMP_COLOUR, lampOn, stepLamp, toggleLamp } from "../lighting/lampState";
+import { LampPoint, LampSpot } from "./LampSpot";
 
 /** The back wall's face (see RoomShell). */
 const WALL_Z = -3.8;
@@ -24,13 +25,28 @@ const SCONCES = [
  * standing 17 cm off the wall.
  */
 const BACK = 0.386;
+/**
+ * Each sconce's light, from where its bulbs are (relative to the sconce): the
+ * bells' mouths are ~11 cm below the arms' bar and ~11 cm out from the wall.
+ *
+ *  - DOWN: what the open bells throw, a soft cone straight down (tipped a
+ *    touch out into the room) that lays the familiar scallop of light down the
+ *    wall under the fitting, starting right at it (tipped further out, the
+ *    pool began a hand below the bells), and onto what stands below it;
+ *  - GLOW: what the frosted glass lets through all round, a faint point in the
+ *    bells that lights the wall just about the fitting.
+ */
+const DOWN = { y: -0.11, z: 0.11, out: 0.08, intensity: 1.6, angle: 0.95, reach: 1.25 };
+const GLOW_LIGHT = { y: -0.03, z: 0.2, intensity: 0.18 };
+
 /** Glow of the glass shades at full, in the lamp's own colour. */
 const GLOW = 1.6;
 
 /**
  * Both sconces, switched together as the "wall" lamp (lampState): the glass
- * shades glow while it is lit, and its light (LampSpot / LampPoint in
- * DetectiveOffice) follows the same switch. Click either one to switch.
+ * shades glow while it is lit, and their light comes from the bulbs (DOWN and
+ * GLOW_LIGHT); the room's soft bounce fill (DetectiveOffice) follows the same
+ * switch. Click either one to switch.
  */
 export function WallSconces() {
   const asset = assetManifest.wallSconce;
@@ -99,6 +115,27 @@ export function WallSconces() {
           {...switching}
         >
           <primitive object={copies[i]} position={[-BACK, 0, 0]} />
+        </group>
+      ))}
+      {/* Their light, from the bulbs; dark when the lamps are off. */}
+      {SCONCES.map(({ x, y }, i) => (
+        <group key={`light${i}`}>
+          <LampSpot
+            lamp="wall"
+            at={[x, y + DOWN.y, WALL_Z + DOWN.z]}
+            aim={[x, y + DOWN.y - DOWN.reach, WALL_Z + DOWN.z + DOWN.out]}
+            intensity={DOWN.intensity}
+            angle={DOWN.angle}
+            distance={0}
+            decay={2}
+          />
+          <LampPoint
+            lamp="wall"
+            at={[x, y + GLOW_LIGHT.y, WALL_Z + GLOW_LIGHT.z]}
+            intensity={GLOW_LIGHT.intensity}
+            distance={0}
+            decay={2}
+          />
         </group>
       ))}
     </group>

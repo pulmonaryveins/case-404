@@ -1,9 +1,10 @@
 import { ContactShadows } from "@react-three/drei";
 import { LampStory } from "./LampStory";
+import { Mist } from "./Mist";
 
 /**
  * Room light. The sources are the two wall sconces beside the board
- * (WallSconces, their light in DetectiveOffice), the
+ * (WallSconces, with their light; the bounce fill in DetectiveOffice), the
  * desk lamps (DeskLampLight, parented to each lamp prop; LampStory says when
  * each is lit) and the moonlight through the window (MoonWindow). This file
  * adds nothing but a low hemisphere fill, so shadows stay dark grey rather than
@@ -18,6 +19,9 @@ export function OfficeLighting() {
       {/* 0.75 -> 0.58: shadows read as shadow rather than grey haze, while the
           desk front and floor keep some form. */}
       <hemisphereLight args={["#8e97a6", "#2b2724", 0.58]} />
+
+      {/* The air: a faint haze, and mist drifting through it. */}
+      <Mist />
 
       {/* Which lamps are lit for the current chapter. */}
       <LampStory />

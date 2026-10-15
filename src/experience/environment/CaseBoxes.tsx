@@ -5,8 +5,9 @@ import { assetManifest } from "../../assets/assetManifest";
 
 /**
  * The evidence boxes from case-boxes.glb, taken apart and restacked around the
- * merch cabinets: one box on top of each cabinet, and on the floor against the
- * side wall, left of B, a stack of three with one more open box beside it.
+ * merch cabinets: two on top of cabinet B (A carries the gramophone), and on
+ * the floor against the side wall, left of B, a stack of three with one more
+ * open box beside it.
  * Only lidded boxes carry another: the open ones' flaps stand up past their
  * rims, so a box set on one would rest on the flap tips and look afloat.
  *
@@ -69,16 +70,18 @@ export function CaseBoxes({ cabinets, top }: { cabinets: Cabinet[]; top: number 
   const boxes = useBoxes();
 
   const stacks = useMemo<Stack[]>(() => {
-    const [a, b] = cabinets;
+    const [, b] = cabinets;
     // A box lies square to its cabinet with its long side (model x) along the
     // cabinet's width (the wall).
     const along = (c: Cabinet) => c.yaw + Math.PI / 2;
     return [
-      { at: [a.at.x, a.at.z], y: top, boxes: [{ id: "B", yaw: along(a) + 0.05 }] },
       {
         at: [b.at.x, b.at.z],
         y: top,
-        boxes: [{ id: "D001", yaw: b.yaw - 0.04 }],
+        boxes: [
+          { id: "B", yaw: along(b) + 0.05 },
+          { id: "D001", yaw: b.yaw - 0.04, dx: 0.01 },
+        ],
       },
       // On the floor against the side wall (x -3.6), just past B's rounded
       // corner, long sides along the wall: the big box and a lidded one, the

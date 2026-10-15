@@ -582,19 +582,36 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
-  // realistic_m1_garand_updated.glb -> m1-garand.glb (9.2K tris; colour maps
-  // 4096/2048 -> 1024, normal and metal/rough -> 512; room made by removing
-  // the unused file-rack.glb). 853 units long: muzzle at -z, butt at +z, up
-  // +y, right side (operating rod) at +x. At 0.0013 a real 1.1 m rifle, hung
-  // above the evidence board facing left by RifleDisplay.
-  m1Garand: {
-    id: "m1Garand",
-    url: "/models/case-404/props/m1-garand.glb",
+  // old_musket.glb -> old-musket.glb (16.5K tris; colour map 2048 -> 1536,
+  // metal/rough -> 512, in the texture room the removed M1 Garand freed). 2
+  // units long, centred on its origin: butt at -x, muzzle (and bayonet) at +x,
+  // and its UP is +z (lock and hammer on top, trigger guard under), so it lies
+  // on its side as exported. At 0.75 a 1.5 m musket, hung above the evidence
+  // board by MusketDisplay.
+  oldMusket: {
+    id: "oldMusket",
+    url: "/models/case-404/props/old-musket.glb",
     category: "props",
     preloadPriority: 3,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    scale: 0.0013,
+    scale: 0.75,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // gramophone.glb (9.9K tris; maps 4096 -> colour 768, others 256, to fit
+  // the texture budget). 168 units tall, feet at y -12.3, front (horn mouth,
+  // maker's plate) toward -z. At 0.00357 a 0.6 m gramophone, on merch
+  // cabinet A, by Gramophone (it plays /audio/cool-vibes.mp3, see
+  // gramophoneAudio).
+  gramophone: {
+    id: "gramophone",
+    url: "/models/case-404/props/gramophone.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.00357,
     castShadow: true,
     receiveShadow: true,
   },

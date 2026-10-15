@@ -107,11 +107,13 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   // as the archive shot does at the computer desk. The cabinet is flush to the
   // middle of that wall and the mannequin to its right, both whole in the
   // frame from a narrow 1.6:1 window to a wide 2.15:1 one. As in the archive
-  // shot, the wall's rounded ends sit near the frame's edges.
+  // shot, the wall's rounded ends sit near the frame's edges. Pulled back
+  // 0.4 m along that same line (and aimed 5 cm higher) so the gramophone on
+  // cabinet A is whole in frame too, horn and all.
   merchCorner: {
     id: "merchCorner",
-    position: [-0.97, 1.5, -1.32],
-    target: [-2.15, 0.8, -3.1],
+    position: [-0.76, 1.62, -1.0],
+    target: [-2.15, 0.85, -3.1],
     fov: DEFAULT_CAMERA.fov,
   },
   creativeEvidence: {

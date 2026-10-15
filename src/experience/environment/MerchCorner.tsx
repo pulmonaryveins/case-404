@@ -18,6 +18,7 @@ import { storyRig } from "../../story/storyRig";
 import { useCursor } from "../cursor/cursorStore";
 import { Model } from "../models/Model";
 import { CaseBoxes } from "./CaseBoxes";
+import { Gramophone } from "./Gramophone";
 
 /* ------------------------------------------------------------------ */
 /* Placement (world space, metres)                                      */
@@ -43,6 +44,8 @@ const CABINETS = [
 const CABINET_SCALE = 1.3;
 /** The cabinet body's top, model units (file-cabinet.glb bounds). */
 const BODY_TOP = 0.756;
+/** How far the gramophone sits back from the middle of cabinet A's top (m). */
+const GRAMOPHONE_SET_BACK = 0.08;
 
 /**
  * Measured from file-cabinet.glb (model frame, after its own root turn): the
@@ -455,6 +458,17 @@ export function MerchCorner() {
       ))}
       <Model id="mannequin" />
       <CaseBoxes cabinets={CABINETS} top={(BODY_TOP - BODY.floor) * CABINET_SCALE} />
+      {/* The gramophone on cabinet A, set back a little toward the wall so the
+          horn does not overhang, its front turned to the room (the cabinet's
+          drawer side), a touch toward the middle of the office. */}
+      <Gramophone
+        position={[
+          CABINETS[0].at.x - 0.62 * GRAMOPHONE_SET_BACK,
+          (BODY_TOP - BODY.floor) * CABINET_SCALE,
+          CABINETS[0].at.z - 0.78 * GRAMOPHONE_SET_BACK,
+        ]}
+        yaw={CABINETS[0].yaw - Math.PI / 2 + 0.3}
+      />
     </group>
   );
 }
