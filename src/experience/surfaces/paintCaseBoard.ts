@@ -1,5 +1,7 @@
 import { boardIslands, type BoardPieceId } from "./boardIslands";
 import { caseFile, mapStains, pieces, tags, type PieceKind } from "../../data/evidenceBoard";
+import { editorCode, printoutCode, terminalLines } from "../../data/boardCode";
+import { paintCodeEditor, paintCodePrintout, paintTerminal } from "./paintCode";
 
 const INK = "#1f1b17";
 const RED = "#8e221d";
@@ -580,34 +582,17 @@ function paintCaseFile(ctx: Ctx, w: number, h: number) {
 function paintKind(ctx: Ctx, kind: PieceKind, w: number, h: number, seed: number) {
   const r = rng(seed);
   switch (kind) {
-    case "codeEditor": {
-      // Photo of a dark code editor: gutter, indented syntax-coloured lines.
-      ctx.fillStyle = "#1c1d21";
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = "#2a2b30";
-      ctx.fillRect(0, 0, w * 0.12, h);
-      const colors = ["#9b7bb0", "#7aa0b8", "#c5a46a", "#8fb08a", "#b8b2a6"];
-      for (let i = 0; i < 14; i++) {
-        let x = w * 0.16 + (i % 5 === 0 ? 0 : (1 + (i % 3)) * w * 0.05);
-        const y = h * (0.07 + i * 0.065);
-        for (let t = 0; t < 1 + Math.floor(r() * 3); t++) {
-          const len = w * (0.08 + r() * 0.2);
-          ctx.fillStyle = colors[Math.floor(r() * colors.length)];
-          ctx.fillRect(x, y, Math.min(len, w * 0.95 - x), h * 0.025);
-          x += len + w * 0.03;
-        }
-      }
+    case "codeEditor":
+      // A screenshot of real code from this site, as it is in the editor.
+      paintCodeEditor(ctx, w, h, editorCode.file, editorCode.lines);
       break;
-    }
-    case "codePrintout": {
-      ctx.fillStyle = "#cfc4ae";
-      ctx.fillRect(0, 0, w, h);
-      const lines = ["<header>", "  <nav>", "  <main", '   id="404"', "  />", "</header>"];
-      ctx.font = `bold ${h * 0.075}px ${TYPE}`;
-      ctx.fillStyle = "#2d2a26";
-      lines.forEach((l, i) => ctx.fillText(l, w * 0.08, h * (0.16 + i * 0.13)));
+    case "codePrintout":
+      // ...and some more of it, printed out.
+      paintCodePrintout(ctx, w, h, printoutCode.file, printoutCode.lines);
       break;
-    }
+    case "terminal":
+      paintTerminal(ctx, w, h, terminalLines);
+      break;
     case "wireframeSheet": {
       // Pencil UX sketch: three screens joined by flow arrows.
       ctx.fillStyle = "#d4cab3";
@@ -966,6 +951,81 @@ export function paintCaseBoard(atlas: ImageBitmap | HTMLImageElement) {
   paintPieces(ctx, size);
   paintTags(ctx, size);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  return canvas;
+}
+
+/** Sticky-note paper, per note: classic yellow and two faded neighbours. */
+const NOTE_COLOURS = ["#e9cf5c", "#ecc66a", "#e4d273", "#efc35e"];
+
+/**
+ * A role's sticky note: square yellow paper, a slightly glossier glue band
+ * along the top, the role written in black marker (two lines), underlined in
+ * red, with a faint shadow toward the lifted bottom edge. `size` is the canvas
+ * side in px.
+ */
+export function paintStickyNote(lines: string[], seed: number, size = 512) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const r = rng(seed);
+  ctx.fillStyle = NOTE_COLOURS[seed % NOTE_COLOURS.length];
+  ctx.fillRect(0, 0, size, size);
+  // Glue band: a touch lighter and smoother.
+  ctx.fillStyle = "rgba(255,250,220,0.16)";
+  ctx.fillRect(0, 0, size, size * 0.16);
+  // Light falls off toward the curled bottom, and the paper is a little
+  // darker at its edges.
+  const fall = ctx.createLinearGradient(0, 0, 0, size);
+  fall.addColorStop(0, "rgba(0,0,0,0)");
+  fall.addColorStop(0.7, "rgba(0,0,0,0.03)");
+  fall.addColorStop(1, "rgba(70,45,0,0.2)");
+  ctx.fillStyle = fall;
+  ctx.fillRect(0, 0, size, size);
+  const edge = ctx.createRadialGradient(
+    size / 2,
+    size / 2,
+    size * 0.4,
+    size / 2,
+    size / 2,
+    size * 0.75,
+  );
+  edge.addColorStop(0, "rgba(0,0,0,0)");
+  edge.addColorStop(1, "rgba(90,60,0,0.16)");
+  ctx.fillStyle = edge;
+  ctx.fillRect(0, 0, size, size);
+  // Paper fibre.
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = r() > 0.5 ? "rgba(255,255,230,0.07)" : "rgba(90,60,0,0.06)";
+    ctx.fillRect(r() * size, r() * size, 1 + r() * 2, 1);
+  }
+
+  // The role in marker, a line each, sized to fit the longest.
+  const longest = Math.max(...lines.map((l) => l.length));
+  const px = Math.min(size * 0.2, (size * 0.84) / (longest * 0.66));
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#1a1714";
+  ctx.font = `bold ${px}px ${HAND}`;
+  const top = size * 0.5 - ((lines.length - 1) * px * 1.05) / 2 - px * 0.15;
+  lines.forEach((line, i) => {
+    ctx.save();
+    ctx.translate(size / 2 + (r() - 0.5) * size * 0.03, top + i * px * 1.05);
+    ctx.rotate((r() - 0.5) * 0.05);
+    ctx.fillText(line, 0, 0);
+    ctx.restore();
+  });
+  // A quick red underline under the last line.
+  const uy = top + (lines.length - 1) * px * 1.05 + px * 0.68;
+  const half = Math.min(size * 0.4, ctx.measureText(lines[lines.length - 1]).width * 0.5);
+  ctx.strokeStyle = "rgba(170,32,26,0.9)";
+  ctx.lineWidth = size * 0.016;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(size / 2 - half, uy + size * 0.01);
+  ctx.quadraticCurveTo(size / 2, uy - size * 0.012, size / 2 + half, uy + size * 0.004);
+  ctx.stroke();
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   return canvas;
 }
 

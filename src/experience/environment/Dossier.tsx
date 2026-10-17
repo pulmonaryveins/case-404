@@ -1,4 +1,4 @@
-import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import {
@@ -6,6 +6,7 @@ import {
   DoubleSide,
   FrontSide,
   Group,
+  MathUtils,
   Mesh,
   MeshStandardMaterial,
   MeshPhysicalMaterial,
@@ -15,10 +16,13 @@ import {
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 import { storyRig } from "../../story/storyRig";
-import { paintAboutPage } from "../surfaces/paintDossierPages";
+import { dossierPages } from "../../data/dossier";
+import { useExperienceStore } from "../../store/useExperienceStore";
+import { paintDossierPage } from "../surfaces/paintDossierPages";
 import { DossierRecords } from "./DossierRecords";
 import { DossierEvidence } from "./DossierEvidence";
-import { dossierReadable } from "./dossierState";
+import { DossierTabs } from "./DossierTabs";
+import { dossierReadable, slamHeight, useDossier, whenIdle } from "./dossierState";
 import { useFocusable } from "../camera/focus";
 import { PaperContactShadow } from "./PaperContactShadow";
 import { createPaperBump } from "../surfaces/paperFinish";
@@ -35,16 +39,51 @@ const PAGE = { w: 2.02, h: 2.75 };
 const RIGHT_PAGE: [number, number, number] = [0.02, 0.1, 0.12];
 const LEFT_PAGE: [number, number, number] = [-2.34, 0.14, 0.12];
 
+/**
+ * A new sheet is dropped onto the stack from this high (folder-local units; the
+ * folder is ~0.24 m wide, so ~13 cm), tilted as it falls, and bounces as it
+ * lands. It lands half-way through its time.
+ */
+const DROP_HEIGHT = 1.2;
+const DROP_TILT = 0.16;
+const DROP_SECONDS = 0.75;
+/** The index tabs slide out from under the stack, this far, as the folder opens. */
+const TAB_SLIDE = 0.34;
+
 // One dossier in the scene, so its live three.js parts are module state:
 // mutated every frame, never React state.
 const parts = {
-  right: null as MeshStandardMaterial | null,
+  right: null as MeshPhysicalMaterial | null,
+  leafFront: null as MeshPhysicalMaterial | null,
 };
 
-function pageMaterial(canvas: HTMLCanvasElement) {
-  const map = new CanvasTexture(canvas);
-  map.colorSpace = SRGBColorSpace;
-  map.anisotropy = 8;
+/**
+ * Each sheet is painted once, the first time it is needed (or in idle time
+ * once the folder is open), and kept. Its GPU copy is freed while it is not on
+ * show and uploads again if it is turned back to.
+ */
+const canvases = new Map<number, HTMLCanvasElement>();
+const textures = new Map<number, CanvasTexture>();
+function pageCanvas(index: number) {
+  let canvas = canvases.get(index);
+  if (!canvas) canvases.set(index, (canvas = paintDossierPage(index)));
+  return canvas;
+}
+function pageTexture(index: number) {
+  let map = textures.get(index);
+  if (!map) {
+    map = new CanvasTexture(pageCanvas(index));
+    map.colorSpace = SRGBColorSpace;
+    map.anisotropy = 8;
+    textures.set(index, map);
+  }
+  return map;
+}
+function releaseTextures(keep: number) {
+  for (const [index, map] of textures) if (index !== keep) map.dispose();
+}
+
+function pageMaterial(map: CanvasTexture) {
   return new MeshPhysicalMaterial({
     map,
     bumpMap: createPaperBump(),
@@ -58,8 +97,12 @@ function pageMaterial(canvas: HTMLCanvasElement) {
 }
 
 function pageMaterials() {
-  parts.right ??= pageMaterial(paintAboutPage());
-  return parts.right;
+  parts.right ??= pageMaterial(pageTexture(useDossier.getState().page));
+  if (!parts.leafFront) {
+    parts.leafFront = pageMaterial(pageTexture(0));
+    parts.leafFront.transparent = true;
+  }
+  return { right: parts.right, leafFront: parts.leafFront };
 }
 
 /**
@@ -218,8 +261,11 @@ function attachFolder(scene: Object3D) {
 
 /**
  * The case dossier. Its cover opening is scrubbed from storyRig.dossierOpen
- * using the folder's own recorded morph frames; photos and the map stay
- * attached to the left cover, with profile records on the right.
+ * using the folder's own recorded morph frames; photos and records stay
+ * attached to the left cover, the subject's file on the right as a stack of
+ * sheets (dossierPages) with index tabs on its edge (DossierTabs): choosing
+ * one drops that sheet onto the stack with a bounce, and the left cover's
+ * items are swapped for that sheet's (DossierEvidence).
  */
 export function Dossier() {
   const asset = assetManifest.dossierFolder;
@@ -243,8 +289,35 @@ export function Dossier() {
     cover.frustumCulled = false;
     return { scene: owned, cover, source, geometry };
   }, [scene]);
-  const rightMat = pageMaterials();
+  const { right: rightMat, leafFront } = pageMaterials();
   const leaf = useRef<Group>(null);
+  const droppingSheet = useRef<Group>(null);
+  const tabs = useRef<Group>(null);
+  /**
+   * The page change in progress: the new sheet is dropped onto the stack, in
+   * either direction, and covers the old one, which is swapped for it
+   * underneath once it has settled.
+   */
+  const turn = useRef({ t: 1, to: 0 });
+  useEffect(
+    () =>
+      useDossier.subscribe((state, prev) => {
+        if (state.page === prev.page) return;
+        // A change already running ends where it was going.
+        if (turn.current.t < 1) parts.right!.map = pageTexture(turn.current.to);
+        if (storyRig.dossierOpen < 0.5) {
+          // Closed (or closing): nothing to see, just swap the sheet.
+          parts.right!.map = pageTexture(state.page);
+          turn.current = { t: 1, to: state.page };
+          releaseTextures(state.page);
+          return;
+        }
+        parts.leafFront!.map = pageTexture(state.page);
+        turn.current = { t: 0, to: state.page };
+      }),
+    [],
+  );
+  const wasReadable = useRef(false);
   const coverDesign = useRef<Group>(null);
   const lastProgress = useRef(-1);
 
@@ -254,8 +327,50 @@ export function Dossier() {
     lastProgress.current = -1;
     return () => animated.geometry.dispose();
   }, [animated]);
-  useFrame(() => {
+  useFrame((_, dt) => {
     const p = Math.max(0, Math.min(1, storyRig.dossierOpen));
+
+    // Readable: the other sheets (and the left cover's items) are painted
+    // ahead, in idle time. Folded shut again: back to the first sheet.
+    const dossier = useDossier.getState();
+    const readable = p > 0.95 && useExperienceStore.getState().currentChapter === "SUBJECT_PROFILE";
+    if (readable !== wasReadable.current) {
+      wasReadable.current = readable;
+      dossier.setReadable(readable);
+      if (readable && canvases.size < dossierPages.length) {
+        // One sheet per idle callback (each due within a second or so, spaced
+        // out), so no one frame carries them all.
+        dossierPages.forEach((_, i) => whenIdle(() => pageCanvas(i), 800 + i * 500));
+      }
+    }
+    if (p < 0.02 && dossier.page !== 0) dossier.reset();
+
+    // The index tabs slide out from under the stack as the folder finishes opening.
+    if (tabs.current) {
+      const reveal = MathUtils.smoothstep(p, 0.9, 1);
+      tabs.current.visible = reveal > 0;
+      tabs.current.position.x = -TAB_SLIDE * (1 - reveal);
+    }
+
+    // A new sheet falls, lands flat and bounces; tilted and a little off-line while up.
+    const slide = turn.current;
+    if (droppingSheet.current) {
+      if (slide.t < 1) {
+        slide.t = Math.min(1, slide.t + dt / DROP_SECONDS);
+        const h = slamHeight(slide.t);
+        droppingSheet.current.position.y = RIGHT_PAGE[1] + 0.006 + DROP_HEIGHT * h;
+        droppingSheet.current.rotation.set(DROP_TILT * h, 0.1 * h, -DROP_TILT * 0.7 * h);
+        // Appears at once rather than fading: it is already in the air.
+        parts.leafFront!.opacity = MathUtils.clamp(slide.t / 0.06, 0, 1);
+        droppingSheet.current.visible = true;
+        if (slide.t === 1) {
+          droppingSheet.current.visible = false;
+          parts.right!.map = pageTexture(slide.to);
+          releaseTextures(slide.to);
+        }
+      } else droppingSheet.current.visible = false;
+    }
+
     if (p !== lastProgress.current) {
       const frame = p * OPEN_FRAME;
       const index = Math.floor(frame);
@@ -296,8 +411,8 @@ export function Dossier() {
     }
   });
 
-  // The profile page fills most of the frame: it is text to read.
-  const pageFocus = useFocusable(dossierReadable, { fill: 1.12, label: "Read profile" });
+  // The page fills most of the frame: it is text to read.
+  const pageFocus = useFocusable(dossierReadable, { fill: 1.12, label: "Read page" });
   return (
     <group position={asset.position} rotation={asset.rotation} scale={asset.scale}>
       <primitive object={animated.scene} />
@@ -334,6 +449,24 @@ export function Dossier() {
       >
         <planeGeometry args={[PAGE.w, PAGE.h]} />
       </mesh>
+      {/* The incoming sheet, dropped onto the stack (not clickable in the air). */}
+      <group
+        ref={droppingSheet}
+        visible={false}
+        position={[RIGHT_PAGE[0], RIGHT_PAGE[1] + 0.006, RIGHT_PAGE[2]]}
+      >
+        <mesh rotation={[-Math.PI / 2, 0, 0]} material={leafFront} castShadow raycast={() => null}>
+          <planeGeometry args={[PAGE.w, PAGE.h]} />
+        </mesh>
+      </group>
+      {/* The index tabs on the stack's right edge. */}
+      <group ref={tabs} visible={false}>
+        <DossierTabs
+          x={RIGHT_PAGE[0] + PAGE.w / 2}
+          y={RIGHT_PAGE[1] - 0.008}
+          zTop={RIGHT_PAGE[2] - PAGE.h / 2}
+        />
+      </group>
       <group
         ref={leaf}
         visible={false}

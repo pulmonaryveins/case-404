@@ -3,15 +3,35 @@ export interface Certificate {
   title: string;
   issuer: string;
   year: string;
+  /** The scanned certificate (public/images/certificates), shown in its frame on the shelf. */
+  image: string;
 }
 
 /**
- * Placeholder demo content. The first four hang as the framed achievements on
- * the shelf above the archive terminal (AchievementShelf), left to right.
+ * The certificates on file, newest first. They hang as the framed
+ * achievements on the shelf above the archive terminal (AchievementShelf):
+ * the first two on the left, the third on the right.
  */
 export const certificates: Certificate[] = [
-  { id: "cert-1", title: "Frontend Development", issuer: "Placeholder Academy", year: "20XX" },
-  { id: "cert-2", title: "UI/UX Design", issuer: "Placeholder Institute", year: "20XX" },
-  { id: "cert-3", title: "Graphic Design", issuer: "Placeholder School of Arts", year: "20XX" },
-  { id: "cert-4", title: "Video Editing", issuer: "Placeholder Film Lab", year: "20XX" },
+  {
+    id: "alliance-merit",
+    title: "Certificate of Merit · Alliance Jumpstart Training Program",
+    issuer: "Alliance Software Inc.",
+    year: "2025",
+    image: "/images/certificates/2.webp",
+  },
+  {
+    id: "alliance-completion",
+    title: "Certificate of Completion · Alliance Jumpstart Training Program",
+    issuer: "Alliance Software Inc.",
+    year: "2025",
+    image: "/images/certificates/3.webp",
+  },
+  {
+    id: "ccna-srwe",
+    title: "CCNA: Switching, Routing, and Wireless Essentials",
+    issuer: "Cisco Networking Academy",
+    year: "2024",
+    image: "/images/certificates/1.webp",
+  },
 ];

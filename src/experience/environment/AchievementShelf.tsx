@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useLoader } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import {
   Box3,
   CanvasTexture,
   type Group,
+  ImageLoader,
   Mesh,
   MeshStandardMaterial,
   PlaneGeometry,
@@ -13,7 +15,6 @@ import {
 import { assetManifest } from "../../assets/assetManifest";
 import { certificates, type Certificate } from "../../data/certificates";
 import { Model } from "../models/Model";
-import { paintCertificate } from "../surfaces/paintCertificate";
 import { ShipDisplay } from "./ShipDisplay";
 import { useWallInspect } from "./wallInspect";
 
@@ -33,12 +34,14 @@ const SHELF_MODEL_TOP = 0.016;
  * at the manifest scale): 1.71 m as authored, 1.02 m at 0.6, 1.54 m at 0.9.
  */
 const SHELF_LENGTH_SCALE = 0.9;
-/** Frame centres along the shelf, from its centre, and a slight turn each. */
+/**
+ * Frame centres along the shelf, from its centre, and a slight turn each: two
+ * to the left of the ship, one to the right (one per certificate on file).
+ */
 const FRAMES = [
   { x: -0.655, yaw: 0.04 },
   { x: -0.43, yaw: -0.02 },
-  { x: 0.43, yaw: 0.025 },
-  { x: 0.655, yaw: -0.04 },
+  { x: 0.54, yaw: -0.03 },
 ];
 /** The ship's plinth: centred on the shelf, halfway out from the wall. */
 const SHIP_Z = 0.0625;
@@ -52,22 +55,34 @@ const FRAME_GAP = 0.012;
  * frame's moulding (y 0.6 to 0.67).
  */
 const PANEL = { w: 1.2116, h: 0.7852, y: 0.546 };
-const SHEET = new PlaneGeometry(PANEL.w, PANEL.h);
 /**
- * Canvas size, in the panel's proportions once the mesh's node scale
- * (0.663 x 0.802) is applied: 1.276 : 1.
+ * The panel is 1.276 : 1 once the mesh's node scale (0.663 x 0.802) is
+ * applied; the scans are A4 landscape (1.415 : 1). Each scan is shown whole,
+ * a little inside the panel, with the frame's own mat round it: 94% of the
+ * panel's width, and its height cut to the scan's proportions.
  */
-const CERT_PX: [number, number] = [384, 301];
+const PANEL_RATIO = 1.276;
+const SCAN_RATIO = 1600 / 1131;
+const SHEET = new PlaneGeometry(PANEL.w * 0.94, PANEL.h * 0.94 * (PANEL_RATIO / SCAN_RATIO));
+/** The scan's size on its canvas: 1024 wide, enough for the close-up inspect. */
+const SCAN_W = 1024;
 
 function Diploma({ cert, x, yaw }: { cert: Certificate; x: number; yaw: number }) {
   const group = useRef<Group>(null);
   const inspect = useWallInspect(() => group.current, "Inspect certificate", 1.6);
   const asset = assetManifest.diplomaFrame;
   const { scene } = useGLTF(asset.url);
+  const scan = useLoader(ImageLoader, cert.image);
 
   const { frame, offset, texture, material } = useMemo(() => {
     const frame = scene.clone(true);
-    const texture = new CanvasTexture(paintCertificate(cert, ...CERT_PX));
+    // The scan, scaled down once onto a canvas (the 1600 px original would
+    // take over twice the memory as a texture, for no detail at this size).
+    const canvas = document.createElement("canvas");
+    canvas.width = SCAN_W;
+    canvas.height = Math.round(SCAN_W / SCAN_RATIO);
+    canvas.getContext("2d")!.drawImage(scan, 0, 0, canvas.width, canvas.height);
+    const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
     texture.anisotropy = 8;
     const material = new MeshStandardMaterial({ map: texture, roughness: 0.85 });
@@ -90,7 +105,7 @@ function Diploma({ cert, x, yaw }: { cert: Certificate; x: number; yaw: number }
     const s = asset.scale;
     const offset = new Vector3(-((box.min.x + box.max.x) / 2) * s, -box.min.y * s, -box.min.z * s);
     return { frame, offset, texture, material };
-  }, [scene, cert, asset.scale]);
+  }, [scene, scan, asset.scale]);
 
   useEffect(
     () => () => {

@@ -22,9 +22,13 @@ export const profile: Profile = {
 };
 
 export const profileSkills = [
-  { label: "DEVELOPMENT", value: "React, JavaScript, HTML, CSS, Tailwind, MySQL" },
-  { label: "DESIGN & MEDIA", value: "Figma, Photoshop, Premiere Pro" },
-  { label: "WORKFLOW", value: "Vite, Git, GitHub" },
+  {
+    label: "DEVELOPMENT",
+    value:
+      "HTML, CSS, JavaScript, Angular, Tailwind, MySQL, NestJS, PHP, React, Laravel, Supabase, ASP.NET, C#",
+  },
+  { label: "DESIGN & MEDIA", value: "Figma, Adobe Photoshop, Premiere Pro, After Effects, Canva" },
+  { label: "WORKFLOW", value: "Git, GitHub" },
 ] as const;
 
 /** Right-page records. Only ABOUT has content in Phase 4A. */

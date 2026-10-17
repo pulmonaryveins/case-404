@@ -7,6 +7,7 @@ import { useExperienceStore } from "../../store/useExperienceStore";
 import { useCursor } from "../cursor/cursorStore";
 import { LAMP_COLOUR, lampOn, stepLamp, toggleLamp } from "../lighting/lampState";
 import { LampPoint, LampSpot } from "./LampSpot";
+import { lampAudio } from "../audio/lampAudio";
 
 /** The back wall's face (see RoomShell). */
 const WALL_Z = -3.8;
@@ -92,6 +93,7 @@ export function WallSconces() {
       if (!enabled()) return;
       e.stopPropagation();
       toggleLamp("wall");
+      lampAudio.wall(lampOn.wall);
       useCursor.getState().set("switch", label());
     },
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {

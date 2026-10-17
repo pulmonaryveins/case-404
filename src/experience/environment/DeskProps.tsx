@@ -6,6 +6,7 @@ import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
 import { lampLit, lampOn, toggleLamp, type LampId } from "../lighting/lampState";
+import { lampAudio } from "../audio/lampAudio";
 import { useCursor } from "../cursor/cursorStore";
 import { DeskSmoke } from "./DeskSmoke";
 import { ContactShadow } from "./ContactShadow";
@@ -130,6 +131,7 @@ export function DeskProp({
         onClick: (e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
           toggleLamp(lamp);
+          lampAudio.desk(lampOn[lamp]);
           useCursor.getState().set("switch", lampOn[lamp] ? "Lamp off" : "Lamp on");
         },
         onPointerOver: (e: ThreeEvent<PointerEvent>) => {

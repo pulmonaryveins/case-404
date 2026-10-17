@@ -14,6 +14,7 @@ import { assetManifest } from "../../assets/assetManifest";
 import { archiveProjects } from "../../data/projects";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
+import { computerAudio } from "../audio/computerAudio";
 import { Model } from "../models/Model";
 import { paintArchiveScreen, SCREEN_H, SCREEN_W, type ScreenView } from "../surfaces/paintArchive";
 import { AchievementShelf } from "./AchievementShelf";
@@ -130,6 +131,74 @@ function paintShutdown(
   screen.map.needsUpdate = true;
 }
 
+/** Length of the CRT's change from a disk's record back to the menu. */
+const TRANSITION_MS = 750;
+
+/** A copy of a canvas's picture, to keep what was showing. */
+function copyOf(canvas: HTMLCanvasElement) {
+  const copy = document.createElement("canvas");
+  copy.width = canvas.width;
+  copy.height = canvas.height;
+  copy.getContext("2d")!.drawImage(canvas, 0, 0);
+  return copy;
+}
+
+/**
+ * The change from a disk's record back to the menu: the picture tears into
+ * horizontal bands that slip sideways, a bright band sweeps down the tube and
+ * the static thickens to a flash at the middle, where it swaps to the menu and
+ * settles. `t` runs 0 to 1. Per frame, a few dozen band copies and a few
+ * hundred specks (nothing under a clip).
+ */
+function paintTransition(
+  screen: { canvas: HTMLCanvasElement; map: CanvasTexture },
+  from: HTMLCanvasElement,
+  to: HTMLCanvasElement,
+  t: number,
+) {
+  const ctx = screen.canvas.getContext("2d")!;
+  const W = SCREEN_W;
+  const H = SCREEN_H;
+  // Nothing at either end, full at the middle.
+  const k = Math.sin(Math.PI * t);
+  const src = t < 0.5 ? from : to;
+  ctx.save();
+  ctx.fillStyle = "#020403";
+  ctx.fillRect(0, 0, W, H);
+  let y = 0;
+  while (y < H) {
+    const h = Math.min(6 + Math.random() * 26, H - y);
+    const shift = (Math.random() - 0.5) * 200 * k * k;
+    ctx.drawImage(src, 0, y, W, h, shift, y, W, h);
+    y += h;
+  }
+  ctx.globalCompositeOperation = "lighter";
+  const band = (t * 1.5 - 0.15) * H;
+  ctx.fillStyle = `rgba(150, 255, 200, ${0.16 * k})`;
+  ctx.fillRect(0, band - 28, W, 56);
+  const specks = Math.round(900 * k * k);
+  for (let i = 0; i < specks; i++) {
+    ctx.fillStyle = `rgba(190, 255, 215, ${0.12 + Math.random() * 0.5 * k})`;
+    ctx.fillRect(
+      Math.random() * W,
+      Math.random() * H,
+      2 + Math.random() * 40 * k,
+      1 + Math.random() * 2,
+    );
+  }
+  if (Math.abs(t - 0.5) < 0.08) {
+    ctx.fillStyle = "rgba(120, 255, 180, 0.28)";
+    ctx.fillRect(0, 0, W, H);
+  }
+  ctx.restore();
+  screen.map.needsUpdate = true;
+}
+
+/** The change in progress (if any), mutated by the effect that starts it and the frame loop. */
+const crtTransition: {
+  run: { since: number; last: number; from: HTMLCanvasElement; to: HTMLCanvasElement } | null;
+} = { run: null };
+
 /** The terminal's scroll, in canvas px: where it is, where it is heading, how far it can go. */
 const terminalScroll = { target: 0, current: 0, max: 0 };
 
@@ -225,6 +294,8 @@ export function ArchiveStation() {
     since: 0,
     last: 0,
     userOff: false,
+    /** Switched on by the button (a click behind the sound) rather than by arriving. */
+    pressed: false,
     picture: null as HTMLCanvasElement | null,
   });
   const togglePower = () => {
@@ -232,9 +303,11 @@ export function ArchiveStation() {
     if (p.mode === "shutdown") return;
     if (p.mode === "off") {
       p.userOff = false; // boots on the next frame
+      p.pressed = true;
       return;
     }
     p.userOff = true;
+    computerAudio.powerOff(SHUTDOWN_MS / 1000);
     p.mode = "shutdown";
     p.since = performance.now();
     // Keep the last picture to collapse.
@@ -277,6 +350,8 @@ export function ArchiveStation() {
       p.mode = "boot";
       p.since = now;
       p.last = 0;
+      computerAudio.powerOn(BOOT_MS / 1000, p.pressed);
+      p.pressed = false;
     }
     if (p.mode === "boot") {
       const t = reducedMotion ? 1 : (now - p.since) / BOOT_MS;
@@ -290,21 +365,45 @@ export function ArchiveStation() {
     }
   });
   // Menu or the inserted disk's record once online; blank while it is off.
+  const wasActive = useRef(false);
   useEffect(() => {
+    // A disk coming out while the terminal is on: the record that was showing.
+    const ejected = wasActive.current && !active && online;
+    wasActive.current = !!active;
     // A new page starts at the top.
     terminalScroll.target = terminalScroll.current = 0;
     insertPhase.since = performance.now();
     insertPhase.last = 0;
     insertPhase.ready = false;
+    crtTransition.run = null;
     if (online) {
-      // The disk is not in the drive yet (or has been ejected): the menu.
-      terminalScroll.max = repaintScreen(screen, {
-        kind: "menu",
-        active: null,
-        projects: archiveProjects,
-      });
+      if (ejected && !reducedMotion) {
+        // Back to the menu through a burst of CRT static, from the record on
+        // show (the screen has not been repainted yet).
+        const to = document.createElement("canvas");
+        to.width = SCREEN_W;
+        to.height = SCREEN_H;
+        terminalScroll.max = paintArchiveScreen(to, {
+          kind: "menu",
+          active: null,
+          projects: archiveProjects,
+        });
+        crtTransition.run = {
+          since: performance.now(),
+          last: 0,
+          from: copyOf(screen.canvas),
+          to,
+        };
+      } else {
+        // The disk is not in the drive yet (or has been ejected): the menu.
+        terminalScroll.max = repaintScreen(screen, {
+          kind: "menu",
+          active: null,
+          projects: archiveProjects,
+        });
+      }
     } else if (power.current.mode === "off") repaintScreen(screen, { kind: "off" });
-  }, [screen, online, active]);
+  }, [screen, online, active, reducedMotion]);
   // The inserted video disk plays its clip on the tube, repainted each frame.
   const video = useRef<HTMLVideoElement | null>(null);
   const clip = active?.video ?? null;
@@ -326,6 +425,27 @@ export function ArchiveStation() {
   }, [clip]);
   // Eases the terminal's scroll, and repaints while it moves or a clip plays.
   useFrame((_, dt) => {
+    const run = crtTransition.run;
+    if (run) {
+      if (!online) crtTransition.run = null;
+      else {
+        const now = performance.now();
+        const t = (now - run.since) / TRANSITION_MS;
+        if (t < 1) {
+          if (now - run.last >= PAINT_MS) {
+            run.last = now;
+            paintTransition(screen, run.from, run.to, t);
+          }
+          return;
+        }
+        crtTransition.run = null;
+        terminalScroll.max = repaintScreen(screen, {
+          kind: "menu",
+          active: null,
+          projects: archiveProjects,
+        });
+      }
+    }
     const sinceInsert = performance.now() - insertPhase.since;
     if (online && active && !insertPhase.ready) {
       const wait = INSERT_SECONDS * 1000;
@@ -478,6 +598,19 @@ export function ArchiveStation() {
     return { disks, outward: pc.outward, shadows, matrix: pc.matrix, top };
   }, []);
 
+  /** Click a disk: put it in (taking out the one already there), or take it out. */
+  const toggleDisk = (id: string) => {
+    if (active?.id === id) {
+      computerAudio.eject(INSERT_SECONDS);
+      setActive(null);
+      return;
+    }
+    // Another disk comes out as this one goes in: no screen change to sound.
+    if (active) computerAudio.eject(INSERT_SECONDS, { screen: false });
+    computerAudio.insert(INSERT_SECONDS, READ_MS / 1000);
+    setActive(id);
+  };
+
   return (
     <group name="archive-station" position={STATION_POS} rotation={[0, STATION_YAW, 0]}>
       <Model id="archiveDesk" />
@@ -530,7 +663,7 @@ export function ArchiveStation() {
           outward={poses.outward}
           inserted={active?.id === project.id}
           interactive={interactive && online}
-          onSelect={() => setActive(active?.id === project.id ? null : project.id)}
+          onSelect={() => toggleDisk(project.id)}
         />
       ))}
     </group>

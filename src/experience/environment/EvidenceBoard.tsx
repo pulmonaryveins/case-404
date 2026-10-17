@@ -1,12 +1,17 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useLoader } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import {
   Box3,
   CanvasTexture,
+  type Group,
+  ImageLoader,
   Mesh,
   MeshStandardMaterial,
   type Object3D,
+  PlaneGeometry,
   QuadraticBezierCurve3,
+  Raycaster,
   SRGBColorSpace,
   TubeGeometry,
   Vector3,
@@ -14,14 +19,18 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import {
+  boardPhotos,
   caseFile,
   connections,
   hiddenPieces,
   roleClusters,
+  tags,
   type BoardPoster,
   type PosterShape,
+  type RoleCluster,
+  type StringEnd,
 } from "../../data/evidenceBoard";
-import { paintCaseBoard, paintCaseFileImage, paintEvidenceImage } from "../surfaces/paintCaseBoard";
+import { paintCaseBoard, paintEvidenceImage, paintStickyNote } from "../surfaces/paintCaseBoard";
 
 /**
  * The painted board material, one per loaded model. Kept here, in the module,
@@ -31,15 +40,27 @@ import { paintCaseBoard, paintCaseFileImage, paintEvidenceImage } from "../surfa
  */
 const paintedBoards = new WeakMap<Object3D, MeshStandardMaterial>();
 
-const STRING_RADIUS = 0.0015;
+/**
+ * The red string, matched to the new detective board's (detective_board.glb
+ * in assets-source): a deep red cord about 2.5 mm thick, matte (its atlas
+ * gives roughness 0.84, no metal). Untextured: that string samples a flat
+ * patch of solid red from its atlas, so a plain colour is the same thing.
+ */
+const STRING_RADIUS = 0.00125;
+const STRING_COLOR = "#a50201";
+const STRING_ROUGHNESS = 0.84;
 
 /**
- * Evidence string red. The board's own strands share the single atlas
- * material with the cork and the papers, so a clone of it maps this tube's
- * 0..1 UVs across the whole 4096 atlas and the string renders as muddy grey.
- * The strings get their own untextured matte material instead.
+ * The push pins' size: 1.15 x the real pin, a 13 mm head. In the pin model
+ * (its +Y is out of the board), the flange's back is 2.1 mm up the needle
+ * (it sits on the paper there, the needle below it going in) and its neck,
+ * where the strings tie, about 6 mm up.
  */
-const STRING_COLOR = "#9b2823";
+const PIN_SCALE = 1.15;
+const PIN_FLANGE = 0.0021;
+const PIN_NECK = 0.006;
+/** The most a pin leans with the paper under it, off square to the board. */
+const PIN_TILT = (30 * Math.PI) / 180;
 
 /**
  * The poster models (the ones on the graphic-design wall), as hung on the
@@ -74,30 +95,62 @@ const POSTER_OFF = 0.014;
 const POSTER_STEP = 0.012;
 /** How far down from a poster's top edge its pin sits (m). */
 const PIN_DROP = 0.022;
+/** The square poster model's side at scale 1 (m), and the portrait one's size. */
+const SQUARE_SIDE = 0.36;
+const PORTRAIT_SIZE = { w: 0.435, h: 0.62 };
+
+/**
+ * The role sticky notes: side (m), how far the free bottom edge curls off the
+ * board (m), each note's tilt (in roleClusters order), and how far down from
+ * its top edge its pin sits.
+ */
+const NOTE = { side: 0.125, curl: 0.012, rolls: [-0.05, 0.04, 0.06, -0.035], pinDrop: 0.02 };
 
 /**
  * The investigation board with its generic content replaced by CASE 404
  * evidence:
  * - colour atlas repainted once at load (same material, geometry, UVs);
  * - the board's baked photographs, loose strands and spare pins hidden;
- * - a role card at each corner of the map, the case file at its centre;
+ * - a role sticky note at each corner of the map (over the board's own cards,
+ *   now hidden), the case file at its centre;
  * - twelve 3D posters (a landscape, a portrait and a square round each role
  *   card), hung from the board's own pins, with sample images painted per
  *   role;
- * - four extra pins (clones of an existing one): a hub above and a hub below
- *   the case file, and one on its top edge and one on its bottom edge;
- * - a red string network (hubs → case file and role cards → each card's
- *   posters) merged into a single mesh: one extra draw call for every strand.
+ * - four loose evidence photos round the case file (`boardPhotos`);
+ * - extra pins (clones of an existing one): one on the case file's top edge
+ *   and one on each photo;
+ * - a red string network (`connections`, and each card to its posters)
+ *   merged into a single mesh: one extra draw call for every strand.
  */
 export function EvidenceBoard() {
   const asset = assetManifest.investigationBoard;
   const { scene } = useGLTF(asset.url);
-  const { board, faceX } = useMemo(() => buildBoard(scene), [scene]);
+  const { scene: pin } = useGLTF(assetManifest.redPin.url);
+  const { board, faceX, pins } = useMemo(() => buildBoard(scene, pin), [scene, pin]);
+
+  // Once the posters, photos and notes are mounted: pins onto their paper,
+  // then the strings between them.
+  const group = useRef<Group>(null);
+  useLayoutEffect(() => {
+    if (!group.current) return;
+    const strings = seatPins(board, group.current, pins);
+    return () => {
+      board.remove(strings);
+      strings.geometry.dispose();
+      (strings.material as MeshStandardMaterial).dispose();
+    };
+  }, [board, pins]);
 
   return (
-    <group position={asset.position} rotation={asset.rotation} scale={asset.scale}>
+    <group ref={group} position={asset.position} rotation={asset.rotation} scale={asset.scale}>
       <primitive object={board} />
       <CasePosterModel faceX={faceX} />
+      {boardPhotos.map((photo) => (
+        <BoardPhotoModel key={photo.id} photo={photo} faceX={faceX} />
+      ))}
+      {roleClusters.map((cluster, i) => (
+        <StickyNote key={cluster.role} cluster={cluster} order={i} faceX={faceX} />
+      ))}
       {roleClusters.map((cluster) =>
         cluster.posters.map((poster, i) => (
           <BoardPosterModel key={poster.pin} poster={poster} order={i} faceX={faceX} />
@@ -123,13 +176,14 @@ function PosterModel({
   scale,
 }: {
   shape: PosterShape;
-  canvas: HTMLCanvasElement;
+  canvas: HTMLCanvasElement | HTMLImageElement;
   s: number;
   t: number;
   roll: number;
   /** Distance of the poster's back from the board's face. */
   lift: number;
-  scale: number;
+  /** Uniform, or [width, height, depth] for a print of other proportions. */
+  scale: number | [number, number, number];
 }) {
   const spec = POSTER[shape];
   const { scene } = useGLTF(assetManifest[spec.id].url);
@@ -175,8 +229,57 @@ function PosterModel({
   );
 }
 
-/** One of the role clusters' posters, with the sample image for its role. */
-function BoardPosterModel({
+/** One of the role clusters' posters: its image if it has one, else the painted sample. */
+function BoardPosterModel(props: { poster: BoardPoster; order: number; faceX: number }) {
+  return props.poster.image ? <ImagePrintModel {...props} /> : <SamplePosterModel {...props} />;
+}
+
+/**
+ * An image printed on a poster of any shape: fitted whole inside it,
+ * centred, on the print's off-white paper (the role photos are cropped to
+ * their poster's shape beforehand, so they fill it with an even border).
+ */
+function ImagePrintModel({
+  poster,
+  order,
+  faceX,
+}: {
+  poster: BoardPoster;
+  order: number;
+  faceX: number;
+}) {
+  const spec = POSTER[poster.shape];
+  const image = useLoader(ImageLoader, poster.image!);
+  const canvas = useMemo(() => {
+    const [w, h] = spec.px;
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#e6e0d2";
+    ctx.fillRect(0, 0, w, h);
+    const margin = Math.min(w, h) * 0.05;
+    const k = Math.min((w - margin * 2) / image.width, (h - margin * 2) / image.height);
+    const dw = image.width * k;
+    const dh = image.height * k;
+    ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    return c;
+  }, [image, spec]);
+  return (
+    <PosterModel
+      shape={poster.shape}
+      canvas={canvas}
+      s={poster.s}
+      t={poster.t}
+      roll={poster.roll}
+      lift={faceX + POSTER_OFF + order * POSTER_STEP}
+      scale={spec.scale}
+    />
+  );
+}
+
+/** A role cluster's poster with the painted sample image for its role. */
+function SamplePosterModel({
   poster,
   order,
   faceX,
@@ -203,14 +306,91 @@ function BoardPosterModel({
   );
 }
 
+/**
+ * One of the loose evidence prints round the case file, on the square poster
+ * model, or the portrait one stretched a touch to the print's proportions.
+ */
+function BoardPhotoModel({ photo, faceX }: { photo: (typeof boardPhotos)[number]; faceX: number }) {
+  const image = useLoader(ImageLoader, photo.image);
+  const portrait = photo.aspect > 1.05;
+  const k = photo.size / (portrait ? PORTRAIT_SIZE.w : SQUARE_SIDE);
+  const ky = portrait ? (photo.size * photo.aspect) / PORTRAIT_SIZE.h : k;
+  return (
+    <PosterModel
+      shape={portrait ? "portrait" : "square"}
+      canvas={image}
+      s={photo.s}
+      t={photo.t}
+      roll={photo.roll}
+      lift={faceX + POSTER_OFF}
+      scale={[k, ky, k]}
+    />
+  );
+}
+
+/**
+ * A role's sticky note, stuck to the map by its glue band along the top: a
+ * thin square whose free lower part curls a little off the board.
+ */
+function StickyNote({
+  cluster,
+  order,
+  faceX,
+}: {
+  cluster: RoleCluster;
+  order: number;
+  faceX: number;
+}) {
+  const { geometry, material } = useMemo(() => {
+    const lines = tags.find((tag) => tag.piece === cluster.card.piece)?.lines ?? [cluster.role];
+    const texture = new CanvasTexture(paintStickyNote(lines, 11 + order));
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = 8;
+    const geometry = new PlaneGeometry(NOTE.side, NOTE.side, 1, 10);
+    const pos = geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      // 0 down to below the glue band, rising to 1 at the free bottom edge.
+      const free = Math.max(0, (NOTE.side * 0.34 - pos.getY(i)) / (NOTE.side * 0.84));
+      pos.setZ(i, NOTE.curl * free * free);
+    }
+    geometry.computeVertexNormals();
+    const material = new MeshStandardMaterial({ map: texture, roughness: 0.82, metalness: 0 });
+    return { geometry, material };
+  }, [cluster, order]);
+
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.map?.dispose();
+      material.dispose();
+    },
+    [geometry, material],
+  );
+
+  return (
+    <group
+      position={[faceX + 0.003, cluster.card.t, -cluster.card.s]}
+      rotation={[0, Math.PI / 2, 0]}
+    >
+      <mesh
+        geometry={geometry}
+        material={material}
+        rotation={[0, 0, NOTE.rolls[order] ?? 0]}
+        castShadow
+        receiveShadow
+      />
+    </group>
+  );
+}
+
 /** The CASE 404 file: a square poster at the centre of the board. */
 function CasePosterModel({ faceX }: { faceX: number }) {
   const { s, t, roll, scale } = caseFile.poster;
-  const canvas = useMemo(() => paintCaseFileImage(768), []);
+  const image = useLoader(ImageLoader, caseFile.image);
   return (
     <PosterModel
       shape="square"
-      canvas={canvas}
+      canvas={image}
       s={s}
       t={t}
       roll={roll}
@@ -221,7 +401,7 @@ function CasePosterModel({ faceX }: { faceX: number }) {
 }
 
 /** Works in the board GLB's own scene space (board face toward +X). */
-function buildBoard(source: Object3D) {
+function buildBoard(source: Object3D, redPin: Object3D) {
   const board = source.clone(true);
   board.updateMatrixWorld(true);
 
@@ -273,20 +453,16 @@ function buildBoard(source: Object3D) {
     node.updateMatrixWorld(true);
   };
 
-  // Role cards, one at each corner of the map, each with its own pin carried
-  // along with it.
-  for (const { card } of roleClusters) {
-    const paper = board.getObjectByName(card.piece)!;
-    const pin = board.getObjectByName(card.pin)!;
-    const before = new Box3().setFromObject(paper).getCenter(new Vector3());
-    const x = faceX + 0.012;
-    moveCentreTo(paper, card.s, card.t, x);
-    const after = new Box3().setFromObject(paper).getCenter(new Vector3());
-    // The pin keeps its place on the paper: shift it by the paper's own move.
-    const pp = board.worldToLocal(pin.getWorldPosition(new Vector3())).add(after).sub(before);
-    pin.position.copy(pin.parent!.worldToLocal(board.localToWorld(pp)));
-    pin.updateMatrixWorld(true);
-  }
+  // The board's own role cards give way to the sticky notes (StickyNote);
+  // each card's pin moves to the top of its note, under the glue band.
+  roleClusters.forEach(({ card }, i) => {
+    board.getObjectByName(card.piece)!.visible = false;
+    const roll = NOTE.rolls[i] ?? 0;
+    const up = NOTE.side / 2 - NOTE.pinDrop;
+    const s = card.s - up * Math.sin(roll);
+    const t = card.t + up * Math.cos(roll);
+    moveCentreTo(board.getObjectByName(card.pin)!, s, t, faceX + 0.014);
+  });
 
   // Each poster's pin: at the top of the poster, just in front of it.
   roleClusters.forEach(({ posters }) => {
@@ -301,48 +477,91 @@ function buildBoard(source: Object3D) {
   });
   board.updateMatrixWorld(true);
 
-  // The extra pins are clones of one existing pin, scaled up a little, set at
-  // a board-face (s, t) and depth x. Each returns where its strings tie off.
-  const pinSource = board.getObjectByName(connections.cloneOf) as Mesh;
-  const sourceBox = new Box3().setFromObject(pinSource);
-  const sourceCentre = sourceBox.getCenter(new Vector3());
-  const addPin = (s: number, t: number, x: number) => {
-    const k = connections.scale;
-    const pin = new Mesh(pinSource.geometry, pinSource.material);
-    pinSource.matrixWorld.decompose(pin.position, pin.quaternion, pin.scale);
-    // Move the clone so its centre sits at the spot, scaled about that centre.
-    pin.position
-      .sub(sourceCentre)
-      .multiplyScalar(k)
-      .add(new Vector3(x, t, -s));
-    pin.scale.multiplyScalar(k);
-    pin.castShadow = true;
+  // Every pin is the new board's red push pin (redPin), all one size. The
+  // board's own pins that are in use (each role note's and each poster's,
+  // moved above) only mark the spots; the case file and photos get a spot at
+  // their top edge. The pins' depth is settled once everything is mounted
+  // (seatPins), on whatever paper is under each.
+  const pins = new Map<string, Object3D>();
+  const place = (key: string, at: Vector3) => {
+    const pin = redPin.clone(true);
+    // Head (+Y) out of the board (+X), needle in.
+    pin.rotation.set(0, 0, -Math.PI / 2);
+    pin.scale.setScalar(PIN_SCALE);
+    pin.position.copy(at);
+    pin.userData.casePin = true;
+    pin.traverse((o) => {
+      if (o instanceof Mesh) o.castShadow = o.receiveShadow = true;
+    });
     board.add(pin);
-    return new Vector3(x + (sourceBox.max.x - sourceCentre.x) * k * 0.6, t, -s);
+    pins.set(key, pin);
   };
-  // The hubs stand on the map; the case file's two pins on its poster's top and
-  // bottom edges, in front of its (curled) paper.
-  const mapX = faceX + 0.012;
-  const caseScale = caseFile.poster.scale;
-  const caseX =
-    faceX + POSTER_OFF + POSTER.square.bulge * (caseScale / POSTER.square.scale) + 0.012;
-  const caseHalf = POSTER.square.half * (caseScale / POSTER.square.scale) - 0.02;
-  const hubTop = addPin(connections.hubs.top.s, connections.hubs.top.t, mapX);
-  const hubBottom = addPin(connections.hubs.bottom.s, connections.hubs.bottom.t, mapX);
-  const fileTop = addPin(caseFile.poster.s, caseFile.poster.t + caseHalf, caseX);
-  const fileBottom = addPin(caseFile.poster.s, caseFile.poster.t - caseHalf, caseX);
-
-  // Where a strand ties off: just under a pin's head, on the viewer side.
-  const heads = new Map<string, Vector3>();
-  const head = (name: string) => {
-    let p = heads.get(name);
-    if (!p) {
-      const box = new Box3().setFromObject(board.getObjectByName(name)!);
-      const c = box.getCenter(new Vector3());
-      p = new Vector3(c.x + (box.max.x - c.x) * 0.6, c.y, c.z);
-      heads.set(name, p);
+  board.traverse((o) => {
+    if (o instanceof Mesh && o.visible && o.name.startsWith("Cylinder")) {
+      place(o.name, new Box3().setFromObject(o, true).getCenter(new Vector3()));
+      o.visible = false;
     }
-    return p;
+  });
+  const atTopOf = (s: number, t: number, roll: number, side: number, drop: number) => {
+    const up = side / 2 - drop;
+    return new Vector3(faceX + 0.02, t + up * Math.cos(roll), -(s - up * Math.sin(roll)));
+  };
+  const { poster } = caseFile;
+  place("file", atTopOf(poster.s, poster.t, poster.roll, SQUARE_SIDE * poster.scale, 0.02));
+  for (const photo of boardPhotos) {
+    // In the photo's top margin, clear of its title or date stamp.
+    const height = photo.size * photo.aspect;
+    place(`photo:${photo.id}`, atTopOf(photo.s, photo.t, photo.roll, height, 0.011));
+  }
+
+  return { board, faceX, pins };
+}
+
+/**
+ * Sets each pin's depth so its flange sits on the paper under it (a ray from
+ * in front of the pin, straight into the board; the posters, notes and photos
+ * curl, so their depth at a pin is only known once they are mounted), then
+ * strings the pins together. Returns the strings' mesh, added to the board.
+ */
+function seatPins(board: Object3D, around: Object3D, pins: Map<string, Object3D>) {
+  around.updateMatrixWorld(true);
+  const out = new Vector3(1, 0, 0).transformDirection(board.matrixWorld);
+  const raycaster = new Raycaster();
+  const shown = (o: Object3D | null): boolean => !o || (o.visible && shown(o.parent));
+  const isPin = (o: Object3D | null): boolean => !!o && (o.userData.casePin || isPin(o.parent));
+  for (const pin of pins.values()) {
+    const world = board.localToWorld(pin.position.clone());
+    raycaster.set(world.clone().addScaledVector(out, 0.2), out.clone().negate());
+    const hit = raycaster
+      .intersectObject(around, true)
+      .find((h) => h.object.name !== "case404-strings" && !isPin(h.object) && shown(h.object));
+    if (!hit) continue;
+    // Square to the paper where it is hit, as a pin pushed into curled paper
+    // leans with it (at most PIN_TILT off square to the board).
+    const toBoard = board.matrixWorld.clone().invert();
+    const n = hit.face
+      ? hit.face.normal
+          .clone()
+          .transformDirection(hit.object.matrixWorld)
+          .transformDirection(toBoard)
+      : new Vector3(1, 0, 0);
+    if (n.x < 0) n.negate();
+    const tilt = Math.acos(Math.min(1, n.x));
+    if (tilt > PIN_TILT) {
+      const side = n.clone().setX(0).normalize();
+      n.set(Math.cos(PIN_TILT), 0, 0).addScaledVector(side, Math.sin(PIN_TILT));
+    }
+    pin.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), n);
+    pin.position
+      .copy(board.worldToLocal(hit.point.clone()))
+      .addScaledVector(n, -PIN_FLANGE * PIN_SCALE);
+  }
+
+  // Where a strand ties off: round the pin's neck, just behind its cap.
+  const tie = (key: string) => {
+    const pin = pins.get(key)!;
+    const axis = new Vector3(0, 1, 0).applyQuaternion(pin.quaternion);
+    return pin.position.clone().addScaledVector(axis, PIN_NECK * PIN_SCALE);
   };
 
   /**
@@ -359,29 +578,27 @@ function buildBoard(source: Object3D) {
     return new TubeGeometry(new QuadraticBezierCurve3(a, mid, b), 16, STRING_RADIUS, 5, false);
   };
 
-  // roleClusters runs upper left, lower left, upper right, lower right.
-  const upper = [roleClusters[0], roleClusters[2]];
-  const lower = [roleClusters[1], roleClusters[3]];
+  const end = (e: StringEnd) => {
+    if (e === "file") return tie("file");
+    if ("photo" in e) return tie(`photo:${e.photo}`);
+    return tie(roleClusters.find((c) => c.role === e.card)!.card.pin);
+  };
   const tubes = [
-    // The top hub: down to the case file's top edge, out to the two upper cards.
-    strand(hubTop, fileTop, 0.02),
-    ...upper.map(({ card }) => strand(hubTop, head(card.pin), 0.06)),
-    // The bottom hub: up to the case file's bottom edge, out to the two lower cards.
-    strand(hubBottom, fileBottom, 0.02),
-    ...lower.map(({ card }) => strand(hubBottom, head(card.pin), 0.06)),
+    // The network round the case file.
+    ...connections.strands.map(([a, b]) => strand(end(a), end(b), 0.05)),
     // Each card to its three posters.
     ...roleClusters.flatMap(({ card, posters }) =>
-      posters.map((poster) => strand(head(card.pin), head(poster.pin), 0.16)),
+      posters.map((poster) => strand(tie(card.pin), tie(poster.pin), 0.16)),
     ),
   ];
   const strings = new Mesh(
     mergeGeometries(tubes),
-    new MeshStandardMaterial({ color: STRING_COLOR, roughness: 0.92, metalness: 0 }),
+    new MeshStandardMaterial({ color: STRING_COLOR, roughness: STRING_ROUGHNESS, metalness: 0 }),
   );
+  tubes.forEach((t) => t.dispose());
   strings.name = "case404-strings";
   strings.castShadow = true;
   strings.receiveShadow = true;
   board.add(strings);
-
-  return { board, faceX };
+  return strings;
 }

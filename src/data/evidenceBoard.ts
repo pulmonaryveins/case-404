@@ -21,7 +21,8 @@ export type PieceKind =
   | "editingTimeline"
   | "filmStrip"
   | "videoStill"
-  | "evidenceCard";
+  | "evidenceCard"
+  | "terminal";
 
 export interface BoardPiece {
   piece: BoardPieceId;
@@ -33,6 +34,8 @@ export interface BoardPiece {
 /** Case file painted over the centre of the (kept, aged) world map. */
 export const caseFile = {
   piece: "Plane058__0",
+  /** The case file sheet hung at the centre (public/images/board). */
+  image: "/images/board/case-file.webp",
   title: ["CASE", "404"],
   subtitle: "SUBJECT UNKNOWN",
   fields: [
@@ -60,7 +63,7 @@ export const caseFile = {
  */
 export const pieces: BoardPiece[] = [];
 
-/** Role label on each cluster's note card. */
+/** Role label on each cluster's sticky note (and the board's old card under it). */
 export const tags: { piece: BoardPieceId; lines: string[] }[] = [
   { piece: "Plane068__0", lines: ["FRONTEND", "DEVELOPMENT"] },
   { piece: "Plane064__0", lines: ["UI/UX", "DESIGN"] },
@@ -89,6 +92,11 @@ export interface BoardPoster {
   shape: PosterShape;
   /** Which sample image to paint on it (see paintEvidenceImage). */
   kind: PieceKind;
+  /**
+   * An image to print instead (a URL under public/images), such as the
+   * subject's own design work. Fitted whole inside the poster, on its paper.
+   */
+  image?: string;
   /** The board pin this poster hangs from. */
   pin: string;
   /** Centre on the board face (s = right, t = up, metres) and tilt (rad). */
@@ -144,7 +152,7 @@ export const roleClusters: RoleCluster[] = [
       },
       {
         shape: "square",
-        kind: "browserPage",
+        kind: "terminal",
         pin: "Cylinder018__0",
         s: -1.45,
         t: 1.66,
@@ -191,6 +199,7 @@ export const roleClusters: RoleCluster[] = [
       {
         shape: "landscape",
         kind: "colorPalette",
+        image: "/images/design/9.webp",
         pin: "Cylinder021__0",
         s: 0.498,
         t: 1.9,
@@ -199,12 +208,21 @@ export const roleClusters: RoleCluster[] = [
       {
         shape: "portrait",
         kind: "posterLetter",
+        image: "/images/design/3.webp",
         pin: "Cylinder022__0",
         s: 0.215,
         t: 1.83,
         roll: -0.05,
       },
-      { shape: "square", kind: "shapeStudy", pin: "Cylinder020__0", s: 0.498, t: 1.66, roll: 0.04 },
+      {
+        shape: "square",
+        kind: "shapeStudy",
+        image: "/images/design/8.webp",
+        pin: "Cylinder020__0",
+        s: 0.498,
+        t: 1.66,
+        roll: 0.04,
+      },
     ],
   },
   {
@@ -269,22 +287,94 @@ export const mapStains = {
   ],
 } as const;
 
+export type BoardPhotoId = "top" | "bottom" | "left" | "right";
+
 /**
- * The red-string network. Two hub pins stand on the map, one above the case
- * file and one below it, level with the file's middle column. The top hub is
- * strung to the file's top edge and to the two upper role cards (FRONTEND and
- * GRAPHIC); the bottom hub to the file's bottom edge and to the two lower role
- * cards (UI/UX and VIDEO). Each role card is then strung to its three
- * posters (all derived from `roleClusters`; see EvidenceBoard). Nothing
- * crosses the case file. The pins are clones of an existing one.
- *
- * Board-face coordinates (s = right, t = up) are in the board GLB's own space.
+ * Loose evidence prints on the map round the case file, each pinned at its
+ * top: one above the file, one below it, and one either side between the file
+ * and the role cards. `image` is the print (public/images/board), `size` its
+ * width (m) and `aspect` its height over width (the bottom one, a fingerprint,
+ * is a portrait print; the rest are square).
  */
-export const connections = {
-  cloneOf: "Cylinder019__0",
-  scale: 1.3,
-  hubs: {
-    top: { s: -0.476, t: 1.87 },
-    bottom: { s: -0.476, t: 1.13 },
+export const boardPhotos: {
+  id: BoardPhotoId;
+  image: string;
+  aspect: number;
+  s: number;
+  t: number;
+  roll: number;
+  size: number;
+}[] = [
+  {
+    id: "top",
+    image: "/images/board/photo-top.webp",
+    aspect: 1,
+    s: -0.476,
+    t: 1.875,
+    roll: 0.03,
+    size: 0.17,
   },
-} as const;
+  {
+    id: "bottom",
+    image: "/images/board/photo-bottom.webp",
+    aspect: 768 / 574,
+    s: -0.476,
+    t: 1.155,
+    roll: -0.04,
+    size: 0.13,
+  },
+  {
+    id: "left",
+    image: "/images/board/photo-left.webp",
+    aspect: 1,
+    s: -0.78,
+    t: 1.47,
+    roll: -0.06,
+    size: 0.14,
+  },
+  {
+    id: "right",
+    image: "/images/board/photo-right.webp",
+    aspect: 1,
+    s: -0.172,
+    t: 1.47,
+    roll: 0.06,
+    size: 0.14,
+  },
+];
+
+/** A strand's end: the case file's top pin, a role card (by role) or a photo. */
+export type StringEnd = "file" | { card: string } | { photo: BoardPhotoId };
+
+/**
+ * The red-string network (besides each role card's strings to its own three
+ * posters, which follow from `roleClusters`). The case file's pin, on its top
+ * edge, is strung to the photo above it and to the two upper role cards. Each
+ * upper card runs down to the card below it. On the left, UI/UX is strung up
+ * to the left photo and on to the file, and down to the photo under the file.
+ * On the right, GRAPHIC is strung to the right photo, which runs on to the
+ * photo under the file and to VIDEO. The file's bottom edge has no string.
+ * Every pin is the red push pin (EvidenceBoard).
+ */
+export const connections: {
+  strands: [StringEnd, StringEnd][];
+} = {
+  strands: [
+    ["file", { photo: "top" }],
+    ["file", { card: "FRONTEND" }],
+    ["file", { card: "GRAPHIC" }],
+    [{ card: "FRONTEND" }, { card: "UI/UX" }],
+    [{ card: "GRAPHIC" }, { card: "VIDEO" }],
+    [{ card: "UI/UX" }, { photo: "left" }],
+    [{ photo: "left" }, "file"],
+    [{ card: "UI/UX" }, { photo: "bottom" }],
+    [{ card: "GRAPHIC" }, { photo: "right" }],
+    [{ photo: "right" }, { photo: "bottom" }],
+    [{ photo: "right" }, { card: "VIDEO" }],
+    // The web's middle: more threads through the photos either side.
+    [{ card: "FRONTEND" }, { photo: "left" }],
+    [{ photo: "left" }, { photo: "bottom" }],
+    ["file", { photo: "right" }],
+    [{ photo: "bottom" }, { card: "VIDEO" }],
+  ],
+};

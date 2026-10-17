@@ -137,6 +137,21 @@ export const assetManifest = {
     castShadow: false,
     receiveShadow: true,
   },
+  redPin: {
+    id: "redPin",
+    // The push pin from detective_board.glb (assets-source), on its own: the
+    // pin mesh only, at its real size (11 mm head), head up (+Y), needle down
+    // (EvidenceBoard fits it to each pin it replaces). Two plain materials (red plastic
+    // head, steel needle) sampled from that board's atlas; no textures.
+    url: "/models/case-404/environment/red-pin.glb",
+    category: "environment",
+    preloadPriority: 1,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
   posterSquare: {
     id: "posterSquare",
     url: "/models/case-404/environment/posters/poster-square.glb",
