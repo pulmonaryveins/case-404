@@ -11,16 +11,32 @@ import {
   Vector3,
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
-import { archiveProjects } from "../../data/projects";
+import { archiveProjects, type Project } from "../../data/projects";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
 import { computerAudio } from "../audio/computerAudio";
 import { Model } from "../models/Model";
-import { paintArchiveScreen, SCREEN_H, SCREEN_W, type ScreenView } from "../surfaces/paintArchive";
+import {
+  paintArchiveScreen,
+  scanlines,
+  SCREEN_H,
+  SCREEN_W,
+  type ScreenView,
+} from "../surfaces/paintArchive";
+import { nigelFaceAt, paintNigelChat, paintNigelSplash } from "../surfaces/paintNigel";
+import {
+  MAX_INPUT,
+  nigel,
+  nigelReset,
+  nigelSkip,
+  nigelStep,
+  nigelSubmit,
+  nigelType,
+} from "../nigel/nigelChat";
 import { AchievementShelf } from "./AchievementShelf";
 import { ContactShadow } from "./ContactShadow";
 import { DiskRack } from "./DiskRack";
-import { rackSlot, type RackColumn } from "./diskRackLayout";
+import { DISK, DISK_T, RACK_AT, rackSlot, type RackColumn } from "./diskRackLayout";
 import { DesignPosters } from "./DesignPosters";
 import { DeskProp } from "./DeskProps";
 import { DeskLampLight } from "../lighting/DeskLampLight";
@@ -67,6 +83,17 @@ function repaintScreen(
   const max = paintArchiveScreen(screen.canvas, view, scroll);
   screen.map.needsUpdate = true;
   return max;
+}
+
+/** Paints the CRT with `paint` (then its scanlines) and flags the texture for upload. */
+function paintOnScreen(
+  screen: { canvas: HTMLCanvasElement; map: CanvasTexture },
+  paint: (ctx: CanvasRenderingContext2D) => void,
+) {
+  const ctx = screen.canvas.getContext("2d")!;
+  paint(ctx);
+  scanlines(ctx);
+  screen.map.needsUpdate = true;
 }
 
 /** Length of the CRT switch-off. */
@@ -209,6 +236,23 @@ const terminalScroll = { target: 0, current: 0, max: 0 };
 const insertPhase = { since: 0, last: 0, ready: false };
 const READ_MS = 1500;
 
+/**
+ * The red disk by the rack: N.I.G.E.L., the inquiry program (nigelChat). It
+ * goes in and out like a project disk; while it is in, the CRT runs the chat.
+ */
+const NIGEL_ID = "nigel";
+const NIGEL_DISK: Project = {
+  id: NIGEL_ID,
+  title: "N.I.G.E.L. Inquiry Program",
+  category: "Development",
+  description: "",
+  tools: [],
+};
+/** The program's splash, after the disk has gone in. */
+const NIGEL_SPLASH_MS = 2600;
+/** What the chat last painted (see the frame loop): repaint only when it changes. */
+const nigelPaint = { last: 0, key: "" };
+
 /** Keep the CRT this much larger than the frame's height when zoomed on. */
 const ZOOM_FILL = 1.18;
 /** Pixels of terminal scroll per wheel pixel, and per arrow-key press. */
@@ -263,6 +307,7 @@ export function ArchiveStation() {
   const chapter = useExperienceStore((s) => s.currentChapter);
   const setActive = useExperienceStore((s) => s.setActiveProjectId);
   const active = useActiveProject();
+  const nigelIn = useExperienceStore((s) => s.activeProjectId === NIGEL_ID);
   const online = useExperienceStore((s) => s.archiveOnline);
   const setOnline = useExperienceStore((s) => s.setArchiveOnline);
   const reducedMotion = useExperienceStore((s) => s.reducedMotion);
@@ -368,8 +413,9 @@ export function ArchiveStation() {
   const wasActive = useRef(false);
   useEffect(() => {
     // A disk coming out while the terminal is on: the record that was showing.
-    const ejected = wasActive.current && !active && online;
-    wasActive.current = !!active;
+    const ejected = wasActive.current && !active && !nigelIn && online;
+    wasActive.current = !!active || nigelIn;
+    if (nigelIn) nigelReset();
     // A new page starts at the top.
     terminalScroll.target = terminalScroll.current = 0;
     insertPhase.since = performance.now();
@@ -403,7 +449,7 @@ export function ArchiveStation() {
         });
       }
     } else if (power.current.mode === "off") repaintScreen(screen, { kind: "off" });
-  }, [screen, online, active, reducedMotion]);
+  }, [screen, online, active, nigelIn, reducedMotion]);
   // The inserted video disk plays its clip on the tube, repainted each frame.
   const video = useRef<HTMLVideoElement | null>(null);
   const clip = active?.video ?? null;
@@ -447,6 +493,49 @@ export function ArchiveStation() {
       }
     }
     const sinceInsert = performance.now() - insertPhase.since;
+    if (online && nigelIn) {
+      const now = performance.now();
+      const wait = INSERT_SECONDS * 1000;
+      if (sinceInsert < wait) return;
+      const t = reducedMotion ? 1 : (sinceInsert - wait) / NIGEL_SPLASH_MS;
+      if (t < 1) {
+        if (now - insertPhase.last > 70) {
+          insertPhase.last = now;
+          paintOnScreen(screen, (ctx) => paintNigelSplash(ctx, t, now));
+        }
+        return;
+      }
+      insertPhase.ready = true;
+      nigelStep(dt);
+      // Everything the picture depends on: the conversation, the cursor's
+      // blink, the mascot's face, the "consulting" dots and the focus.
+      const focusedNow = useExperienceStore.getState().screenFocused;
+      const talking = nigel.lines.some((l) => l.who === "nigel" && l.shown < l.text.length);
+      const key = [
+        nigel.version,
+        Math.floor(now / 500) % 2,
+        nigelFaceAt(now, talking, nigel.thinking),
+        nigel.thinking ? Math.floor(now / 300) % 3 : 0,
+        focusedNow,
+      ].join("|");
+      if (key !== nigelPaint.key && now - nigelPaint.last >= PAINT_MS) {
+        nigelPaint.last = now;
+        nigelPaint.key = key;
+        paintOnScreen(screen, (ctx) =>
+          paintNigelChat(
+            ctx,
+            {
+              lines: nigel.lines,
+              input: nigel.input,
+              thinking: nigel.thinking,
+              focused: focusedNow,
+            },
+            now,
+          ),
+        );
+      }
+      return;
+    }
     if (online && active && !insertPhase.ready) {
       const wait = INSERT_SECONDS * 1000;
       if (sinceInsert < wait) return;
@@ -490,7 +579,7 @@ export function ArchiveStation() {
   // Zoomed onto the screen: the wheel, arrows and touch scroll the terminal.
   useEffect(() => {
     storyRig.screenFocus.on = focused;
-    if (!focused || focusKind !== "screen") return;
+    if (!focused || focusKind !== "screen" || nigelIn) return;
     const by = (px: number) => {
       terminalScroll.target = MathUtils.clamp(terminalScroll.target + px, 0, terminalScroll.max);
     };
@@ -533,7 +622,7 @@ export function ArchiveStation() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [focused, focusKind]);
+  }, [focused, focusKind, nigelIn]);
 
   /** Click the CRT: fly the camera square-on to it, filling the view. */
   const zoomToScreen = (e: ThreeEvent<MouseEvent>) => {
@@ -595,21 +684,92 @@ export function ArchiveStation() {
     const top = new Vector3(PC_MODEL.topSpot.x, PC_MODEL.max.y, PC_MODEL.topSpot.z).applyMatrix4(
       pc.matrix,
     );
-    return { disks, outward: pc.outward, shadows, matrix: pc.matrix, top };
+    // N.I.G.E.L.'s red disk lies flat on the desk in front of the rack, centred
+    // on it and just clear of its front ledge, turned a touch, label up.
+    const nigelRest: DiskPose = {
+      position: new Vector3(RACK_AT.x, DESK_TOP + DISK_T / 2, RACK_AT.z + DISK * 0.62),
+      quaternion: yawQuat(0.08)
+        .multiply(FLAT)
+        .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI))),
+    };
+    const nigelDisk = {
+      rest: nigelRest,
+      insert: { position: insertCentre, quaternion: insertQuat },
+    };
+    return { disks, nigelDisk, outward: pc.outward, shadows, matrix: pc.matrix, top };
   }, []);
 
   /** Click a disk: put it in (taking out the one already there), or take it out. */
+  const inDrive = nigelIn ? NIGEL_ID : (active?.id ?? null);
   const toggleDisk = (id: string) => {
-    if (active?.id === id) {
+    if (inDrive === id) {
       computerAudio.eject(INSERT_SECONDS);
       setActive(null);
       return;
     }
     // Another disk comes out as this one goes in: no screen change to sound.
-    if (active) computerAudio.eject(INSERT_SECONDS, { screen: false });
-    computerAudio.insert(INSERT_SECONDS, READ_MS / 1000);
+    if (inDrive) computerAudio.eject(INSERT_SECONDS, { screen: false });
+    computerAudio.insert(INSERT_SECONDS, (id === NIGEL_ID ? NIGEL_SPLASH_MS : READ_MS) / 1000);
     setActive(id);
   };
+
+  // N.I.G.E.L.'s keyboard: zoomed onto the screen with its disk in, keys go to
+  // a hidden text field (so phones bring up their keyboard too) and from there
+  // to the prompt. "EXIT" ejects the disk.
+  useEffect(() => {
+    if (!nigelIn || !focused || focusKind !== "screen") return;
+    const field = document.createElement("input");
+    field.type = "text";
+    field.maxLength = MAX_INPUT;
+    field.autocomplete = "off";
+    field.setAttribute("autocapitalize", "characters");
+    field.setAttribute("aria-label", "Ask N.I.G.E.L. about the subject");
+    Object.assign(field.style, {
+      position: "fixed",
+      left: "0",
+      bottom: "0",
+      width: "1px",
+      height: "1px",
+      opacity: "0",
+      pointerEvents: "none",
+    });
+    document.body.appendChild(field);
+    field.value = nigel.input;
+    field.focus({ preventScroll: true });
+    // A tap anywhere puts the focus back (a phone keyboard needs the gesture).
+    const refocus = () => field.focus({ preventScroll: true });
+    const onInput = () => {
+      nigelType(field.value);
+      computerAudio.key();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      // Escape still reaches the close-up controls (it zooms back out).
+      if (e.key === "Escape") return;
+      e.stopPropagation();
+      if (insertPhase.ready && nigel.lines.some((l) => l.shown < l.text.length)) nigelSkip();
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (!insertPhase.ready || nigel.thinking) return;
+      computerAudio.key();
+      const asked = nigel.input.trim().length > 0;
+      const result = nigelSubmit();
+      field.value = "";
+      if (result === "exit") {
+        setFocused(false);
+        computerAudio.eject(INSERT_SECONDS);
+        setActive(null);
+      } else if (asked && nigel.thinking) computerAudio.consult(1.6);
+    };
+    field.addEventListener("input", onInput);
+    field.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", refocus);
+    return () => {
+      field.removeEventListener("input", onInput);
+      field.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", refocus);
+      field.remove();
+    };
+  }, [nigelIn, focused, focusKind, setActive, setFocused]);
 
   return (
     <group name="archive-station" position={STATION_POS} rotation={[0, STATION_YAW, 0]}>
@@ -661,11 +821,21 @@ export function ArchiveStation() {
           rest={rest}
           insert={insert}
           outward={poses.outward}
-          inserted={active?.id === project.id}
+          inserted={inDrive === project.id}
           interactive={interactive && online}
           onSelect={() => toggleDisk(project.id)}
         />
       ))}
+      <FloppyDisk
+        project={NIGEL_DISK}
+        index={-1}
+        rest={poses.nigelDisk.rest}
+        insert={poses.nigelDisk.insert}
+        outward={poses.outward}
+        inserted={nigelIn}
+        interactive={interactive && online}
+        onSelect={() => toggleDisk(NIGEL_ID)}
+      />
     </group>
   );
 }

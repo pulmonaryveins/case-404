@@ -77,7 +77,7 @@ function layer(key: string, w: number, h: number, paint: (ctx: Ctx) => number | 
 }
 
 /** Scanlines: sells the tube. One cached overlay instead of 170 rects a paint. */
-function scanlines(ctx: Ctx) {
+export function scanlines(ctx: Ctx) {
   ctx.shadowBlur = 0;
   const { canvas } = layer("scanlines", SCREEN_W, SCREEN_H, (c) => {
     c.fillStyle = "rgba(0,0,0,0.1)";
@@ -173,6 +173,10 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
         ctx.fillText(p.title.replace(/^(Dev|UI\/UX|Video) /, "").toUpperCase(), x, 410 + i * 56);
       });
   }
+  ctx.fillStyle = DIM;
+  ctx.font = `bold 24px ${MONO}`;
+  ctx.fillText("QUESTIONS? THE RED DISK BY THE RACK RUNS N.I.G.E.L.", 60, 575);
+  ctx.fillStyle = PHOSPHOR;
   ctx.font = `bold 34px ${MONO}`;
   ctx.fillText("A:\\> _", 60, 620);
 
@@ -189,6 +193,7 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
     "2. IT SLIDES INTO DRIVE A: AND ITS FILE OPENS HERE.",
     "3. SCROLL TO READ THE WHOLE FILE.",
     "4. SELECT THE DISK AGAIN TO EJECT IT.",
+    "5. THE RED DISK RUNS N.I.G.E.L.: CLICK THE SCREEN AND ASK IT ABOUT THE SUBJECT.",
   ]) {
     y = wrap(ctx, line, 60, y, SCREEN_W - 120, 40) + 12;
   }
@@ -398,6 +403,28 @@ export function paintDiskLabel(canvas: HTMLCanvasElement, project: Project, inde
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#f1ecda";
   ctx.fillRect(0, 0, LABEL_W, LABEL_H);
+
+  if (project.id === "nigel") {
+    // The inquiry program's disk: a red band, typed rather than handwritten.
+    ctx.fillStyle = "#a3241c";
+    ctx.fillRect(0, 0, LABEL_W, 110);
+    ctx.fillStyle = "#f1ecda";
+    ctx.font = `bold 64px ${MONO}`;
+    ctx.fillText("N.I.G.E.L.", 24, 78);
+    ctx.textAlign = "right";
+    ctx.font = `bold 40px ${MONO}`;
+    ctx.fillText("MK-I", LABEL_W - 24, 74);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#14120e";
+    ctx.font = `bold 50px ${MONO}`;
+    ctx.fillText("INQUIRY PROGRAM", 24, 200);
+    ctx.font = `bold 30px ${MONO}`;
+    ctx.fillText("ATTIC SYSTEMS LTD. 1974", 24, 262);
+    ctx.fillStyle = "#a3241c";
+    ctx.font = `bold 34px "Segoe Print", "Bradley Hand", cursive`;
+    ctx.fillText("ask about the subject!", 24, 340);
+    return;
+  }
 
   const dev = project.category === "Development";
   const vid = project.category === "Video Editing";

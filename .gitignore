@@ -33,3 +33,8 @@ assets-source/**/*.gltf
 assets-source/**/*.fbx
 assets-source/**/*.blend
 assets-source/**/*.bin
+
+# Cloudflare Wrangler local state (worker/nigel)
+.wrangler
+
+.env

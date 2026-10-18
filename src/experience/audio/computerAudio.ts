@@ -308,4 +308,20 @@ export const computerAudio = {
     tone(e, t + seconds * 0.95, "sine", 2400, 1200, 0.06, 0.1); // the dot
     thunk(e, t + seconds * 0.95, 0.3);
   },
+
+  /** A key on the terminal's keyboard: a short plastic clack, a little different each time. */
+  key() {
+    const e = engineNow();
+    const t = e.ctx.currentTime + 0.005;
+    hiss(e, t, 0.018, "bandpass", 2600 + Math.random() * 900, 1800, 1.5, 0.09);
+    tone(e, t, "sine", 260 + Math.random() * 60, 140, 0.03, 0.05);
+  },
+
+  /** The drive looking something up for N.I.G.E.L.: the motor and the head's seeks. */
+  consult(seconds: number) {
+    const e = engineNow();
+    const t = e.ctx.currentTime + 0.02;
+    motor(e, t, seconds, 0.16);
+    seeks(e, t + 0.15, Math.max(0.2, seconds - 0.3), 0.1);
+  },
 };
