@@ -11,8 +11,11 @@
  *  - Where it is: it falls off with the camera's distance from the gramophone
  *    and pans with where it stands in view (`place`, every frame).
  *
- * Nothing is created until the first click (browsers only allow sound after
- * a gesture). One gramophone, so the engine is module state.
+ * The music starts on its own as the page loads (`autoplay`, called from
+ * main.tsx), as soon as the browser allows sound: at once where it does, and
+ * otherwise on the visitor's first click, key press or tap. Clicking the
+ * gramophone still turns it off and on. One gramophone, so the engine is
+ * module state.
  */
 const MUSIC_URL = "/audio/cool-vibes.mp3";
 /**
@@ -34,6 +37,8 @@ const PAN = 0.55;
 /** Spin-up and wind-down: playback rate at the start / end, and how long (s). */
 const SPIN_UP = { from: 0.55, seconds: 0.9 };
 const WIND_DOWN = { to: 0.3, seconds: 1.3 };
+/** The music fading in when it starts on its own as the page loads. */
+const FADE_IN_SECONDS = 2.5;
 
 interface Engine {
   ctx: AudioContext;
@@ -55,6 +60,18 @@ let rateTarget = 1;
 /** How much the rate changes per second while easing. */
 let rateStep = 1;
 let pauseAt = 0;
+/** The player has clicked the gramophone themselves: autoplay leaves it alone. */
+let chosen = false;
+/** Autoplay's waiting for the browser to allow sound (see `autoplay`). */
+let armed = false;
+/** When autoplay last started the music (ms), so a click that did it is not read twice. */
+let autoStartedAt = -Infinity;
+/**
+ * A click on the gramophone this soon after autoplay started the music is the
+ * same click that let the browser play it (its pointer-down is the first
+ * interaction): it must not turn the music straight off again.
+ */
+const SAME_CLICK_MS = 1500;
 
 /** Sparse clicks and a low hiss, three seconds, looped under the music. */
 function crackleBuffer(ctx: AudioContext) {
@@ -96,6 +113,9 @@ function build(): Engine {
   horn.frequency.value = 5200;
   horn.Q.value = 0.9;
   const distance = ctx.createGain();
+  // The music can start before the scene is up to place it (see `autoplay`):
+  // start at the far level, not full.
+  distance.gain.value = DISTANCE.floor;
   const pan = ctx.createStereoPanner();
   const master = ctx.createGain();
   master.gain.value = VOLUME;
@@ -213,7 +233,76 @@ function scratch(e: Engine) {
   noise.start();
 }
 
+/**
+ * The record starts. `needle` is the click on the gramophone: the needle's
+ * thump, the motor's buzz and the record spinning up, the music rising to
+ * pitch. Without it (the music starting on its own as the page loads) the
+ * record is at full speed at once and the music only fades in: the spin-up is
+ * eased by the scene's frame loop (`place`), which is not running yet while
+ * the page loads, and a slowed song would drag until it was.
+ */
+function spinUp(e: Engine, needle: boolean) {
+  const t = e.ctx.currentTime;
+  on = true;
+  if (needle) {
+    thump(e);
+    buzz(e, 0.7);
+    rate = SPIN_UP.from;
+    rateStep = (1 - SPIN_UP.from) / SPIN_UP.seconds;
+  } else {
+    rate = 1;
+  }
+  rateTarget = 1;
+  e.media.playbackRate = rate;
+  void e.media.play().catch(() => undefined);
+  e.music.gain.cancelScheduledValues(t);
+  e.music.gain.setValueAtTime(e.music.gain.value, t);
+  e.music.gain.linearRampToValueAtTime(1, t + (needle ? SPIN_UP.seconds : FADE_IN_SECONDS));
+  e.crackle.gain.setTargetAtTime(CRACKLE, t, 0.15);
+  pauseAt = Infinity;
+}
+
 export const gramophone = {
+  /**
+   * Starts the music as the page loads. Browsers only let a page make sound
+   * once the visitor has interacted with it, so this tries at once (it works
+   * where the browser allows it, such as for a returning visitor) and, where
+   * it is blocked, tries again on the first click, key press or tap (a wheel
+   * scroll is not an interaction to a browser). Does nothing once the music is
+   * playing or the player has used the gramophone.
+   */
+  autoplay() {
+    if (armed) return;
+    armed = true;
+    const events = ["pointerdown", "pointerup", "keydown", "touchend"] as const;
+    const disarm = () => {
+      for (const name of events) window.removeEventListener(name, attempt);
+    };
+    const attempt = () => {
+      if (chosen || on) return disarm();
+      engine ??= build();
+      const e = engine;
+      const begin = () => {
+        if (chosen || on || e.ctx.state !== "running") return;
+        // Only once the record is really playing: a browser can allow the
+        // audio context yet still hold back the element.
+        void e.media.play().then(
+          () => {
+            if (chosen || on) return;
+            disarm();
+            autoStartedAt = performance.now();
+            spinUp(e, false);
+          },
+          () => undefined,
+        );
+      };
+      e.ctx.addEventListener("statechange", begin);
+      void e.ctx.resume().then(begin, () => undefined);
+    };
+    for (const name of events) window.addEventListener(name, attempt);
+    attempt();
+  },
+
   get on() {
     return on;
   },
@@ -228,21 +317,13 @@ export const gramophone = {
     const e = engine;
     void e.ctx.resume();
     const t = e.ctx.currentTime;
-    on = !on;
-    if (on) {
-      thump(e);
-      buzz(e, 0.7);
-      rate = SPIN_UP.from;
-      rateTarget = 1;
-      rateStep = (1 - SPIN_UP.from) / SPIN_UP.seconds;
-      e.media.playbackRate = rate;
-      void e.media.play().catch(() => undefined);
-      e.music.gain.cancelScheduledValues(t);
-      e.music.gain.setValueAtTime(e.music.gain.value, t);
-      e.music.gain.linearRampToValueAtTime(1, t + SPIN_UP.seconds);
-      e.crackle.gain.setTargetAtTime(CRACKLE, t, 0.15);
-      pauseAt = Infinity;
+    const sameClick = on && !chosen && performance.now() - autoStartedAt < SAME_CLICK_MS;
+    chosen = true;
+    if (sameClick) return;
+    if (!on) {
+      spinUp(e, true);
     } else {
+      on = false;
       scratch(e);
       buzz(e, 0.5);
       rateTarget = WIND_DOWN.to;

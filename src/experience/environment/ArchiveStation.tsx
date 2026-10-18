@@ -24,6 +24,7 @@ import {
   type ScreenView,
 } from "../surfaces/paintArchive";
 import { nigelFaceAt, paintNigelChat, paintNigelSplash } from "../surfaces/paintNigel";
+import { loadProjectImages, projectImages } from "../surfaces/projectImages";
 import {
   MAX_INPUT,
   nigel,
@@ -105,7 +106,7 @@ const SHUTDOWN_MS = 1100;
  * to the GPU; ~30 a second is smooth on a CRT and half the cost of every frame.
  */
 const PAINT_MS = 33;
-const paintClock = { last: 0 };
+const paintClock = { last: 0, images: 0 };
 
 /**
  * One frame of a CRT switching off, drawn over the last picture: the image
@@ -562,7 +563,9 @@ export function ArchiveStation() {
     terminalScroll.current = MathUtils.damp(terminalScroll.current, terminalScroll.target, 14, dt);
     if (Math.abs(terminalScroll.current - terminalScroll.target) < 0.3)
       terminalScroll.current = terminalScroll.target;
-    const moved = terminalScroll.current !== before;
+    // A screenshot that has just loaded changes the page under the scroll.
+    const imagesArrived = projectImages.version !== paintClock.images;
+    const moved = terminalScroll.current !== before || imagesArrived;
     if (!online || (!playing && !moved)) return;
     // Throttled, except the frame the scroll comes to rest on, so it never
     // stops a step short.
@@ -570,6 +573,7 @@ export function ArchiveStation() {
     const resting = !playing && terminalScroll.current === terminalScroll.target;
     if (now - paintClock.last < PAINT_MS && !resting) return;
     paintClock.last = now;
+    paintClock.images = projectImages.version;
     terminalScroll.max = repaintScreen(
       screen,
       { kind: "menu", active, projects: archiveProjects, video: playing ? el : undefined },
@@ -710,6 +714,8 @@ export function ArchiveStation() {
     // Another disk comes out as this one goes in: no screen change to sound.
     if (inDrive) computerAudio.eject(INSERT_SECONDS, { screen: false });
     computerAudio.insert(INSERT_SECONDS, (id === NIGEL_ID ? NIGEL_SPLASH_MS : READ_MS) / 1000);
+    // Its screenshots load while it travels in and is read.
+    loadProjectImages(archiveProjects.find((p) => p.id === id));
     setActive(id);
   };
 

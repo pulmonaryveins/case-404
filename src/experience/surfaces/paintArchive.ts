@@ -1,4 +1,5 @@
 import type { Project } from "../../data/projects";
+import { loadedCount, loadedImage } from "./projectImages";
 
 const PHOSPHOR = "#7dffb0";
 const DIM = "rgba(125,255,176,0.55)";
@@ -200,26 +201,257 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
   return y + 40;
 }
 
-function paintRecord(ctx: Ctx, project: Project) {
-  ctx.font = `bold 30px ${MONO}`;
-  ctx.fillStyle = DIM;
-  ctx.fillText(`DRIVE A: ${project.category.toUpperCase()}`, 60, 176);
-  ctx.fillStyle = PHOSPHOR;
-  ctx.font = `bold 58px ${MONO}`;
-  let y = wrap(ctx, project.title.toUpperCase(), 60, 252, SCREEN_W - 120, 66);
-  ctx.font = `bold 34px ${MONO}`;
-  y = wrap(ctx, project.description, 60, y + 20, SCREEN_W - 120, 46);
-  ctx.fillStyle = DIM;
-  ctx.fillText("TOOLS", 60, y + 36);
-  ctx.fillStyle = PHOSPHOR;
-  y = wrap(ctx, project.tools.join("  /  "), 60, y + 82, SCREEN_W - 120, 46);
-  if (project.link) {
-    ctx.fillStyle = DIM;
-    ctx.fillText("LINK", 60, y + 30);
-    ctx.fillStyle = PHOSPHOR;
-    y = wrap(ctx, project.link, 60, y + 76, SCREEN_W - 120, 46);
+/** The record page's layout: margins, measure and the body type. */
+const R = {
+  x: 60,
+  w: SCREEN_W - 120,
+  body: `bold 31px ${MONO}`,
+  bodyLine: 48,
+  small: `bold 25px ${MONO}`,
+  /** Space between sections. */
+  gap: 46,
+};
+
+/** Text wrapped to the page, with `indent` px for the lines after the first (a bullet's hang). */
+function wrapHang(
+  ctx: Ctx,
+  text: string,
+  x: number,
+  y: number,
+  w: number,
+  lineH: number,
+  indent: number,
+) {
+  let line = "";
+  let first = true;
+  for (const word of text.split(" ")) {
+    const next = line ? `${line} ${word}` : word;
+    const room = first ? w : w - indent;
+    if (ctx.measureText(next).width > room && line) {
+      ctx.fillText(line, first ? x : x + indent, y);
+      line = word;
+      first = false;
+      y += lineH;
+    } else line = next;
   }
-  return paintFileDetails(ctx, project, y + 30);
+  ctx.fillText(line, first ? x : x + indent, y);
+  return y + lineH;
+}
+
+/**
+ * A section heading: a solid phosphor band with the title knocked out of it
+ * in the screen's dark, as terminals marked their fields. Far easier to spot
+ * while scrolling than dim text. Returns the baseline of the first body line.
+ */
+function sectionHead(ctx: Ctx, title: string, top: number) {
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = PHOSPHOR;
+  ctx.fillRect(R.x, top, R.w, 46);
+  ctx.fillStyle = "#04120a";
+  ctx.font = `bold 28px ${MONO}`;
+  ctx.fillText(`> ${title.toUpperCase()}`, R.x + 16, top + 33);
+  ctx.restore();
+  return top + 46 + 50;
+}
+
+/** Body copy: crisper glow than the headings, so the letters stay sharp to read. */
+function bodyType(ctx: Ctx) {
+  ctx.shadowColor = PHOSPHOR;
+  ctx.shadowBlur = 2;
+  ctx.fillStyle = PHOSPHOR;
+  ctx.font = R.body;
+}
+
+/** Paragraphs, a line's gap between them. Returns where the next thing can start. */
+function paragraphs(ctx: Ctx, text: string, top: number) {
+  bodyType(ctx);
+  let y = top;
+  for (const para of text.split(/\n\s*\n/)) {
+    y = wrap(ctx, para.trim(), R.x, y, R.w, R.bodyLine) + 14;
+  }
+  return y - R.bodyLine;
+}
+
+/** A list, one "- " bullet each, wrapped lines hanging under the text. */
+function bullets(ctx: Ctx, items: string[], top: number) {
+  bodyType(ctx);
+  const hang = ctx.measureText("- ").width;
+  let y = top;
+  for (const item of items) {
+    ctx.fillText("-", R.x, y);
+    y = wrapHang(ctx, item, R.x + hang, y, R.w - hang, R.bodyLine, 0) + 8;
+  }
+  return y - R.bodyLine;
+}
+
+/** Label/value rows with dotted leaders, as the file details are. */
+function facts(ctx: Ctx, rows: [string, string][], top: number) {
+  const labelW = 12;
+  let y = top;
+  for (const [label, value] of rows) {
+    ctx.shadowBlur = 2;
+    ctx.font = R.small;
+    ctx.fillStyle = DIM;
+    const lead = `${label.toUpperCase()} `.padEnd(labelW, ".");
+    ctx.fillText(lead, R.x, y);
+    ctx.fillStyle = PHOSPHOR;
+    const x = R.x + ctx.measureText(`${lead} `).width;
+    y = wrap(ctx, value.toUpperCase(), x, y, R.x + R.w - x, 38) + 4;
+  }
+  return y - 38;
+}
+
+/** The tools as boxed tags, flowed in rows: a name is never split over two lines. */
+function tags(ctx: Ctx, tools: string[], top: number) {
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.font = R.small;
+  const padX = 14;
+  const h = 44;
+  const gap = 12;
+  let x = R.x;
+  let y = top - 22;
+  for (const tool of tools) {
+    const w = ctx.measureText(tool).width + padX * 2;
+    if (x + w > R.x + R.w && x > R.x) {
+      x = R.x;
+      y += h + gap;
+    }
+    ctx.strokeStyle = PHOSPHOR;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fillText(tool, x + padX, y + 30);
+    x += w + gap;
+  }
+  ctx.restore();
+  return y + h + 10;
+}
+
+/**
+ * A disk's record: what it is at a glance (category, title, a one-line
+ * tagline and the facts), then its sections under solid headings, the tools
+ * as tags, the screenshots and the file details. A project with no sections
+ * shows its description under OVERVIEW.
+ */
+function paintRecord(ctx: Ctx, project: Project) {
+  ctx.font = `bold 26px ${MONO}`;
+  ctx.fillStyle = DIM;
+  ctx.fillText(`DRIVE A: ${project.category.toUpperCase()}`, R.x, 176);
+  ctx.fillStyle = PHOSPHOR;
+  ctx.font = `bold 62px ${MONO}`;
+  let y = wrap(ctx, project.title.toUpperCase(), R.x, 248, R.w, 68);
+  if (project.tagline) {
+    ctx.font = `bold 30px ${MONO}`;
+    ctx.fillStyle = PHOSPHOR;
+    y = wrap(ctx, project.tagline, R.x, y + 4, R.w, 44);
+  }
+  if (project.facts?.length) {
+    // A rule above and below, so the facts read as one block.
+    ctx.fillStyle = DIM;
+    ctx.fillRect(R.x, y + 2, R.w, 2);
+    y = facts(ctx, project.facts, y + 46);
+    ctx.fillStyle = DIM;
+    ctx.fillRect(R.x, y + 22, R.w, 2);
+    y += 22 + R.gap;
+  } else y += 10;
+
+  const sections = project.sections?.length
+    ? project.sections
+    : [{ heading: "Overview", text: project.description }];
+  for (const section of sections) {
+    y = sectionHead(ctx, section.heading, y);
+    if (section.text) y = paragraphs(ctx, section.text, y);
+    if (section.items?.length) y = bullets(ctx, section.items, section.text ? y + R.bodyLine : y);
+    y += R.gap;
+  }
+  if (project.purpose) {
+    y = sectionHead(ctx, "Purpose", y);
+    y = paragraphs(ctx, project.purpose, y) + R.gap;
+  }
+  y = sectionHead(ctx, "Built with", y);
+  y = tags(ctx, project.tools, y) + R.gap - 10;
+  if (project.link) {
+    y = sectionHead(ctx, "Link", y);
+    bodyType(ctx);
+    y = wrap(ctx, project.link, R.x, y, R.w, R.bodyLine) - R.bodyLine + R.gap;
+  }
+  if (project.screenshots?.length) y = paintScreenshots(ctx, project, y);
+  glow(ctx);
+  return paintFileDetails(ctx, project, y + 10);
+}
+
+/** One screenshot in its phosphor frame: covered, centred and tinted green as the tube shows it. */
+function shot(ctx: Ctx, src: string, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(x, y, w, h);
+  const img = loadedImage(src);
+  if (img) {
+    const k = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+    const sw = w / k;
+    const sh = h / k;
+    ctx.drawImage(
+      img,
+      (img.naturalWidth - sw) / 2,
+      (img.naturalHeight - sh) / 2,
+      sw,
+      sh,
+      x,
+      y,
+      w,
+      h,
+    );
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = "#b4ffd2";
+    ctx.fillRect(x, y, w, h);
+    ctx.globalCompositeOperation = "source-over";
+  }
+  ctx.strokeStyle = PHOSPHOR;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+  return !!img;
+}
+
+/**
+ * The record's screenshots: the first full width, the rest two to a row, each
+ * captioned. One not loaded yet is an empty frame marked LOADING; the page is
+ * painted again when it arrives (projectImages).
+ */
+function paintScreenshots(ctx: Ctx, project: Project, top: number) {
+  const shots = project.screenshots ?? [];
+  let y = sectionHead(ctx, "Screenshots", top) - 50 + 16;
+  const caption = (text: string, ok: boolean, x: number, at: number) => {
+    ctx.shadowBlur = 2;
+    ctx.font = R.small;
+    ctx.fillStyle = ok ? PHOSPHOR : DIM;
+    ctx.fillText(ok ? text : `${text} - LOADING`, x, at);
+  };
+  shots.forEach((s, i) => {
+    if (i === 0) {
+      const h = Math.round((R.w * 9) / 16);
+      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36);
+      y += h + 70;
+      return;
+    }
+    const gap = 24;
+    const col = (i - 1) % 2;
+    if (col === 0 && i === shots.length - 1) {
+      const h = Math.round((R.w * 9) / 16);
+      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36);
+      y += h + 70;
+      return;
+    }
+    const w = (R.w - gap) / 2;
+    const h = Math.round((w * 9) / 16);
+    const x = R.x + col * (w + gap);
+    caption(s.caption, shot(ctx, s.src, x, y, w, h), x, y + h + 34);
+    if (col === 1 || i === shots.length - 1) y += h + 66;
+  });
+  return y;
 }
 
 /** The rest of a disk's file, below the fold. */
@@ -299,8 +531,11 @@ function paintVideo(ctx: Ctx, project: Project) {
   return paintFileDetails(ctx, project, ty + 30);
 }
 
-/** Tallest scrolling page any disk needs, with room to spare. */
-const PAGE_MAX = 2600;
+/**
+ * The page canvas's starting height: enough for most records. A longer one
+ * grows it (see pageFor).
+ */
+const PAGE_MAX = 4600;
 
 /**
  * The page on screen, painted once into one reused tall canvas: only the
@@ -316,12 +551,21 @@ function pageFor(key: string, paint: (ctx: Ctx) => number) {
     page.canvas.height = PAGE_MAX;
   }
   if (page.key !== key) {
-    const c = page.canvas.getContext("2d")!;
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    c.clearRect(0, 0, SCREEN_W, PAGE_MAX);
-    c.save();
-    page.end = paint(c);
-    c.restore();
+    const draw = () => {
+      const c = page.canvas!.getContext("2d")!;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, SCREEN_W, page.canvas!.height);
+      c.save();
+      page.end = paint(c);
+      c.restore();
+    };
+    draw();
+    // A record longer than the canvas: grow it to fit and paint it again, so
+    // nothing below is silently cut off (it never shrinks back).
+    if (page.end > page.canvas.height) {
+      page.canvas.height = Math.ceil((page.end + 200) / 256) * 256;
+      draw();
+    }
     page.key = key;
   }
   return page as { canvas: HTMLCanvasElement; end: number };
@@ -358,7 +602,8 @@ export function paintArchiveScreen(canvas: HTMLCanvasElement, view: ScreenView, 
 
   const active = view.active;
   const isVideo = !!active?.video;
-  const current = pageFor(active?.id ?? "menu", (c) => {
+  const key = active ? `${active.id}:${loadedCount(active)}` : "menu";
+  const current = pageFor(key, (c) => {
     glow(c);
     if (active && isVideo) return paintVideo(c, active);
     if (active) return paintRecord(c, active);
