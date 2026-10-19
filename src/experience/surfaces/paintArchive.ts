@@ -25,15 +25,43 @@ type Ctx = CanvasRenderingContext2D;
 /** Where the fixed header band ends; the body scrolls beneath it. */
 const BODY_TOP = 124;
 
+/** A word wider than `maxW` (a long URL, say) cut into pieces that each fit. */
+function breakWord(ctx: Ctx, word: string, maxW: number) {
+  const pieces: string[] = [];
+  let piece = "";
+  for (const ch of word) {
+    if (piece && ctx.measureText(piece + ch).width > maxW) {
+      pieces.push(piece);
+      piece = ch;
+    } else piece += ch;
+  }
+  pieces.push(piece);
+  return pieces;
+}
+
 function wrap(ctx: Ctx, text: string, x: number, y: number, maxW: number, lineH: number) {
   let line = "";
   for (const word of text.split(" ")) {
     const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width > maxW && line) {
+    if (ctx.measureText(next).width <= maxW) {
+      line = next;
+      continue;
+    }
+    if (line) {
       ctx.fillText(line, x, y);
-      line = word;
       y += lineH;
-    } else line = next;
+    }
+    if (ctx.measureText(word).width <= maxW) {
+      line = word;
+      continue;
+    }
+    // Too long for a line on its own: break it, the last piece carrying on.
+    const pieces = breakWord(ctx, word, maxW);
+    for (const piece of pieces.slice(0, -1)) {
+      ctx.fillText(piece, x, y);
+      y += lineH;
+    }
+    line = pieces[pieces.length - 1];
   }
   ctx.fillText(line, x, y);
   return y + lineH;
@@ -160,6 +188,12 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
     ["UI / UX", "UI/UX", 380],
     ["VIDEO EDIT", "Video Editing", 710],
   ];
+  // A fourth disk in a column tightens the rows, so the prompt still clears
+  // the "SCROLL DOWN" bar that covers the foot of the screen.
+  const rows = Math.max(
+    ...columns.map(([, category]) => projects.filter((p) => p.category === category).length),
+  );
+  const pitch = rows > 3 ? 48 : 56;
   for (const [title, category, x] of columns) {
     ctx.fillStyle = DIM;
     ctx.font = `bold 30px ${MONO}`;
@@ -171,15 +205,17 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
       .filter((p) => p.category === category)
       .forEach((p, i) => {
         // "Dev Project One" -> "PROJECT ONE": the column already names the kind.
-        ctx.fillText(p.title.replace(/^(Dev|UI\/UX|Video) /, "").toUpperCase(), x, 410 + i * 56);
+        ctx.fillText(p.title.replace(/^(Dev|UI\/UX|Video) /, "").toUpperCase(), x, 410 + i * pitch);
       });
   }
+  const last = 410 + (rows - 1) * pitch;
+  const hintY = rows > 3 ? last + 36 : 575;
   ctx.fillStyle = DIM;
   ctx.font = `bold 24px ${MONO}`;
-  ctx.fillText("QUESTIONS? THE RED DISK BY THE RACK RUNS N.I.G.E.L.", 60, 575);
+  ctx.fillText("QUESTIONS? THE RED DISK BY THE RACK RUNS N.I.G.E.L.", 60, hintY);
   ctx.fillStyle = PHOSPHOR;
   ctx.font = `bold 34px ${MONO}`;
-  ctx.fillText("A:\\> _", 60, 620);
+  ctx.fillText("A:\\> _", 60, rows > 3 ? hintY + 40 : 620);
 
   // Below the fold: reached by scrolling the terminal.
   ctx.fillStyle = DIM;
@@ -424,16 +460,24 @@ function shot(ctx: Ctx, src: string, x: number, y: number, w: number, h: number)
 function paintScreenshots(ctx: Ctx, project: Project, top: number) {
   const shots = project.screenshots ?? [];
   let y = sectionHead(ctx, "Screenshots", top) - 50 + 16;
-  const caption = (text: string, ok: boolean, x: number, at: number) => {
+  // A caption wider than its image's column is set smaller to fit it (down to
+  // 17 px), so neighbouring captions never run into each other.
+  const caption = (text: string, ok: boolean, x: number, at: number, maxW: number) => {
     ctx.shadowBlur = 2;
-    ctx.font = R.small;
+    const label = ok ? text : `${text} - LOADING`;
+    let px = 25;
+    ctx.font = `bold ${px}px ${MONO}`;
+    while (ctx.measureText(label).width > maxW && px > 17) {
+      px -= 1;
+      ctx.font = `bold ${px}px ${MONO}`;
+    }
     ctx.fillStyle = ok ? PHOSPHOR : DIM;
-    ctx.fillText(ok ? text : `${text} - LOADING`, x, at);
+    ctx.fillText(label, x, at);
   };
   shots.forEach((s, i) => {
     if (i === 0) {
       const h = Math.round((R.w * 9) / 16);
-      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36);
+      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36, R.w);
       y += h + 70;
       return;
     }
@@ -441,14 +485,14 @@ function paintScreenshots(ctx: Ctx, project: Project, top: number) {
     const col = (i - 1) % 2;
     if (col === 0 && i === shots.length - 1) {
       const h = Math.round((R.w * 9) / 16);
-      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36);
+      caption(s.caption, shot(ctx, s.src, R.x, y, R.w, h), R.x, y + h + 36, R.w);
       y += h + 70;
       return;
     }
     const w = (R.w - gap) / 2;
     const h = Math.round((w * 9) / 16);
     const x = R.x + col * (w + gap);
-    caption(s.caption, shot(ctx, s.src, x, y, w, h), x, y + h + 34);
+    caption(s.caption, shot(ctx, s.src, x, y, w, h), x, y + h + 34, w - 6);
     if (col === 1 || i === shots.length - 1) y += h + 66;
   });
   return y;

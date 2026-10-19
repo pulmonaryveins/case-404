@@ -3,7 +3,7 @@ import { assetManifest } from "../../assets/assetManifest";
 import { DESK_TOP } from "./worldAnchors";
 
 /**
- * A small tiered floppy-disk rack on the archive desk: three stepped tiers,
+ * A small tiered floppy-disk rack on the archive desk: `TIERS` stepped tiers,
  * one column per category (Development, UI/UX, Video Editing) with the first
  * project in the front tier. Disks stand leaning back a little, each tier
  * higher than the one in front, so every label shows. Built from boxes and
@@ -48,7 +48,9 @@ export const LIP_H = 0.012;
 export const BACK_T = 0.006;
 /** Extra room behind the back tier, so its leaning disks clear the back board. */
 export const REAR_AIR = 0.008;
-export const DEPTH = FRONT + 3 * STEP_D + REAR_AIR + BACK_T;
+/** Disks a column holds, front tier to back (each tier a step higher). */
+export const TIERS = 4;
+export const DEPTH = FRONT + TIERS * STEP_D + REAR_AIR + BACK_T;
 /** How far the side panels and dividers rise above each tier's floor. */
 export const SIDE_RISE = 0.04;
 export const FIN_RISE = 0.026;

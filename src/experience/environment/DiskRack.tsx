@@ -29,6 +29,7 @@ import {
   BACK_T,
   REAR_AIR,
   DEPTH,
+  TIERS,
   SIDE_RISE,
   FIN_RISE,
   tierFloor,
@@ -92,11 +93,11 @@ function profile(rise: number, thick: number, x0: number) {
   const step = (t: number) => FRONT + (t + 1) * STEP_D;
   s.moveTo(0, 0);
   s.lineTo(0, tierFloor(0) + rise);
-  s.lineTo(step(0), tierFloor(0) + rise);
-  s.lineTo(step(0), tierFloor(1) + rise);
-  s.lineTo(step(1), tierFloor(1) + rise);
-  s.lineTo(step(1), tierFloor(2) + rise);
-  s.lineTo(DEPTH, tierFloor(2) + rise);
+  for (let t = 0; t < TIERS - 1; t++) {
+    s.lineTo(step(t), tierFloor(t) + rise);
+    s.lineTo(step(t), tierFloor(t + 1) + rise);
+  }
+  s.lineTo(DEPTH, tierFloor(TIERS - 1) + rise);
   s.lineTo(DEPTH, 0);
   s.closePath();
   const g = new ExtrudeGeometry(s, { depth: thick, bevelEnabled: false });
@@ -189,19 +190,19 @@ export function DiskRack() {
     parts.push(
       box(INNER_W, tierFloor(0), FRONT + STEP_D, [0, tierFloor(0) / 2, -(FRONT + STEP_D) / 2], 0),
     );
-    for (let t = 1; t < 3; t++) {
+    for (let t = 1; t < TIERS; t++) {
       const h = tierFloor(t);
-      const d = STEP_D + (t === 2 ? REAR_AIR : 0);
+      const d = STEP_D + (t === TIERS - 1 ? REAR_AIR : 0);
       parts.push(box(INNER_W, h, d, [0, h / 2, tierFront(t) - d / 2], 0));
     }
     // A lip in front of each tier's disks.
-    for (let t = 0; t < 3; t++) {
+    for (let t = 0; t < TIERS; t++) {
       parts.push(
         box(INNER_W, LIP_H, LIP_T, [0, tierFloor(t) + LIP_H / 2, tierFront(t) - LIP_T / 2], 0),
       );
     }
     // Back board, up to the top of the back tier's sides.
-    const backH = tierFloor(2) + SIDE_RISE + 0.02;
+    const backH = tierFloor(TIERS - 1) + SIDE_RISE + 0.02;
     parts.push(box(INNER_W, backH, BACK_T, [0, backH / 2, -DEPTH + BACK_T / 2], 0));
     // Stepped side panels (grain running front to back) and the two dividers.
     parts.push({ geometry: profile(SIDE_RISE, WALL, -WIDTH / 2), grain: 2 });
