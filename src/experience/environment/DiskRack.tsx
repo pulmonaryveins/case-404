@@ -14,7 +14,6 @@ import {
 } from "three";
 import { createPaperBump } from "../surfaces/paperFinish";
 import {
-  COLUMNS,
   COLUMN_TAGS,
   RACK_AT,
   WALL,
@@ -43,13 +42,16 @@ import {
 
 /**
  * The floor texture is 20 boards across u (a seam every 0.05), each running
- * the full length of v. A piece gets a UV patch inside one board, with the
- * grain along `grain`, so no plank seam crosses it. Grain is scaled up only as
+ * the full length of v. Every piece gets a UV patch inside the same board
+ * (`RACK_BOARD`, at a different spot along it per `board`), with the grain
+ * along `grain`, so no plank seam crosses it and the pieces match. Grain is scaled up only as
  * much as the piece's width needs to fit in a board.
  */
 const BOARD = 0.05;
 const BOARD_PAD = 0.004;
 const UV_PER_M = 0.6;
+/** The board every piece is cut from (an even, mid-toned one). */
+const RACK_BOARD = 7;
 
 type Axis = 0 | 1 | 2;
 
@@ -60,8 +62,8 @@ function woodUVs(geometry: BufferGeometry, grain: Axis, board: number) {
   const size = [box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z];
   const across = Math.max(...size.filter((_, i) => i !== grain));
   const k = Math.min(UV_PER_M, (BOARD - 2 * BOARD_PAD) / across);
-  const u0 = (board % 20) * BOARD + BOARD_PAD;
-  const v0 = (board * 0.37) % 1;
+  const u0 = RACK_BOARD * BOARD + BOARD_PAD;
+  const v0 = (board * 0.071) % 1;
 
   const pos = geometry.getAttribute("position");
   const nrm = geometry.getAttribute("normal");
@@ -130,24 +132,24 @@ function useRackWood() {
     };
     mat.map = own(mat.map);
     mat.normalMap = own(mat.normalMap);
-    mat.roughnessMap = own(mat.roughnessMap);
-    mat.metalnessMap = own(mat.metalnessMap);
+    // Oiled wood, not varnish: the floor's glTF leaves metalness at its default
+    // of 1 (its map makes the boards partly metal) and its roughness map has
+    // glossy streaks, which made the rack shine. Plain, even values instead.
+    mat.roughnessMap = null;
+    mat.metalnessMap = null;
+    mat.metalness = 0;
+    mat.roughness = 0.78;
+    mat.normalScale.set(0.45, 0.45);
+    mat.envMapIntensity = 0.6;
     mat.aoMap = null;
     // The boards are very dark; lift them a little, to a dark walnut that sits
     // with the desk under the same light (a stronger lift glowed beside it).
-    mat.color.setRGB(1.35, 0.98, 0.72);
-    mat.roughness = 0.85;
+    mat.color.setRGB(1.3, 1.0, 0.78);
     return mat;
   }, [scene]);
   useEffect(
     () => () => {
-      for (const t of [
-        material.map,
-        material.normalMap,
-        material.roughnessMap,
-        material.metalnessMap,
-      ])
-        t?.dispose();
+      for (const t of [material.map, material.normalMap]) t?.dispose();
       material.dispose();
     },
     [material],
@@ -157,7 +159,7 @@ function useRackWood() {
 
 const FLOOR_URL = "/models/case-404/environment/architecture/floors/dark-wood-floor.glb";
 
-/** Paper strip with the three category tags, for the front ledge. */
+/** Paper strip with the three column tags, for the front ledge. */
 function paintTags() {
   const canvas = document.createElement("canvas");
   // Same proportion as the strip (~0.37 x 0.009 m), so the type is not stretched.
@@ -171,8 +173,8 @@ function paintTags() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const third = canvas.width / 3;
-  COLUMNS.forEach((c, i) => {
-    ctx.fillText(COLUMN_TAGS[c], third * (i + 0.5), 26);
+  COLUMN_TAGS.forEach((tag, i) => {
+    ctx.fillText(tag, third * (i + 0.5), 26);
     if (i) ctx.fillRect(third * i - 1, 8, 2, 32);
   });
   const tex = new CanvasTexture(canvas);

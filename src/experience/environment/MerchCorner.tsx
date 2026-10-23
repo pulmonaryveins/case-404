@@ -19,6 +19,7 @@ import { useCursor } from "../cursor/cursorStore";
 import { Model } from "../models/Model";
 import { CaseBoxes } from "./CaseBoxes";
 import { Gramophone } from "./Gramophone";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /* ------------------------------------------------------------------ */
 /* Placement (world space, metres)                                      */
@@ -317,7 +318,9 @@ function Drawer({
   const { base, top } = DRAWERS[index];
 
   useFrame((_, dt) => {
+    const was = slide.current;
     slide.current = MathUtils.damp(slide.current, open ? SLIDE : 0, 6, dt);
+    if (Math.abs(slide.current - was) > 1e-5) shadowsChanged();
     if (group.current) group.current.position.x = slide.current;
   });
 

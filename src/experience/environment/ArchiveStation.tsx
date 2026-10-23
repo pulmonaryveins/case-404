@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointLight } from "three";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import {
@@ -7,17 +7,24 @@ import {
   MathUtils,
   MeshBasicMaterial,
   Quaternion,
-  SRGBColorSpace,
+  NoColorSpace,
   Vector3,
 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
-import { archiveProjects, type Project } from "../../data/projects";
+import { archiveProjects, projectClips, type Project } from "../../data/projects";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
 import { computerAudio } from "../audio/computerAudio";
+import { gramophone } from "../audio/gramophoneAudio";
 import { Model } from "../models/Model";
 import {
   paintArchiveScreen,
+  clipAt as galleryClipAt,
+  onVideoWindow,
+  playerButtonAt,
+  playerScroll,
+  previewSeek,
+  seekFraction,
   scanlines,
   SCREEN_H,
   SCREEN_W,
@@ -37,7 +44,7 @@ import {
 import { AchievementShelf } from "./AchievementShelf";
 import { ContactShadow } from "./ContactShadow";
 import { DiskRack } from "./DiskRack";
-import { DISK, DISK_T, RACK_AT, rackSlot, type RackColumn } from "./diskRackLayout";
+import { NIGEL_SLOT, rackPose, rackSlot, type RackColumn } from "./diskRackLayout";
 import { DesignPosters } from "./DesignPosters";
 import { DeskProp } from "./DeskProps";
 import { DeskLampLight } from "../lighting/DeskLampLight";
@@ -106,7 +113,17 @@ const SHUTDOWN_MS = 1100;
  * to the GPU; ~30 a second is smooth on a CRT and half the cost of every frame.
  */
 const PAINT_MS = 33;
-const paintClock = { last: 0, images: 0 };
+const paintClock = { last: 0, images: 0, player: "" };
+/** Starts a clip; with sound on, a browser may refuse without a click: then it starts muted. */
+function startPlayback(el: HTMLVideoElement) {
+  el.play().catch(() => {
+    el.muted = true;
+    el.play().catch(() => {});
+  });
+}
+
+/** Video sound, as the visitor last set it: on to start (the gramophone stops for it). */
+const videoSound = { on: true };
 
 /**
  * One frame of a CRT switching off, drawn over the last picture: the image
@@ -238,7 +255,7 @@ const insertPhase = { since: 0, last: 0, ready: false };
 const READ_MS = 1500;
 
 /**
- * The red disk by the rack: N.I.G.E.L., the inquiry program (nigelChat). It
+ * The red disk in the rack (back right): N.I.G.E.L., the inquiry program (nigelChat). It
  * goes in and out like a project disk; while it is in, the CRT runs the chat.
  */
 const NIGEL_ID = "nigel";
@@ -326,9 +343,23 @@ export function ArchiveStation() {
     canvas.width = SCREEN_W;
     canvas.height = SCREEN_H;
     const map = new CanvasTexture(canvas);
-    map.colorSpace = SRGBColorSpace;
+    // Uploaded as plain RGBA and decoded from sRGB in the shader below. An sRGB
+    // texture made each repaint's upload take ~80 ms of GPU time on the test
+    // machine (boot, scrolling, playing video): ~10 fps with a clip playing,
+    // against ~48 fps this way, for the same picture.
+    map.colorSpace = NoColorSpace;
     map.anisotropy = 8;
     const material = new MeshBasicMaterial({ map, toneMapped: false, color: "#ffffff" });
+    material.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `#ifdef USE_MAP
+          vec4 sampledDiffuseColor = sRGBTransferEOTF( texture2D( map, vMapUv ) );
+          diffuseColor *= sampledDiffuseColor;
+        #endif`,
+      );
+    };
+    material.customProgramCacheKey = () => "crt-srgb-decode";
     return { canvas, map, material };
   }, []);
   // The terminal is off until the camera reaches it, then boots; leaving puts it
@@ -451,25 +482,57 @@ export function ArchiveStation() {
       }
     } else if (power.current.mode === "off") repaintScreen(screen, { kind: "off" });
   }, [screen, online, active, nigelIn, reducedMotion]);
-  // The inserted video disk plays its clip on the tube, repainted each frame.
+  // The inserted video disk plays on the tube, repainted each frame. A single
+  // clip loops by itself; a playlist disk plays nothing until the visitor
+  // picks a clip from its gallery (or with the arrow keys), and stops at the
+  // end of it.
   const video = useRef<HTMLVideoElement | null>(null);
-  const clip = active?.video ?? null;
+  /** A single clip made but not started yet: it starts once the disk's record shows. */
+  const pendingStart = useRef<HTMLVideoElement | null>(null);
+  const clips = useMemo(() => projectClips(active), [active]);
+  const activeId = active?.id ?? null;
+  const [clipAt, setClipAt] = useState<{ id: string | null; index: number }>({
+    id: null,
+    index: 0,
+  });
+  const clipCount = clips.length;
+  const listed = !!active?.videos?.length;
+  const clipIndex = clipAt.id === activeId ? clipAt.index : listed ? -1 : 0;
+  const clip = clips[clipIndex]?.src ?? null;
+  const current = clips[clipIndex];
+  const clipLink = current?.url ?? active?.links?.[0]?.url ?? active?.link ?? null;
+  const silent = !!active?.silent;
+  const clipLabel =
+    listed && current
+      ? `${String(clipIndex + 1).padStart(2, "0")}/${String(clipCount).padStart(2, "0")}  ${current.group} · ${current.title}`
+      : undefined;
   useEffect(() => {
     if (!clip) return;
     const el = document.createElement("video");
-    el.muted = true;
-    el.loop = true;
+    el.muted = !videoSound.on;
+    el.loop = !listed;
     el.playsInline = true;
     el.src = clip;
-    el.play().catch(() => {});
+    // The gramophone's music stops while a clip plays with its sound on.
+    const duck = () => gramophone.hold(!silent && !el.muted && !el.paused && !el.ended);
+    for (const ev of ["play", "pause", "ended", "volumechange"]) el.addEventListener(ev, duck);
     video.current = el;
+    // A clip picked from a gallery plays at once (the record is on screen). A
+    // single clip waits for its record: the disk is still travelling into the
+    // drive, then being read, when it is chosen, and its sound must not start
+    // before the disk is in (the frame loop starts it).
+    if (listed) startPlayback(el);
+    else pendingStart.current = el;
     return () => {
+      if (pendingStart.current === el) pendingStart.current = null;
+      for (const ev of ["play", "pause", "ended", "volumechange"]) el.removeEventListener(ev, duck);
+      gramophone.hold(false);
       video.current = null;
       el.pause();
       el.removeAttribute("src");
       el.load();
     };
-  }, [clip]);
+  }, [clip, listed, silent]);
   // Eases the terminal's scroll, and repaints while it moves or a clip plays.
   useFrame((_, dt) => {
     const run = crtTransition.run;
@@ -557,7 +620,18 @@ export function ArchiveStation() {
     }
     if (active && !insertPhase.ready) return;
     const el = video.current;
-    const playing = !!active?.video && !!el && el.readyState >= 2;
+    if (el && pendingStart.current === el) {
+      pendingStart.current = null;
+      startPlayback(el);
+    }
+    const shown = !!clip && !!el;
+    // Repainting follows the clip while it plays (a jump included); paused, it
+    // follows what changes: a seek starting or landing, and where it is.
+    const playing = shown && !el.paused && !el.ended;
+    const playerState = shown
+      ? `${clip}|${el.paused}|${el.ended}|${el.muted}|${el.seeking}|${el.readyState >= 2}|${el.paused ? Math.round(el.currentTime * 4) : ""}`
+      : "";
+    const playerChanged = playerState !== paintClock.player;
     terminalScroll.target = MathUtils.clamp(terminalScroll.target, 0, terminalScroll.max);
     const before = terminalScroll.current;
     terminalScroll.current = MathUtils.damp(terminalScroll.current, terminalScroll.target, 14, dt);
@@ -565,7 +639,7 @@ export function ArchiveStation() {
       terminalScroll.current = terminalScroll.target;
     // A screenshot that has just loaded changes the page under the scroll.
     const imagesArrived = projectImages.version !== paintClock.images;
-    const moved = terminalScroll.current !== before || imagesArrived;
+    const moved = terminalScroll.current !== before || imagesArrived || playerChanged;
     if (!online || (!playing && !moved)) return;
     // Throttled, except the frame the scroll comes to rest on, so it never
     // stops a step short.
@@ -574,9 +648,19 @@ export function ArchiveStation() {
     if (now - paintClock.last < PAINT_MS && !resting) return;
     paintClock.last = now;
     paintClock.images = projectImages.version;
+    paintClock.player = playerState;
     terminalScroll.max = repaintScreen(
       screen,
-      { kind: "menu", active, projects: archiveProjects, video: playing ? el : undefined },
+      {
+        kind: "menu",
+        active,
+        projects: archiveProjects,
+        video: shown ? el : undefined,
+        clipLabel,
+        clipLink: !!clipLink,
+        clipSilent: silent,
+        selectedClip: listed ? clipIndex : -1,
+      },
       terminalScroll.current,
     );
   });
@@ -604,6 +688,29 @@ export function ArchiveStation() {
       if (e.key in step) {
         e.preventDefault();
         by(step[e.key]);
+      } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && video.current) {
+        // Skip 5 seconds either way.
+        e.preventDefault();
+        const el = video.current;
+        const wasEnded = el.ended;
+        const to = Math.min(
+          el.duration || 0,
+          Math.max(0, el.currentTime + (e.key === "ArrowRight" ? 5 : -5)),
+        );
+        if (el.duration) previewSeek(to / el.duration);
+        el.currentTime = to;
+        if (wasEnded && e.key === "ArrowLeft") el.play().catch(() => {});
+      } else if ((e.key === "," || e.key === ".") && listed) {
+        e.preventDefault();
+        const d = e.key === "." ? 1 : -1;
+        setClipAt((at) => {
+          const from = at.id === activeId ? at.index : -1;
+          return {
+            id: activeId,
+            index: from < 0 ? (d > 0 ? 0 : clipCount - 1) : (from + d + clipCount) % clipCount,
+          };
+        });
+        terminalScroll.target = playerScroll();
       }
     };
     let lastY = 0;
@@ -626,7 +733,50 @@ export function ArchiveStation() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [focused, focusKind, nigelIn]);
+  }, [focused, focusKind, nigelIn, activeId, clipCount, listed]);
+
+  /**
+   * A click on the CRT once zoomed onto it: where it lands on the record
+   * (the texture's top is the canvas's top; the body scrolls under the header).
+   */
+  const tapScreen = (e: ThreeEvent<MouseEvent>) => {
+    if (!e.uv || !clipCount) return;
+    e.stopPropagation();
+    const x = e.uv.x * SCREEN_W;
+    const yOnScreen = (1 - e.uv.y) * SCREEN_H;
+    if (yOnScreen < 124) return;
+    const y = yOnScreen + terminalScroll.current;
+    const el = video.current;
+    const button = el ? playerButtonAt(x, y) : null;
+    if (button === "sound" && el) {
+      videoSound.on = el.muted;
+      el.muted = !el.muted;
+      if (!el.muted && el.paused && !el.ended) el.play().catch(() => {});
+      return;
+    }
+    if (button === "link" && clipLink) {
+      window.open(clipLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+    const jump = el ? seekFraction(x, y) : null;
+    if (jump !== null && el && Number.isFinite(el.duration)) {
+      const wasEnded = el.ended;
+      previewSeek(jump);
+      el.currentTime = jump * el.duration;
+      if (wasEnded) el.play().catch(() => {});
+      return;
+    }
+    const picked = listed ? galleryClipAt(x, y) : -1;
+    if (picked >= 0) {
+      setClipAt({ id: activeId, index: picked });
+      terminalScroll.target = playerScroll();
+      return;
+    }
+    if (el && onVideoWindow(x, y)) {
+      if (el.paused) el.play().catch(() => {});
+      else el.pause();
+    }
+  };
 
   /** Click the CRT: fly the camera square-on to it, filling the view. */
   const zoomToScreen = (e: ThreeEvent<MouseEvent>) => {
@@ -688,14 +838,8 @@ export function ArchiveStation() {
     const top = new Vector3(PC_MODEL.topSpot.x, PC_MODEL.max.y, PC_MODEL.topSpot.z).applyMatrix4(
       pc.matrix,
     );
-    // N.I.G.E.L.'s red disk lies flat on the desk in front of the rack, centred
-    // on it and just clear of its front ledge, turned a touch, label up.
-    const nigelRest: DiskPose = {
-      position: new Vector3(RACK_AT.x, DESK_TOP + DISK_T / 2, RACK_AT.z + DISK * 0.62),
-      quaternion: yawQuat(0.08)
-        .multiply(FLAT)
-        .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI))),
-    };
+    // N.I.G.E.L.'s red disk stands in the rack with the others, back right.
+    const nigelRest: DiskPose = rackPose(...NIGEL_SLOT);
     const nigelDisk = {
       rest: nigelRest,
       insert: { position: insertCentre, quaternion: insertQuat },
@@ -788,7 +932,15 @@ export function ArchiveStation() {
       <PersonalComputer
         matrix={poses.matrix}
         screen={screen.material}
-        onScreenClick={interactive && online && !focused ? zoomToScreen : undefined}
+        onScreenClick={
+          interactive && online
+            ? focused
+              ? clipCount
+                ? tapScreen
+                : undefined
+              : zoomToScreen
+            : undefined
+        }
       />
       <group matrix={poses.matrix} matrixAutoUpdate={false}>
         <PowerButton

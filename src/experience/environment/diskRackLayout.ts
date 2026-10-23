@@ -3,9 +3,10 @@ import { assetManifest } from "../../assets/assetManifest";
 import { DESK_TOP } from "./worldAnchors";
 
 /**
- * A small tiered floppy-disk rack on the archive desk: `TIERS` stepped tiers,
- * one column per category (Development, UI/UX, Video Editing) with the first
- * project in the front tier. Disks stand leaning back a little, each tier
+ * A small tiered floppy-disk rack on the archive desk: `TIERS` stepped tiers
+ * of three columns, filled as an even block (see `PLAN`): Development on the
+ * left, UI/UX at the front of the middle with Development's overflow behind,
+ * Video Editing on the right. Disks stand leaning back a little, each tier
  * higher than the one in front, so every label shows. Built from boxes and
  * extruded side profiles in the floor's tileable PBR wood (colour, normal and
  * roughness maps), with paper category labels on the front lip.
@@ -16,15 +17,38 @@ import { DESK_TOP } from "./worldAnchors";
  */
 
 export type RackColumn = "Development" | "UI/UX" | "Video Editing";
-export const COLUMNS: RackColumn[] = ["Development", "UI/UX", "Video Editing"];
-export const COLUMN_TAGS: Record<RackColumn, string> = {
-  Development: "DEV",
-  "UI/UX": "UI / UX",
-  "Video Editing": "VIDEO",
+/** The tags on the front ledge, one per column. */
+export const COLUMN_TAGS = ["DEV", "UI / UX + DEV", "VIDEO"];
+
+/**
+ * Each category's slots, [column, tier] in project order. Disks past a list
+ * go on behind the category's last slot's column.
+ */
+const PLAN: Record<RackColumn, [number, number][]> = {
+  Development: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [1, 2],
+    [1, 3],
+  ],
+  "UI/UX": [
+    [1, 0],
+    [1, 1],
+  ],
+  "Video Editing": [
+    [2, 0],
+    [2, 1],
+    [2, 2],
+  ],
 };
 
+/** N.I.G.E.L.'s red disk closes the block, back right. */
+export const NIGEL_SLOT: [number, number] = [2, 3];
+
 /** Where the rack's front-centre sits on the desk (station frame). */
-export const RACK_AT = new Vector3(0.17, DESK_TOP, -0.01);
+export const RACK_AT = new Vector3(0.17, DESK_TOP, 0.03);
 
 /** Disk: the floppy model is 9 cm square, 4 mm thick, shown at its manifest scale. */
 export const DISK = 0.09 * assetManifest.floppy.scale;
@@ -74,9 +98,16 @@ export const RACK_DISK_QUAT = new Quaternion()
   .setFromEuler(new Euler(-TILT, 0, 0))
   .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI)));
 
-/** Rest pose (station frame) of the disk `tier` places back in `column`'s column. */
-export function rackSlot(column: RackColumn, tier: number) {
-  const col = COLUMNS.indexOf(column);
+/** Rest pose (station frame) of a category's `n`th disk. */
+export function rackSlot(category: RackColumn, n: number) {
+  const plan = PLAN[category];
+  const last = plan[plan.length - 1];
+  const [col, tier] = plan[n] ?? [last[0], last[1] + n - plan.length + 1];
+  return rackPose(col, tier);
+}
+
+/** Rest pose (station frame) of the disk in `col`, `tier` places back. */
+export function rackPose(col: number, tier: number) {
   const up = new Vector3(0, Math.cos(TILT), -Math.sin(TILT));
   const bottom = new Vector3(
     columnX(col),

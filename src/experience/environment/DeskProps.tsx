@@ -1,7 +1,16 @@
 import { type ReactNode, useEffect, useMemo } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Box3, NearestFilter, Group, Matrix4, Mesh, MeshStandardMaterial, Vector3 } from "three";
+import {
+  Box3,
+  DoubleSide,
+  NearestFilter,
+  Group,
+  Matrix4,
+  Mesh,
+  MeshStandardMaterial,
+  Vector3,
+} from "three";
 import { assetManifest, type AssetId } from "../../assets/assetManifest";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { DeskLampLight } from "../lighting/DeskLampLight";
@@ -75,6 +84,20 @@ export function DeskProp({
         if (id === "revolver" && CHAMBERED_BULLET.test(o.name)) o.visible = false;
         // The pens model ships on a flat display plate; the desk is the ground.
         if (id === "fountainPens" && o.name.startsWith("ground")) o.visible = false;
+        // A transparent, double-sided material is drawn in two passes (back faces,
+        // then front), and three rebuilds its program state on each of them every
+        // frame: the phone, the magnifying glass and the instant camera cost ~5 ms
+        // a frame that way. The camera's and the phone's are opaque in practice
+        // (opacity 1): drawn as opaque, with depth, they look the same in one
+        // pass. The magnifier's lens really is see-through: one pass keeps it so.
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+          const mat = m as MeshStandardMaterial;
+          if (!mat.transparent || mat.side !== DoubleSide) continue;
+          if (id === "polaroidCamera" || id === "phone") {
+            mat.transparent = false;
+            mat.depthWrite = true;
+          } else mat.forceSinglePass = true;
+        }
         // The creeper is a 64x32 pixel texture: sample it unfiltered up close.
         if (id === "creeper") {
           const mat = o.material as MeshStandardMaterial;

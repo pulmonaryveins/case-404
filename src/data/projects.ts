@@ -8,8 +8,18 @@ export interface Project {
   tools: string[];
   /** Live link or case study. Omit until there is one. */
   link?: string;
+  /** Several links, each with a short label (a page and its posts, say): listed under LINKS. */
+  links?: { label: string; url: string }[];
   /** Clip played on the archive terminal when the disk is inserted. */
   video?: string;
+  /** The clip has no sound track: no sound button, and the gramophone plays on. */
+  silent?: boolean;
+  /**
+   * Several clips, shown as a gallery of posters grouped on the record: the
+   * visitor picks one to play (nothing plays by itself). Each has a title, the
+   * group it belongs to and a poster frame. Takes the place of `video`.
+   */
+  videos?: { src: string; title: string; group: string; poster: string; url?: string }[];
   /** One line under the title on the record: what it is at a glance. */
   tagline?: string;
   /** Label/value rows at the top of the record (type, setting, subject...). */
@@ -29,12 +39,9 @@ export interface Project {
 /**
  * Archive projects shown on the floppy-disk rack. Placeholder copy: replace
  * titles, descriptions, tools and links with the real work. The rack holds
- * four disks per column (TIERS in environment/diskRackLayout.ts): add more
+ * six disks per column (TIERS in environment/diskRackLayout.ts): add more
  * and the extra ones have nowhere to stand.
  */
-/** CC0 placeholder clip (MDN interactive-examples); swap per project for real work. */
-const SAMPLE_REEL = "/videos/sample-reel.mp4";
-
 export const projects: Project[] = [
   {
     id: "dev-1",
@@ -352,9 +359,9 @@ export const projects: Project[] = [
     ],
   },
   {
-    id: "ux-1",
+    id: "dev-5",
     title: "Lamoy Ordering",
-    category: "UI/UX",
+    category: "Development",
     tagline: "Lamoy: a simple food ordering system, from the Alliance Jumpstart program.",
     facts: [
       ["Company", "Alliance Software Inc."],
@@ -422,15 +429,113 @@ export const projects: Project[] = [
       "Neon",
     ],
     screenshots: [
-      { src: "/images/projects/ui-ux/lamoy-1.webp", caption: "LANDING PAGE" },
-      { src: "/images/projects/ui-ux/lamoy-2.webp", caption: "THE MENU" },
-      { src: "/images/projects/ui-ux/lamoy-3.webp", caption: "THE CART" },
-      { src: "/images/projects/ui-ux/lamoy-4.webp", caption: "CHECKOUT" },
-      { src: "/images/projects/ui-ux/lamoy-5.webp", caption: "TRACKING AN ORDER" },
-      { src: "/images/projects/ui-ux/lamoy-6.webp", caption: "ADMIN DASHBOARD" },
-      { src: "/images/projects/ui-ux/lamoy-7.webp", caption: "ADMIN: THE MENU" },
-      { src: "/images/projects/ui-ux/lamoy-8.webp", caption: "ON A PHONE" },
+      { src: "/images/projects/development/lamoy-1.webp", caption: "LANDING PAGE" },
+      { src: "/images/projects/development/lamoy-2.webp", caption: "THE MENU" },
+      { src: "/images/projects/development/lamoy-3.webp", caption: "THE CART" },
+      { src: "/images/projects/development/lamoy-4.webp", caption: "CHECKOUT" },
+      { src: "/images/projects/development/lamoy-5.webp", caption: "TRACKING AN ORDER" },
+      { src: "/images/projects/development/lamoy-6.webp", caption: "ADMIN DASHBOARD" },
+      { src: "/images/projects/development/lamoy-7.webp", caption: "ADMIN: THE MENU" },
+      { src: "/images/projects/development/lamoy-8.webp", caption: "ON A PHONE" },
     ],
+  },
+  {
+    id: "dev-6",
+    title: "Flyers Dashboard",
+    category: "Development",
+    tagline:
+      "N-Compass TV's order monitoring platform for in-store flyers, from arrival to delivery.",
+    facts: [
+      ["Company", "NTV360 (N-Compass TV)"],
+      ["Type", "Internal operations tool"],
+      ["Role", "Full-stack developer, Angular and Node"],
+      ["Team", "Several developers and designers"],
+    ],
+    description:
+      "A web platform for N-Compass TV that follows every in-store flyer order from the moment it arrives to the moment it is delivered: who is working on it, how late it is and how the team is performing. The subject was a full-stack developer on it.",
+    sections: [
+      {
+        heading: "From NTV360",
+        text: "A production tool built for the N-Compass TV flyer team, designed in Figma first from a file of more than 90 screens. The screens here come from the design file, with demonstration data: the names of retailers and people are hidden, and the users directory is left out.",
+      },
+      {
+        heading: "The problem",
+        text: "N-Compass TV makes promotional flyers and posters for supermarket chains, with many stores and orders in play each week. Orders arrive from retail partner systems, designers build them and quality checkers review them before they go out.\n\nThere was no single place to answer simple questions: what came in this week and what is unfinished, which orders are overdue and who owns them, what the rules and assets are for each store, and how each designer and checker is performing.",
+      },
+      {
+        heading: "What it does",
+        items: [
+          "Order dashboard: this week's orders, what is overdue, the pipeline from unassigned to completed, and a searchable list by priority, status, designer and days left",
+          "Kanban board: orders as cards that move through the team's workflow, with new orders appearing without a refresh",
+          "Store directory: every retailer's branches, production rules, logos, stickers, backgrounds and fonts",
+          "People: a users directory with roles and a monthly calendar of who is working on what",
+          "Reports: on-time rate, turnaround, rework, first-pass rate and per-designer performance",
+          "Pre-week planning for upcoming flyers, and an image crop tool for poster artwork",
+        ],
+      },
+      {
+        heading: "His part",
+        items: [
+          "The Kanban cards: create, view, edit, labels, priorities, designers and checkers, comments, status history, rich-text descriptions with images, flyer links and delete",
+          "The shared option picker and the Insert Link dialog used across the card modal",
+          "The Store Directory features: modifying a store, store assets, production rules and store tags",
+          "A redesign of the Users Directory table to match the Store Directory",
+          "Deployment work: environment set-up for Auth0 and email, and the preview deploy pipeline",
+          "The database migrations, row-level-security policies and API routes behind these features",
+        ],
+      },
+      {
+        heading: "How it is built",
+        items: [
+          "Angular with server-side rendering and signals, and the component library Component Pantry for a consistent look",
+          "A Node and Express layer between the browser and the database, so the browser never sees keys or the database",
+          "Supabase on PostgreSQL with row-level security, and Socket.IO so open boards update live",
+          "Redis for caching, and Auth0 for sign-in",
+          "Terraform and AWS, with automatic deploys to development, preview and production",
+        ],
+      },
+      {
+        heading: "What he learned",
+        items: [
+          "Designing for data you do not control: every screen needs a sensible empty and failure state",
+          "Turning a design into code without drifting from it, and reusing a shared component instead of building a new one",
+          "Real-time updates must never change the screen under someone's hand mid-drag",
+          "The database is part of the product: security rules, reversible migrations and soft deletes protect other teams' reports",
+        ],
+      },
+    ],
+    purpose:
+      "To give the production team one place to see every flyer order, who owns it and how late it is, so nothing is missed before it goes to the client.",
+    tools: [
+      "Angular",
+      "TypeScript",
+      "Tailwind CSS",
+      "Node.js",
+      "Express",
+      "Supabase",
+      "PostgreSQL",
+      "Socket.IO",
+      "Redis",
+      "Auth0",
+      "Terraform",
+      "AWS",
+      "Figma",
+      "Component Pantry",
+    ],
+    screenshots: [
+      { src: "/images/projects/development/flyers-1.webp", caption: "THE ORDER DASHBOARD" },
+      { src: "/images/projects/development/flyers-2.webp", caption: "THE KANBAN BOARD" },
+      { src: "/images/projects/development/flyers-3.webp", caption: "THE STORE DIRECTORY" },
+      { src: "/images/projects/development/flyers-4.webp", caption: "REPORTS" },
+      { src: "/images/projects/development/flyers-5.webp", caption: "SIGN-IN" },
+    ],
+  },
+  {
+    id: "ux-1",
+    title: "UI/UX Project One",
+    category: "UI/UX",
+    description: "Placeholder description of the first UI/UX project.",
+    tools: ["Figma", "Prototyping"],
   },
   {
     id: "ux-2",
@@ -440,37 +545,228 @@ export const projects: Project[] = [
     tools: ["Figma", "User research"],
   },
   {
-    id: "ux-3",
-    title: "UI/UX Project Three",
-    category: "UI/UX",
-    description: "Placeholder description of the third UI/UX project.",
-    tools: ["Figma", "Design system"],
-  },
-  {
     id: "vid-1",
-    title: "Video Project One",
+    title: "NCTV Work PH",
     category: "Video Editing",
-    description: "Placeholder description of the first video editing project.",
-    tools: ["Premiere Pro", "After Effects"],
-    video: SAMPLE_REEL,
+    tagline: "Short videos for nctvwork.ph, NTV360's Facebook page for its interns.",
+    facts: [
+      ["Company", "NTV360 (N-Compass TV)"],
+      ["Page", "nctvwork.ph on Facebook"],
+      ["Role", "Video editor, with motion graphics"],
+      ["Videos", "17 on file, playing above"],
+    ],
+    description:
+      "nctvwork.ph, a Facebook page run under NTV360 that focuses on its interns. The team makes many kinds of content for it; the subject works mostly on the video editing, in Adobe Premiere Pro, with motion graphics in After Effects. 17 of its videos play on this disk: news first, then Meet the Team, Fast Talk, What you'll learn, intern exit interviews and the company story.",
+    sections: [
+      {
+        heading: "The page",
+        text: "nctvwork.ph is a Facebook page run under NTV360, focused on its interns. The team makes different kinds of content for it, and it is still running.",
+      },
+      {
+        heading: "His part",
+        text: "He works mostly on the video editing:",
+        items: [
+          "Editing the reels in Adobe Premiere Pro",
+          "Motion graphics in Adobe After Effects",
+          "Working with the rest of the team on the page's other content",
+        ],
+      },
+      {
+        heading: "The videos",
+        text: "All of them are in the gallery under the player. Click one to play it and click the player to pause. Click the timeline under it to jump to any point, or use the left and right arrow keys to skip 5 seconds. The buttons under it turn the sound on and off and open it on Facebook.",
+        items: [
+          "News: NCTV News on the Batch 2027 internship, and how to apply",
+          "Meet the Team: four episodes, from the company's first employees to the HR interns",
+          "Fast Talk: quick-fire questions with the interns",
+          "What you'll learn: a day in Graphics, HR and IT",
+          "Intern exit interviews: interns looking back on their internship",
+          "Company story: how N-Compass TV began",
+        ],
+      },
+      {
+        heading: "On Facebook",
+        text: "The page and 16 of its reels, listed below.",
+      },
+    ],
+    purpose: "To share the work and life of NTV360's interns in short, regular videos.",
+    links: [
+      { label: "Page", url: "https://www.facebook.com/profile.php?id=61579509335512" },
+      { label: "Reel 01", url: "https://www.facebook.com/reel/1518087259985090" },
+      { label: "Reel 02", url: "https://www.facebook.com/reel/1622589376145087" },
+      { label: "Reel 03", url: "https://www.facebook.com/reel/1869615257736374" },
+      { label: "Reel 04", url: "https://www.facebook.com/reel/1611889630396836" },
+      { label: "Reel 05", url: "https://www.facebook.com/reel/1052919084230978" },
+      { label: "Reel 06", url: "https://www.facebook.com/reel/1969562727082130" },
+      { label: "Reel 07", url: "https://www.facebook.com/reel/1058227353328324" },
+      { label: "Reel 08", url: "https://www.facebook.com/reel/998583966557079" },
+      { label: "Reel 09", url: "https://www.facebook.com/reel/2910587549276730" },
+      { label: "Reel 10", url: "https://www.facebook.com/reel/1064005306158783" },
+      { label: "Reel 11", url: "https://www.facebook.com/reel/2051620328796149" },
+      { label: "Reel 12", url: "https://www.facebook.com/reel/1272977314906840" },
+      { label: "Reel 13", url: "https://www.facebook.com/reel/959507240129332" },
+      { label: "Reel 14", url: "https://www.facebook.com/reel/2700486267033340" },
+      { label: "Reel 15", url: "https://www.facebook.com/reel/1600466354961777" },
+      { label: "Reel 16", url: "https://www.facebook.com/reel/1615828929650892" },
+    ],
+    tools: ["Adobe Premiere Pro", "Adobe After Effects"],
+    videos: [
+      {
+        src: "/videos/nctvwork/01-news.mp4",
+        poster: "/images/projects/video/nctvwork/01.webp",
+        group: "News",
+        title: "NCTV News: the Batch 2027 internship",
+      },
+      {
+        src: "/videos/nctvwork/02-how-to-apply.mp4",
+        poster: "/images/projects/video/nctvwork/02.webp",
+        group: "News",
+        title: "How to apply",
+      },
+      {
+        src: "/videos/nctvwork/03-meet-the-team-day-ones.mp4",
+        poster: "/images/projects/video/nctvwork/03.webp",
+        group: "Meet the Team",
+        title: "The day ones, the first episode",
+      },
+      {
+        src: "/videos/nctvwork/04-meet-the-team-hr-interns.mp4",
+        poster: "/images/projects/video/nctvwork/04.webp",
+        group: "Meet the Team",
+        title: "The HR interns",
+      },
+      {
+        src: "/videos/nctvwork/05-meet-the-team-ep3.mp4",
+        poster: "/images/projects/video/nctvwork/05.webp",
+        group: "Meet the Team",
+        title: "Episode 3",
+      },
+      {
+        src: "/videos/nctvwork/06-meet-the-team-ep4.mp4",
+        poster: "/images/projects/video/nctvwork/06.webp",
+        group: "Meet the Team",
+        title: "Episode 4: expectation and reality",
+      },
+      {
+        src: "/videos/nctvwork/07-fast-talk-1.mp4",
+        poster: "/images/projects/video/nctvwork/07.webp",
+        group: "Fast Talk",
+        title: "Fast Talk 1",
+      },
+      {
+        src: "/videos/nctvwork/08-fast-talk-2.mp4",
+        poster: "/images/projects/video/nctvwork/08.webp",
+        group: "Fast Talk",
+        title: "Fast Talk 2",
+      },
+      {
+        src: "/videos/nctvwork/09-learn-graphics.mp4",
+        poster: "/images/projects/video/nctvwork/09.webp",
+        group: "What you'll learn",
+        title: "Graphics",
+      },
+      {
+        src: "/videos/nctvwork/10-learn-hr.mp4",
+        poster: "/images/projects/video/nctvwork/10.webp",
+        group: "What you'll learn",
+        title: "HR",
+      },
+      {
+        src: "/videos/nctvwork/11-learn-it.mp4",
+        poster: "/images/projects/video/nctvwork/11.webp",
+        group: "What you'll learn",
+        title: "IT",
+      },
+      {
+        src: "/videos/nctvwork/12-intern-exit-1.mp4",
+        poster: "/images/projects/video/nctvwork/12.webp",
+        group: "Intern exit interviews",
+        title: "Interns look back, 1",
+      },
+      {
+        src: "/videos/nctvwork/13-intern-exit-2.mp4",
+        poster: "/images/projects/video/nctvwork/13.webp",
+        group: "Intern exit interviews",
+        title: "Interns look back, 2",
+      },
+      {
+        src: "/videos/nctvwork/14-intern-exit-3.mp4",
+        poster: "/images/projects/video/nctvwork/14.webp",
+        group: "Intern exit interviews",
+        title: "Interns look back, 3",
+      },
+      {
+        src: "/videos/nctvwork/15-design-intern-exit-1.mp4",
+        poster: "/images/projects/video/nctvwork/15.webp",
+        group: "Intern exit interviews",
+        title: "Design interns look back, 1",
+      },
+      {
+        src: "/videos/nctvwork/16-design-intern-exit-2.mp4",
+        poster: "/images/projects/video/nctvwork/16.webp",
+        group: "Intern exit interviews",
+        title: "Design interns look back, 2",
+      },
+      {
+        src: "/videos/nctvwork/17-company-story.mp4",
+        poster: "/images/projects/video/nctvwork/17.webp",
+        group: "Company story",
+        title: "How N-Compass TV began",
+      },
+    ],
   },
   {
     id: "vid-2",
-    title: "Video Project Two",
+    title: "Face of CCS",
     category: "Video Editing",
-    description: "Placeholder description of the second video editing project.",
-    tools: ["Premiere Pro", "After Effects"],
-    video: SAMPLE_REEL,
+    tagline: "An animated title for The Face of CCS.",
+    facts: [
+      ["Type", "Motion graphics, title animation"],
+      ["Length", "10 seconds"],
+      ["Role", "Motion graphics"],
+    ],
+    description:
+      "A ten-second animated title for The Face of CCS: a gold, sculpted emblem turning into view among moving clockwork gears.",
+    sections: [
+      {
+        heading: "What it is",
+        text: "A ten-second opening title for The Face of CCS. A gold, sculpted emblem of a face turns into view among moving clockwork gears, with the title set in gold beside it.",
+      },
+    ],
+    tools: ["Adobe After Effects"],
+    video: "/videos/face-of-ccs/face-of-ccs.mp4",
+    silent: true,
   },
   {
     id: "vid-3",
-    title: "Video Project Three",
+    title: "OrgaFlow",
     category: "Video Editing",
-    description: "Placeholder description of the third video editing project.",
-    tools: ["Premiere Pro", "After Effects"],
-    video: SAMPLE_REEL,
+    tagline:
+      "An explainer video for OrgaFlow, an event planning and management system for student organizations.",
+    facts: [
+      ["Type", "Explainer video"],
+      ["Length", "3 minutes 19 seconds"],
+      ["For", "Hospitality student organizations, University of Cebu"],
+      ["Role", "Video editing and motion graphics"],
+    ],
+    description:
+      "An explainer video for OrgaFlow, an integrated event planning and management system for the hospitality management student organizations of the University of Cebu.",
+    sections: [
+      {
+        heading: "What it is",
+        text: "OrgaFlow is an integrated event planning and management system for the hospitality management student organizations of the University of Cebu.\n\nThe video walks through the problem, events run on confusing spreadsheets, then what OrgaFlow does from planning to attendee feedback once the event is done, and closes on what it means for student activities and co-curricular learning.",
+      },
+    ],
+    tools: ["Adobe Premiere Pro", "Adobe After Effects"],
+    video: "/videos/orgaflow/orgaflow-explainer.mp4",
   },
 ];
+
+/** The clips a disk plays on the terminal, in order: its playlist, or its one clip. */
+export function projectClips(project: Project | null | undefined) {
+  if (!project) return [];
+  if (project.videos?.length) return project.videos;
+  return project.video ? [{ src: project.video, title: project.title, group: "", poster: "" }] : [];
+}
 
 export const archiveProjects = projects.filter(
   (p) => p.category === "Development" || p.category === "UI/UX" || p.category === "Video Editing",

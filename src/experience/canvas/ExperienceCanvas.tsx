@@ -7,6 +7,7 @@ import { cameraAnchors } from "../camera/cameraAnchors";
 import { CameraRig } from "../camera/CameraRig";
 import { DetectiveOffice } from "../environment/DetectiveOffice";
 import { OfficeLighting } from "../lighting/OfficeLighting";
+import { ShadowDriver } from "./ShadowDriver";
 
 /** Dev-only orbit controls for composing the scene: `?debug=1` in dev. */
 const debugControls =
@@ -80,6 +81,7 @@ export function ExperienceCanvas({ onReady }: { onReady: () => void }) {
     >
       <color attach="background" args={["#0a0908"]} />
       <CameraRig />
+      <ShadowDriver />
       <OfficeLighting />
       <Suspense fallback={null}>
         <DetectiveOffice />

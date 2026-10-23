@@ -999,14 +999,20 @@ export function paintStickyNote(lines: string[], seed: number, size = 512) {
     ctx.fillRect(r() * size, r() * size, 1 + r() * 2, 1);
   }
 
-  // The role in marker, a line each, sized to fit the longest.
-  const longest = Math.max(...lines.map((l) => l.length));
-  const px = Math.min(size * 0.2, (size * 0.84) / (longest * 0.66));
+  // The role in marker, a line each, sized by measuring the longest to fit 82% of
+  // the width (the paper's edges are left clear), the lines and underline
+  // centred on the note together.
+  let px = size * 0.2;
+  const fit = (n: number) => {
+    ctx.font = `bold ${n}px ${HAND}`;
+    return Math.max(...lines.map((l) => ctx.measureText(l).width));
+  };
+  while (fit(px) > size * 0.82 && px > 12) px -= 1;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#1a1714";
   ctx.font = `bold ${px}px ${HAND}`;
-  const top = size * 0.5 - ((lines.length - 1) * px * 1.05) / 2 - px * 0.15;
+  const top = size * 0.5 - ((lines.length - 1) * px * 1.05 + px * 0.22) / 2;
   lines.forEach((line, i) => {
     ctx.save();
     ctx.translate(size / 2 + (r() - 0.5) * size * 0.03, top + i * px * 1.05);

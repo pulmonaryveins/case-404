@@ -4,8 +4,10 @@ import { useGLTF } from "@react-three/drei";
 import {
   Box3,
   CanvasTexture,
+  CatmullRomCurve3,
   type Group,
   ImageLoader,
+  MathUtils,
   Mesh,
   MeshStandardMaterial,
   type Object3D,
@@ -105,6 +107,15 @@ const PORTRAIT_SIZE = { w: 0.435, h: 0.62 };
  * its top edge its pin sits.
  */
 const NOTE = { side: 0.125, curl: 0.012, rolls: [-0.05, 0.04, 0.06, -0.035], pinDrop: 0.02 };
+/**
+ * Strings run behind the sticky notes: where one crosses a note it dips down
+ * to the map (a hair above it, under the paper) so it never runs over the
+ * role's name. It eases down over `NOTE_EDGE` outside the note's edge, and
+ * stays up for `NOTE_PIN` from its own pin, so it still leaves the pin.
+ */
+const NOTE_EDGE = 0.012;
+const NOTE_PIN = 0.002;
+const STRING_ON_MAP = 0.0012;
 
 /**
  * The investigation board with its generic content replaced by CASE 404
@@ -133,13 +144,13 @@ export function EvidenceBoard() {
   const group = useRef<Group>(null);
   useLayoutEffect(() => {
     if (!group.current) return;
-    const strings = seatPins(board, group.current, pins);
+    const strings = seatPins(board, group.current, pins, faceX);
     return () => {
       board.remove(strings);
       strings.geometry.dispose();
       (strings.material as MeshStandardMaterial).dispose();
     };
-  }, [board, pins]);
+  }, [board, faceX, pins]);
 
   return (
     <group ref={group} position={asset.position} rotation={asset.rotation} scale={asset.scale}>
@@ -523,7 +534,7 @@ function buildBoard(source: Object3D, redPin: Object3D) {
  * curl, so their depth at a pin is only known once they are mounted), then
  * strings the pins together. Returns the strings' mesh, added to the board.
  */
-function seatPins(board: Object3D, around: Object3D, pins: Map<string, Object3D>) {
+function seatPins(board: Object3D, around: Object3D, pins: Map<string, Object3D>, faceX: number) {
   around.updateMatrixWorld(true);
   const out = new Vector3(1, 0, 0).transformDirection(board.matrixWorld);
   const raycaster = new Raycaster();
@@ -571,11 +582,43 @@ function seatPins(board: Object3D, around: Object3D, pins: Map<string, Object3D>
    * between far-apart pins reads as stretched, so the strings from a card to
    * its posters sag more than the long spokes from the case file.
    */
+  /** How far under a note (0 clear of it, 1 on it) a point of the board face lies. */
+  const underNote = (point: Vector3) => {
+    const s = -point.z;
+    const t = point.y;
+    let cover = 0;
+    roleClusters.forEach(({ card }, i) => {
+      const roll = NOTE.rolls[i] ?? 0;
+      const ds = s - card.s;
+      const dt = t - card.t;
+      // Into the note's own frame (it is turned by its roll).
+      const lx = ds * Math.cos(roll) + dt * Math.sin(roll);
+      const ly = -ds * Math.sin(roll) + dt * Math.cos(roll);
+      const half = NOTE.side / 2;
+      const d = Math.hypot(Math.max(Math.abs(lx) - half, 0), Math.max(Math.abs(ly) - half, 0));
+      cover = Math.max(cover, 1 - MathUtils.smoothstep(d, 0, NOTE_EDGE));
+    });
+    return cover;
+  };
+
   const strand = (a: Vector3, b: Vector3, slack: number) => {
     const mid = a.clone().add(b).multiplyScalar(0.5);
     mid.y -= a.distanceTo(b) * slack;
     mid.x = Math.max(a.x, b.x) + 0.012;
-    return new TubeGeometry(new QuadraticBezierCurve3(a, mid, b), 16, STRING_RADIUS, 5, false);
+    const curve = new QuadraticBezierCurve3(a, mid, b);
+    const length = curve.getLength();
+    // Sampled, with the dip behind any note it crosses (never near its own ends).
+    const steps = 48;
+    const points: Vector3[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps;
+      const p = curve.getPoint(u);
+      const fromEnd = Math.min(u, 1 - u) * length;
+      const dip = underNote(p) * MathUtils.smoothstep(fromEnd, NOTE_PIN, NOTE_PIN + 0.006);
+      p.x = MathUtils.lerp(p.x, faceX + STRING_ON_MAP, dip);
+      points.push(p);
+    }
+    return new TubeGeometry(new CatmullRomCurve3(points), 64, STRING_RADIUS, 5, false);
   };
 
   const end = (e: StringEnd) => {

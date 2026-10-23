@@ -21,6 +21,7 @@ import { createPaperBump, paintPaperFinish } from "../surfaces/paperFinish";
 import { PaperContactShadow } from "./PaperContactShadow";
 import { useFocusable } from "../camera/focus";
 import { dossierReadable, slamHeight, useDossier, whenIdle } from "./dossierState";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /** Unwrap the board's photo UV island into an upright print. */
 function boardPhoto(
@@ -396,6 +397,7 @@ function Drop({
   const t = useRef(animate ? (-order * DROP_STAGGER) / DROP_SECONDS : 1);
   useFrame((_, dt) => {
     if (!group.current || t.current >= 1) return;
+    shadowsChanged();
     t.current = Math.min(1, t.current + dt / DROP_SECONDS);
     const h = slamHeight(Math.max(0, t.current));
     group.current.position.z = DROP_FROM * h;

@@ -1,4 +1,4 @@
-import type { Project } from "../../data/projects";
+import { projectClips, type Project } from "../../data/projects";
 import { loadedCount, loadedImage } from "./projectImages";
 
 const PHOSPHOR = "#7dffb0";
@@ -18,7 +18,20 @@ export type ScreenView =
   /** A disk has just gone into the drive; `t` runs 0 to 1 while it is read. */
   | { kind: "insert"; project: Project; t: number }
   /** Welcome menu, or the record of the disk in the drive. */
-  | { kind: "menu"; active: Project | null; projects: Project[]; video?: HTMLVideoElement };
+  | {
+      kind: "menu";
+      active: Project | null;
+      projects: Project[];
+      video?: HTMLVideoElement;
+      /** What is playing, under the video window ("03/17  MEET THE TEAM · ..."). */
+      clipLabel?: string;
+      /** The gallery's chosen clip on a playlist disk, -1 for none yet. */
+      selectedClip?: number;
+      /** The clip has a page to open (shows the FACEBOOK button). */
+      clipLink?: boolean;
+      /** The clip has no sound (no SOUND button). */
+      clipSilent?: boolean;
+    };
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -188,34 +201,42 @@ function paintMenu(ctx: Ctx, projects: Project[]) {
     ["UI / UX", "UI/UX", 380],
     ["VIDEO EDIT", "Video Editing", 710],
   ];
-  // A fourth disk in a column tightens the rows, so the prompt still clears
-  // the "SCROLL DOWN" bar that covers the foot of the screen.
+  // More disks in a column tighten the rows (and, from five, lift the whole
+  // list), so the prompt still clears the "SCROLL DOWN" bar at the screen's foot.
   const rows = Math.max(
     ...columns.map(([, category]) => projects.filter((p) => p.category === category).length),
   );
-  const pitch = rows > 3 ? 48 : 56;
+  const pitch = rows > 5 ? 40 : rows > 4 ? 44 : rows > 3 ? 48 : 56;
+  const lift = rows > 5 ? 50 : rows > 4 ? 40 : 0;
   for (const [title, category, x] of columns) {
     ctx.fillStyle = DIM;
     ctx.font = `bold 30px ${MONO}`;
-    ctx.fillText(title, x, 340);
-    ctx.fillRect(x, 354, 290, 3);
+    ctx.fillText(title, x, 340 - lift);
+    ctx.fillRect(x, 354 - lift, 290, 3);
     ctx.fillStyle = PHOSPHOR;
     ctx.font = `bold 28px ${MONO}`;
     projects
       .filter((p) => p.category === category)
       .forEach((p, i) => {
         // "Dev Project One" -> "PROJECT ONE": the column already names the kind.
-        ctx.fillText(p.title.replace(/^(Dev|UI\/UX|Video) /, "").toUpperCase(), x, 410 + i * pitch);
+        ctx.fillText(
+          p.title.replace(/^(Dev|UI\/UX|Video) /, "").toUpperCase(),
+          x,
+          410 - lift + i * pitch,
+        );
       });
   }
-  const last = 410 + (rows - 1) * pitch;
-  const hintY = rows > 3 ? last + 36 : 575;
+  const last = 410 - lift + (rows - 1) * pitch;
+  // Six rows leave no room for the hint above the prompt: they share a line.
+  const shared = rows > 5;
+  const hintY = shared ? last + 44 : rows > 3 ? last + 36 : 575;
+  const promptY = shared ? hintY : rows > 3 ? hintY + 40 : 620;
   ctx.fillStyle = DIM;
   ctx.font = `bold 24px ${MONO}`;
-  ctx.fillText("QUESTIONS? THE RED DISK BY THE RACK RUNS N.I.G.E.L.", 60, hintY);
+  ctx.fillText("QUESTIONS? THE RED DISK IN THE RACK RUNS N.I.G.E.L.", shared ? 230 : 60, hintY);
   ctx.fillStyle = PHOSPHOR;
   ctx.font = `bold 34px ${MONO}`;
-  ctx.fillText("A:\\> _", 60, rows > 3 ? hintY + 40 : 620);
+  ctx.fillText("A:\\> _", 60, promptY);
 
   // Below the fold: reached by scrolling the terminal.
   ctx.fillStyle = DIM;
@@ -371,7 +392,7 @@ function tags(ctx: Ctx, tools: string[], top: number) {
  * as tags, the screenshots and the file details. A project with no sections
  * shows its description under OVERVIEW.
  */
-function paintRecord(ctx: Ctx, project: Project) {
+function paintRecord(ctx: Ctx, project: Project, selected = -1) {
   ctx.font = `bold 26px ${MONO}`;
   ctx.fillStyle = DIM;
   ctx.fillText(`DRIVE A: ${project.category.toUpperCase()}`, R.x, 176);
@@ -382,6 +403,11 @@ function paintRecord(ctx: Ctx, project: Project) {
     ctx.font = `bold 30px ${MONO}`;
     ctx.fillStyle = PHOSPHOR;
     y = wrap(ctx, project.tagline, R.x, y + 4, R.w, 44);
+  }
+  if (projectClips(project).length) {
+    const listed = !!project.videos?.length;
+    y = videoWindowAt(ctx, y + 10, listed && selected < 0);
+    if (listed) y = paintGallery(ctx, project, y, selected);
   }
   if (project.facts?.length) {
     // A rule above and below, so the facts read as one block.
@@ -412,6 +438,19 @@ function paintRecord(ctx: Ctx, project: Project) {
     y = sectionHead(ctx, "Link", y);
     bodyType(ctx);
     y = wrap(ctx, project.link, R.x, y, R.w, R.bodyLine) - R.bodyLine + R.gap;
+  }
+  if (project.links?.length) {
+    y = sectionHead(ctx, "Links", y);
+    const labelW = 150;
+    for (const { label, url } of project.links) {
+      ctx.shadowBlur = 2;
+      ctx.font = R.small;
+      ctx.fillStyle = DIM;
+      ctx.fillText(label.toUpperCase(), R.x, y);
+      ctx.fillStyle = PHOSPHOR;
+      y = wrap(ctx, url.replace(/^https?:\/\/(www\.)?/, ""), R.x + labelW, y, R.w - labelW, 38) + 4;
+    }
+    y += R.gap - 38;
   }
   if (project.screenshots?.length) y = paintScreenshots(ctx, project, y);
   glow(ctx);
@@ -523,56 +562,331 @@ function paintFileDetails(ctx: Ctx, project: Project, top: number) {
   return y + 130;
 }
 
-/** The video window on a video disk's page (page coordinates). */
-const VIDEO = { x: 60, y: 140, w: SCREEN_W - 120, h: 420 };
+/**
+ * The video window on the record now on screen (page coordinates), where
+ * paintRecord put it; null for a record without a clip.
+ */
+let videoWindow: { x: number; y: number; w: number; h: number } | null = null;
+const VIDEO_H = 400;
+/** The timeline under the player: its bar (offset and height from the window's foot), and how far its click area reaches. */
+const TRACK_Y = 14;
+const TRACK_H = 14;
+const TRACK_HIT: [number, number] = [2, 46];
 
-/** The clip's current frame, tinted to the phosphor, and its progress bar. */
-function paintVideoFrame(ctx: Ctx, video: HTMLVideoElement, scroll: number) {
-  const { x, w, h } = VIDEO;
-  const y = VIDEO.y - scroll;
+/**
+ * Where on the clip a click at (x, y) on the record would seek to (0 to 1),
+ * or null when it is not on the timeline.
+ */
+export function seekFraction(x: number, y: number) {
+  const v = videoWindow;
+  if (!v) return null;
+  if (x < v.x || x > v.x + v.w) return null;
+  if (y < v.y + v.h + TRACK_HIT[0] || y > v.y + v.h + TRACK_HIT[1]) return null;
+  return Math.min(1, Math.max(0, (x - v.x) / v.w));
+}
+
+/**
+ * The last picture taken from the clip on screen. While a jump is being
+ * decoded the video element has no frame to draw (and the window would flash
+ * black), so this one stays up until the new one is ready.
+ */
+const lastFrame = { canvas: null as HTMLCanvasElement | null, src: "", ok: false };
+
+/** Where a jump is heading (0 to 1) while the browser still decodes it: the handle goes there at once. */
+let seekPreview: number | null = null;
+export function previewSeek(fraction: number | null) {
+  seekPreview = fraction;
+}
+
+/** 73.4 s as "1:13". */
+function clock(seconds: number) {
+  const s = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+/** The buttons under the player: sound, and the clip's page (page coordinates). */
+let playerButtons: { sound: Rect; link: Rect } | null = null;
+type Rect = { x: number; y: number; w: number; h: number };
+const inRect = (r: Rect | null | undefined, x: number, y: number) =>
+  !!r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+
+/** The player's button under a point on the record (page coordinates), if any. */
+export function playerButtonAt(x: number, y: number): "sound" | "link" | null {
+  const shown = shownButtons();
+  if (inRect(shown.sound, x, y)) return "sound";
+  if (inRect(shown.link, x, y)) return "link";
+  return null;
+}
+
+/** Which buttons the player shows now (as last painted), right-aligned. */
+const buttonsShown = { sound: true, link: false };
+function shownButtons(): { sound?: Rect; link?: Rect } {
+  const b = playerButtons;
+  if (!b) return {};
+  // The right-hand slot belongs to the link when there is one, else to the sound button.
+  return {
+    link: buttonsShown.link ? b.link : undefined,
+    sound: buttonsShown.sound ? (buttonsShown.link ? b.sound : b.link) : undefined,
+  };
+}
+
+/** Where to scroll so the player and its controls fill the screen under the header. */
+export function playerScroll() {
+  return videoWindow ? Math.max(0, videoWindow.y - BODY_TOP - 8) : 0;
+}
+
+/** Where each gallery poster sits on the record now on screen (page coordinates). */
+let galleryCells: { index: number; x: number; y: number; w: number; h: number }[] = [];
+
+/** The clip under a point on the record (page coordinates), or -1. */
+export function clipAt(x: number, y: number) {
+  const cell = galleryCells.find((c) => x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h);
+  return cell ? cell.index : -1;
+}
+
+/** Whether a point on the record (page coordinates) is on the video window. */
+export function onVideoWindow(x: number, y: number) {
+  return inRect(videoWindow, x, y);
+}
+
+/**
+ * Every clip of a playlist disk as a poster, grouped under its group's name,
+ * five to a row; the chosen one framed bright and marked PLAYING. Returns the
+ * page below.
+ */
+function paintGallery(ctx: Ctx, project: Project, top: number, selected: number) {
+  const clips = project.videos ?? [];
+  galleryCells = [];
+  let y = sectionHead(ctx, `All videos (${clips.length})`, top) - 50 + 10;
+  const cols = 5;
+  const gap = 16;
+  const w = (R.w - gap * (cols - 1)) / cols;
+  const h = Math.round((w * 16) / 9);
+  const groups: string[] = [];
+  for (const c of clips) if (!groups.includes(c.group)) groups.push(c.group);
+  for (const group of groups) {
+    ctx.shadowBlur = 2;
+    ctx.font = R.small;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fillText(group.toUpperCase(), R.x, y + 26);
+    y += 46;
+    const members = clips.map((c, index) => ({ c, index })).filter(({ c }) => c.group === group);
+    members.forEach(({ c, index }, i) => {
+      const col = i % cols;
+      if (i > 0 && col === 0) y += h + 92;
+      const x = R.x + col * (w + gap);
+      const chosen = index === selected;
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x, y, w, h);
+      const img = loadedImage(c.poster);
+      if (img) {
+        // Whole poster inside the cell (a landscape clip sits in a band).
+        const k = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+        const dw = img.naturalWidth * k;
+        const dh = img.naturalHeight * k;
+        ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        ctx.globalCompositeOperation = "multiply";
+        ctx.fillStyle = "#b4ffd2";
+        ctx.fillRect(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        ctx.globalCompositeOperation = "source-over";
+      }
+      // A play mark in the middle, or PLAYING on the chosen one.
+      ctx.fillStyle = chosen ? PHOSPHOR : "rgba(4,18,10,0.7)";
+      ctx.beginPath();
+      ctx.arc(x + w / 2, y + h / 2, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = chosen ? "#04120a" : PHOSPHOR;
+      ctx.beginPath();
+      ctx.moveTo(x + w / 2 - 8, y + h / 2 - 13);
+      ctx.lineTo(x + w / 2 - 8, y + h / 2 + 13);
+      ctx.lineTo(x + w / 2 + 13, y + h / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = chosen ? PHOSPHOR : DIM;
+      ctx.lineWidth = chosen ? 6 : 2;
+      ctx.strokeRect(x, y, w, h);
+      ctx.restore();
+      galleryCells.push({ index, x, y, w, h });
+      // Number and title under the poster, up to three short lines.
+      ctx.shadowBlur = 2;
+      ctx.font = `bold 18px ${MONO}`;
+      ctx.fillStyle = chosen ? PHOSPHOR : DIM;
+      ctx.fillText(
+        chosen
+          ? `${String(index + 1).padStart(2, "0")} PLAYING`
+          : String(index + 1).padStart(2, "0"),
+        x,
+        y + h + 24,
+      );
+      ctx.fillStyle = PHOSPHOR;
+      const words = c.title.toUpperCase().split(" ");
+      let line = "";
+      let ly = y + h + 48;
+      let lines = 0;
+      for (const word of words) {
+        const next = line ? `${line} ${word}` : word;
+        if (ctx.measureText(next).width > w && line) {
+          ctx.fillText(line, x, ly);
+          ly += 22;
+          lines++;
+          line = word;
+          if (lines === 2) break;
+        } else line = next;
+      }
+      if (lines < 3) ctx.fillText(line, x, ly);
+    });
+    y += h + 110;
+  }
+  return y + R.gap - 40;
+}
+
+/** The empty window and progress track; the frames are drawn over it live. Returns the page below. */
+function videoWindowAt(ctx: Ctx, top: number, prompt = false) {
+  const box = { x: R.x, y: top, w: R.w, h: VIDEO_H };
+  videoWindow = box;
+  const row = box.y + box.h + 56;
+  playerButtons = {
+    link: { x: box.x + box.w - 190, y: row, w: 190, h: 40 },
+    sound: { x: box.x + box.w - 190 - 14 - 190, y: row, w: 190, h: 40 },
+  };
+  ctx.save();
   ctx.shadowBlur = 0;
-  if (video.videoWidth) {
-    const k = Math.min(w / video.videoWidth, h / video.videoHeight);
-    const vw = video.videoWidth * k;
-    const vh = video.videoHeight * k;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = PHOSPHOR;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.fillStyle = DIM;
+  ctx.fillRect(box.x, box.y + box.h + TRACK_Y, box.w, TRACK_H);
+  if (prompt) {
+    ctx.font = `bold 30px ${MONO}`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fillText("SELECT A VIDEO BELOW", box.x + box.w / 2, box.y + 150);
+    ctx.font = R.small;
+    ctx.fillStyle = DIM;
+    ctx.fillText("CLICK ONE TO PLAY IT HERE", box.x + box.w / 2, box.y + 194);
+    ctx.textAlign = "left";
+  }
+  ctx.restore();
+  // Room for the timeline and the controls row.
+  return top + box.h + 112;
+}
+
+/**
+ * The clip's current frame in the record's window, tinted to the phosphor
+ * (a portrait reel stands in the middle of it), its progress bar, and what is
+ * playing.
+ */
+function paintVideoFrame(
+  ctx: Ctx,
+  video: HTMLVideoElement,
+  scroll: number,
+  label?: string,
+  hasLink = false,
+  silent = false,
+) {
+  buttonsShown.link = hasLink;
+  buttonsShown.sound = !silent;
+  if (!videoWindow) return;
+  const { x, w, h } = videoWindow;
+  const y = videoWindow.y - scroll;
+  ctx.shadowBlur = 0;
+  // A new clip starts with no picture; while the same one decodes a jump, its last picture stays.
+  if (video.currentSrc !== lastFrame.src) {
+    lastFrame.src = video.currentSrc;
+    lastFrame.ok = false;
+  }
+  if (video.readyState >= 2 && !video.seeking && video.videoWidth > 0) {
+    const c = (lastFrame.canvas ??= document.createElement("canvas"));
+    if (c.width !== video.videoWidth || c.height !== video.videoHeight) {
+      c.width = video.videoWidth;
+      c.height = video.videoHeight;
+    }
+    c.getContext("2d")!.drawImage(video, 0, 0);
+    lastFrame.ok = true;
+  }
+  const frame = lastFrame.ok ? lastFrame.canvas : null;
+  if (frame) {
+    const k = Math.min(w / frame.width, h / frame.height);
+    const vw = frame.width * k;
+    const vh = frame.height * k;
     const dx = x + (w - vw) / 2;
     const dy = y + (h - vh) / 2;
-    ctx.drawImage(video, dx, dy, vw, vh);
+    ctx.drawImage(frame, dx, dy, vw, vh);
     ctx.globalCompositeOperation = "multiply";
     ctx.fillStyle = "#b4ffd2";
     ctx.fillRect(dx, dy, vw, vh);
     ctx.globalCompositeOperation = "source-over";
   }
-  const p = video.duration ? video.currentTime / video.duration : 0;
+  if (!video.seeking) seekPreview = null;
+  const duration = Number.isFinite(video.duration) ? video.duration : 0;
+  const p =
+    video.seeking && seekPreview !== null
+      ? seekPreview
+      : duration
+        ? video.currentTime / duration
+        : 0;
   ctx.fillStyle = PHOSPHOR;
-  ctx.fillRect(x, y + h + 18, w * p, 6);
-}
-
-/** A video disk's page, without the clip: the window, the empty bar and the text. */
-function paintVideo(ctx: Ctx, project: Project) {
-  const { x, y, w, h } = VIDEO;
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = "#000";
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = PHOSPHOR;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = DIM;
-  ctx.fillRect(x, y + h + 18, w, 6);
-  glow(ctx);
-  ctx.font = `bold 34px ${MONO}`;
-  ctx.fillText(project.title.toUpperCase(), 60, 640);
-  ctx.fillStyle = DIM;
-  ctx.font = `bold 26px ${MONO}`;
-  ctx.fillText(`DRIVE A: ${project.category.toUpperCase()}`, 60, 680);
+  ctx.fillRect(x, y + h + TRACK_Y, w * p, TRACK_H);
+  // A handle at the playing position: the timeline can be clicked to jump.
+  const hx = Math.min(x + w - 6, Math.max(x, x + w * p - 6));
+  ctx.fillRect(hx, y + h + TRACK_Y - 8, 12, TRACK_H + 16);
+  // Elapsed and total, over the picture's bottom left.
+  ctx.font = `bold 22px ${MONO}`;
+  const time = `${clock(p * duration)} / ${clock(duration)}`;
+  const tw = ctx.measureText(time).width + 24;
+  ctx.fillStyle = "rgba(4,18,10,0.82)";
+  ctx.fillRect(x + 10, y + h - 46, tw, 36);
   ctx.fillStyle = PHOSPHOR;
-  ctx.font = `bold 34px ${MONO}`;
-  let ty = wrap(ctx, project.description, 60, 750, SCREEN_W - 120, 46);
-  ctx.fillStyle = DIM;
-  ctx.fillText("TOOLS", 60, ty + 30);
-  ctx.fillStyle = PHOSPHOR;
-  ty = wrap(ctx, project.tools.join("  /  "), 60, ty + 76, SCREEN_W - 120, 46);
-  return paintFileDetails(ctx, project, ty + 30);
+  ctx.fillText(time, x + 22, y + h - 20);
+  // Paused or finished: say so over the picture.
+  if (video.paused || video.ended) {
+    const msg = video.ended ? "ENDED · CLICK TO REPLAY" : "PAUSED · CLICK TO PLAY";
+    ctx.font = `bold 28px ${MONO}`;
+    const mw = ctx.measureText(msg).width + 40;
+    ctx.fillStyle = "rgba(4,18,10,0.82)";
+    ctx.fillRect(x + (w - mw) / 2, y + h / 2 - 32, mw, 56);
+    ctx.fillStyle = PHOSPHOR;
+    ctx.textAlign = "center";
+    ctx.fillText(msg, x + w / 2, y + h / 2 + 8);
+    ctx.textAlign = "left";
+  }
+  // The buttons: sound, and the clip's page.
+  const b = playerButtons;
+  if (b) {
+    const button = (r: Rect, text: string, lit: boolean) => {
+      const by = r.y - scroll;
+      ctx.fillStyle = lit ? PHOSPHOR : "rgba(4,18,10,1)";
+      ctx.fillRect(r.x, by, r.w, r.h);
+      ctx.strokeStyle = PHOSPHOR;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(r.x, by, r.w, r.h);
+      ctx.font = `bold 22px ${MONO}`;
+      ctx.fillStyle = lit ? "#04120a" : PHOSPHOR;
+      ctx.textAlign = "center";
+      ctx.fillText(text, r.x + r.w / 2, by + 28);
+      ctx.textAlign = "left";
+    };
+    const shown = shownButtons();
+    if (shown.sound) button(shown.sound, video.muted ? "SOUND: OFF" : "SOUND: ON", !video.muted);
+    if (shown.link) button(shown.link, "FACEBOOK  >", false);
+  }
+  // What is playing, cut to the room left of the buttons.
+  if (label) {
+    ctx.font = `bold 22px ${MONO}`;
+    ctx.fillStyle = PHOSPHOR;
+    const leftmost = shownButtons().sound ?? shownButtons().link;
+    const room = (leftmost ? leftmost.x : x + w) - x - 20;
+    let text = label.toUpperCase();
+    if (ctx.measureText(text).width > room) {
+      while (text.length > 4 && ctx.measureText(text + "...").width > room)
+        text = text.slice(0, -1);
+      text = text.trimEnd() + "...";
+    }
+    ctx.fillText(text, x, (b ? b.sound.y - scroll : y + h + 36) + 28);
+  }
 }
 
 /**
@@ -645,17 +959,24 @@ export function paintArchiveScreen(canvas: HTMLCanvasElement, view: ScreenView, 
   }
 
   const active = view.active;
-  const isVideo = !!active?.video;
-  const key = active ? `${active.id}:${loadedCount(active)}` : "menu";
+  const isVideo = projectClips(active).length > 0;
+  const selected = view.kind === "menu" ? (view.selectedClip ?? -1) : -1;
+  const key = active ? `${active.id}:${loadedCount(active)}:${selected}` : "menu";
   const current = pageFor(key, (c) => {
     glow(c);
-    if (active && isVideo) return paintVideo(c, active);
-    if (active) return paintRecord(c, active);
+    if (active) {
+      videoWindow = null;
+      playerButtons = null;
+      galleryCells = [];
+      return paintRecord(c, active, selected);
+    }
     return paintMenu(c, view.projects);
   });
   const end = current.end;
   ctx.drawImage(current.canvas, 0, -scroll);
-  if (isVideo && view.video) paintVideoFrame(ctx, view.video, scroll);
+  if (isVideo && view.video) {
+    paintVideoFrame(ctx, view.video, scroll, view.clipLabel, view.clipLink, view.clipSilent);
+  }
 
   const max = Math.max(0, end - SCREEN_H);
   // Header band over whatever scrolled beneath it.
@@ -724,7 +1045,7 @@ export function paintDiskLabel(canvas: HTMLCanvasElement, project: Project, inde
   ctx.textAlign = "left";
   ctx.fillText(dev ? "DEV" : vid ? "VIDEO" : "UI/UX", 24, 66);
   ctx.textAlign = "right";
-  ctx.fillText(`A-0${index + 1}`, LABEL_W - 24, 66);
+  ctx.fillText(`A-${String(index + 1).padStart(2, "0")}`, LABEL_W - 24, 66);
 
   // Title: as large as fits, on up to two lines.
   ctx.textAlign = "left";

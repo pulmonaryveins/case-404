@@ -64,6 +64,14 @@ let pauseAt = 0;
 let chosen = false;
 /** Autoplay's waiting for the browser to allow sound (see `autoplay`). */
 let armed = false;
+/**
+ * A video on the archive terminal is playing with its sound on: the record is
+ * stopped (faded out and paused) until it ends, and then plays on (see `hold`).
+ */
+let held = false;
+/** A pending release (see `hold`). */
+let releaseTimer = 0;
+
 /** When autoplay last started the music (ms), so a click that did it is not read twice. */
 let autoStartedAt = -Infinity;
 /**
@@ -162,7 +170,7 @@ function build(): Engine {
  */
 function keepAlive() {
   const e = engine;
-  if (!e || !on) return;
+  if (!e || !on || held) return;
   if (e.ctx.state !== "running") void e.ctx.resume();
   if (e.media.paused) void e.media.play().catch(() => undefined);
 }
@@ -309,6 +317,7 @@ export const gramophone = {
   /** How fast the record turns, 0 (still) to 1 (full speed), for the spin. */
   get speed() {
     if (!engine) return 0;
+    if (held) return 0;
     return on || engine.ctx.currentTime < pauseAt ? rate : 0;
   },
 
@@ -342,6 +351,46 @@ export const gramophone = {
         (WIND_DOWN.seconds + 0.15) * 1000,
       );
     }
+  },
+
+  /**
+   * Stops the music (`true`) while a video on the terminal plays with its
+   * sound on: a quick fade, then the record pauses where it is. `false`
+   * plays it on from there, if it was playing.
+   */
+  hold(stop: boolean) {
+    if (stop) {
+      // A hold cancels a release still waiting (one clip giving way to the next).
+      window.clearTimeout(releaseTimer);
+      releaseTimer = 0;
+      if (held) return;
+      held = true;
+      const e = engine;
+      if (!e || !on) return;
+      const t = e.ctx.currentTime;
+      e.music.gain.cancelScheduledValues(t);
+      e.music.gain.setValueAtTime(e.music.gain.value, t);
+      e.music.gain.linearRampToValueAtTime(0, t + 0.35);
+      e.crackle.gain.setTargetAtTime(0, t, 0.08);
+      window.setTimeout(() => {
+        if (held) e.media.pause();
+      }, 400);
+      return;
+    }
+    if (!held || releaseTimer) return;
+    // Wait a moment: the next clip may take the hold straight back.
+    releaseTimer = window.setTimeout(() => {
+      releaseTimer = 0;
+      held = false;
+      const e = engine;
+      if (!e || !on) return;
+      const t = e.ctx.currentTime;
+      e.music.gain.cancelScheduledValues(t);
+      e.music.gain.setValueAtTime(e.music.gain.value, t);
+      void e.media.play().catch(() => undefined);
+      e.music.gain.linearRampToValueAtTime(1, t + 0.8);
+      e.crackle.gain.setTargetAtTime(CRACKLE, t, 0.15);
+    }, 350);
   },
 
   /** What the engine is doing, for checking it: level, state and whether the record turns. */

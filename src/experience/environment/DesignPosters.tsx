@@ -22,6 +22,7 @@ import { useExperienceStore } from "../../store/useExperienceStore";
 import { paintPosterBack, paintStickyNote } from "../surfaces/paintPosterBack";
 import { useDesignInspect } from "./designInspectState";
 import { useWallInspect } from "./wallInspect";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /**
  * The design wall: the subject's own design work (data/designWork.ts) printed
@@ -254,6 +255,7 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
     // Back on the wall after the close-up: free its painted back (~4 MB).
     if (turn.current === 0 && backPainted && !inspected) setBackPainted(false);
     if (!flipper.current || turn.current === target) return;
+    shadowsChanged();
     const step = dt / FLIP_SECONDS;
     turn.current =
       target > turn.current

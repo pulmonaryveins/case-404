@@ -27,6 +27,7 @@ import { useFocusable } from "../camera/focus";
 import { PaperContactShadow } from "./PaperContactShadow";
 import { createPaperBump } from "../surfaces/paperFinish";
 import { DossierCoverDesign } from "./DossierCoverDesign";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /**
  * Morph-target frames of the folder's recorded animation: 0 = closed,
@@ -356,6 +357,7 @@ export function Dossier() {
     const slide = turn.current;
     if (droppingSheet.current) {
       if (slide.t < 1) {
+        shadowsChanged();
         slide.t = Math.min(1, slide.t + dt / DROP_SECONDS);
         const h = slamHeight(slide.t);
         droppingSheet.current.position.y = RIGHT_PAGE[1] + 0.006 + DROP_HEIGHT * h;
@@ -372,6 +374,8 @@ export function Dossier() {
     }
 
     if (p !== lastProgress.current) {
+      // The folder opening or closing (its tabs slide with it).
+      shadowsChanged();
       const frame = p * OPEN_FRAME;
       const index = Math.floor(frame);
       const blend = frame - index;

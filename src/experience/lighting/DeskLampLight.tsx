@@ -11,6 +11,7 @@ import { useFrame } from "@react-three/fiber";
 import { storyRig } from "../../story/storyRig";
 import { DustMotes } from "./DustMotes";
 import { LAMP_COLOUR, lampLit, stepLamp, type LampId } from "./lampState";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /**
  * Bulb of the desk lamp, in the lamp model's own space. Measured from the
@@ -90,8 +91,14 @@ export function DeskLampLight({
   const light = useRef<SpotLight>(null);
   const halo = useRef<SpriteMaterial>(null);
   const frames = useRef(0);
+  const lastLit = useRef(-1);
   useFrame((_, dt) => {
     const lit = stepLamp(lamp, dt);
+    // Switching on (or off): its shadow map needs drawing again.
+    if (Math.abs(lit - lastLit.current) > 1e-3) {
+      lastLit.current = lit;
+      shadowsChanged();
+    }
     const open = lamp === "main" ? MathUtils.smoothstep(storyRig.dossierOpen, 0, 1) : 0;
     if (light.current) {
       light.current.intensity = LAMP * strength * lit * MathUtils.lerp(1, OPEN_FRACTION, open);

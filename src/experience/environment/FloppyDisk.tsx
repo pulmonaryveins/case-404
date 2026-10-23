@@ -15,6 +15,7 @@ import { assetManifest } from "../../assets/assetManifest";
 import { useCursor } from "../cursor/cursorStore";
 import type { Project } from "../../data/projects";
 import { LABEL_H, LABEL_W, paintDiskLabel } from "../surfaces/paintArchive";
+import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /**
  * Where the paper label sits on the disk's front (+Z) face, in the model's
@@ -109,6 +110,7 @@ export function FloppyDisk({
     const g = group.current;
     if (!g) return;
     const target = inserted ? 1 : 0;
+    if (t.current !== target) shadowsChanged();
     t.current +=
       Math.sign(target - t.current) * Math.min(Math.abs(target - t.current), dt / SECONDS);
     const u = t.current;

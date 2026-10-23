@@ -10,15 +10,19 @@ export const projectImages = { version: 0 };
 
 /** Starts loading a project's screenshots (a disk going in): ready by the time its record shows. */
 export function loadProjectImages(project: Project | null | undefined) {
-  for (const shot of project?.screenshots ?? []) {
-    if (cache.has(shot.src)) continue;
+  const srcs = [
+    ...(project?.screenshots ?? []).map((s) => s.src),
+    ...(project?.videos ?? []).map((v) => v.poster),
+  ];
+  for (const src of srcs) {
+    if (cache.has(src)) continue;
     const img = new Image();
     img.decoding = "async";
     img.onload = () => {
       projectImages.version++;
     };
-    img.src = shot.src;
-    cache.set(shot.src, img);
+    img.src = src;
+    cache.set(src, img);
   }
 }
 
@@ -28,7 +32,10 @@ export function loadedImage(src: string) {
   return img && img.complete && img.naturalWidth > 0 ? img : null;
 }
 
-/** How many of a project's screenshots have loaded (part of its page's cache key). */
+/** How many of a project's screenshots and posters have loaded (part of its page's cache key). */
 export function loadedCount(project: Project) {
-  return (project.screenshots ?? []).filter((s) => loadedImage(s.src)).length;
+  return (
+    (project.screenshots ?? []).filter((s) => loadedImage(s.src)).length +
+    (project.videos ?? []).filter((v) => loadedImage(v.poster)).length
+  );
 }
