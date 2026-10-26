@@ -1,7 +1,8 @@
 /*
  * The loading screen, in the interface's own terms (see SceneNav): small
  * typewriter labels and a thin progress track with a tungsten fill and a
- * paper knob riding it, on the room's black.
+ * paper knob riding it, on the room's black. A faint tungsten glow behind the
+ * number flickers like the lamp it is waiting to switch on.
  */
 .loader {
   --progress: 0;
@@ -13,27 +14,94 @@
   padding: 16px;
   background: var(--color-black);
   font-family: var(--font-terminal);
-  transition: opacity var(--motion-duration-slow) var(--motion-ease);
+  overflow: hidden;
+  transition: opacity 700ms var(--motion-ease);
 }
 
 /* Ready: a short beat with the line full, then the room shows through. */
 .loader[data-done="true"] {
   opacity: 0;
   pointer-events: none;
-  transition-delay: 250ms;
+  transition-delay: 350ms;
+}
+
+.loader[data-done="true"] .panel {
+  opacity: 0;
+  transform: translateY(-6px) scale(1.015);
+  filter: blur(1.5px);
+  transition:
+    opacity 450ms var(--motion-ease) 250ms,
+    transform 600ms var(--motion-ease) 250ms,
+    filter 450ms var(--motion-ease) 250ms;
+}
+
+/* The lamp warming up: a soft pool that grows with the load. */
+.glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(640px, 130vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(217, 168, 96, 0.2),
+    rgba(217, 168, 96, 0.06) 55%,
+    transparent
+  );
+  transform: translate(-50%, -50%) scale(calc(0.55 + var(--progress) * 0.45));
+  opacity: calc(0.35 + var(--progress) * 0.65);
+  animation: flicker 3.6s steps(1, end) infinite;
+  pointer-events: none;
 }
 
 .panel {
+  position: relative;
   display: grid;
-  gap: 0.9rem;
-  width: min(280px, 100%);
-  animation: appear var(--motion-duration-slow) var(--motion-ease) both;
+  gap: 1.1rem;
+  width: min(320px, 100%);
+  animation: appear 700ms var(--motion-ease) both;
+}
+
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
 }
 
 .name {
-  font-size: 0.72rem;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
+  color: var(--color-tungsten);
+}
+
+.file {
+  color: var(--color-text-muted);
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+.percent {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.15rem;
+  margin: 0.4rem 0 0.2rem;
+  font-size: clamp(3rem, 14vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 28px rgba(217, 168, 96, 0.28);
+}
+
+.sign {
+  font-size: 0.32em;
+  letter-spacing: 0;
   color: var(--color-tungsten);
 }
 
@@ -48,12 +116,22 @@
 .fill {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   border-radius: 1px;
   background: linear-gradient(90deg, #b9834a, var(--color-tungsten));
   box-shadow: 0 0 8px rgba(217, 168, 96, 0.5);
   transform-origin: left;
   transform: scaleX(var(--progress));
-  transition: transform var(--motion-duration-base) var(--motion-ease);
+}
+
+/* A glint running along the fill while there is still load to do. */
+.fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 240, 210, 0.75), transparent);
+  animation: glint 1.6s ease-in-out infinite;
 }
 
 /* The rail's knob, upright here, at the head of the fill. */
@@ -67,50 +145,131 @@
   background: var(--color-paper);
   box-shadow: 0 0 6px rgba(232, 225, 211, 0.6);
   transform: translate(-50%, -50%);
-  transition: left var(--motion-duration-base) var(--motion-ease);
 }
 
-.status {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 0;
-  font-size: 0.68rem;
+.steps {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  row-gap: 0.15rem;
+  color: rgba(189, 181, 164, 0.4);
+  transition: color 300ms var(--motion-ease);
+}
+
+.steps li[data-state="active"] {
+  color: var(--color-tungsten);
+}
+
+.steps li[data-state="done"] {
   color: var(--color-text-muted);
 }
 
-.status span:first-child {
+/* · -> › -> ✓, as a case sheet is ticked off. */
+.mark::before {
+  content: "·";
+}
+
+.steps li[data-state="active"] .mark::before {
+  content: "›";
+  animation: blink 1s steps(1, end) infinite;
+}
+
+.steps li[data-state="done"] .mark::before {
+  content: "✓";
+}
+
+.label {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.percent {
-  flex: none;
-  color: var(--color-tungsten);
+/* What is being counted, under its row: files and MB, then the lamps' own steps. */
+.detail {
+  grid-column: 2;
+  font-size: 0.6rem;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  opacity: 0.7;
+}
+
+.detail:empty {
+  display: none;
 }
 
 @keyframes appear {
   from {
     opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes glint {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Irregular, like tungsten on a weak supply. */
+@keyframes flicker {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  8% {
+    filter: brightness(0.8);
+  }
+  11% {
+    filter: brightness(1.05);
+  }
+  47% {
+    filter: brightness(0.9);
+  }
+  50% {
+    filter: brightness(1);
+  }
+  83% {
+    filter: brightness(0.85);
+  }
+  86% {
+    filter: brightness(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel {
+  .panel,
+  .glow,
+  .fill::after,
+  .steps li[data-state="active"] .mark::before {
     animation: none;
   }
 
-  .fill,
-  .knob {
-    transition: none;
-  }
-
-  .loader[data-done="true"] {
+  .loader[data-done="true"],
+  .loader[data-done="true"] .panel {
     transition-delay: 0ms;
+    transition-duration: 1ms;
   }
 }

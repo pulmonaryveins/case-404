@@ -450,13 +450,14 @@ export const projects: Project[] = [
       ["Type", "Internal operations tool"],
       ["Role", "Full-stack developer, Angular and Node"],
       ["Team", "Several developers and designers"],
+      ["Status", "In development"],
     ],
     description:
-      "A web platform for N-Compass TV that follows every in-store flyer order from the moment it arrives to the moment it is delivered: who is working on it, how late it is and how the team is performing. The subject was a full-stack developer on it.",
+      "A web platform for N-Compass TV that follows every in-store flyer order from the moment it arrives to the moment it is delivered: who is working on it, how late it is and how the team is performing. The subject is a full-stack developer on it, and it is still being built: new features are added every sprint.",
     sections: [
       {
         heading: "From NTV360",
-        text: "A production tool built for the N-Compass TV flyer team, designed in Figma first from a file of more than 90 screens. The screens here come from the design file, with demonstration data: the names of retailers and people are hidden, and the users directory is left out.",
+        text: "A production tool built for the N-Compass TV flyer team, designed in Figma first from a file of more than 90 screens. It is still in active development, so what is shown is work in progress and will change. The first screens are the running app on test data (sample and demonstration orders, stores and cards, with the users directory left out); the last five are from the design file, with retailer and people names hidden.",
       },
       {
         heading: "The problem",
@@ -523,11 +524,32 @@ export const projects: Project[] = [
       "Component Pantry",
     ],
     screenshots: [
-      { src: "/images/projects/development/flyers-1.webp", caption: "THE ORDER DASHBOARD" },
-      { src: "/images/projects/development/flyers-2.webp", caption: "THE KANBAN BOARD" },
-      { src: "/images/projects/development/flyers-3.webp", caption: "THE STORE DIRECTORY" },
-      { src: "/images/projects/development/flyers-4.webp", caption: "REPORTS" },
-      { src: "/images/projects/development/flyers-5.webp", caption: "SIGN-IN" },
+      {
+        src: "/images/projects/development/flyers-6.webp",
+        caption: "THE KANBAN BOARD (IN DEVELOPMENT)",
+      },
+      { src: "/images/projects/development/flyers-7.webp", caption: "AN ORDER CARD" },
+      { src: "/images/projects/development/flyers-8.webp", caption: "THE STORE DIRECTORY" },
+      { src: "/images/projects/development/flyers-9.webp", caption: "A STORE'S PROFILE" },
+      { src: "/images/projects/development/flyers-10.webp", caption: "BRAND GUIDELINES" },
+      { src: "/images/projects/development/flyers-11.webp", caption: "STORE ASSETS" },
+      { src: "/images/projects/development/flyers-12.webp", caption: "POSTER HISTORY" },
+      { src: "/images/projects/development/flyers-13.webp", caption: "THE PROFILE PAGE" },
+      { src: "/images/projects/development/flyers-14.webp", caption: "MANAGING A USER" },
+      {
+        src: "/images/projects/development/flyers-1.webp",
+        caption: "DESIGN FILE: THE ORDER DASHBOARD",
+      },
+      {
+        src: "/images/projects/development/flyers-2.webp",
+        caption: "DESIGN FILE: THE KANBAN BOARD",
+      },
+      {
+        src: "/images/projects/development/flyers-3.webp",
+        caption: "DESIGN FILE: THE STORE DIRECTORY",
+      },
+      { src: "/images/projects/development/flyers-4.webp", caption: "DESIGN FILE: REPORTS" },
+      { src: "/images/projects/development/flyers-5.webp", caption: "DESIGN FILE: SIGN-IN" },
     ],
   },
   {

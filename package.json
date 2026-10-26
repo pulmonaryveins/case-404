@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/gen-asset-sizes.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/gen-asset-sizes.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",
