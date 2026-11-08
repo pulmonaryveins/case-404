@@ -4,6 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import {
   Box3,
   DoubleSide,
+  FrontSide,
   NearestFilter,
   Group,
   Matrix4,
@@ -45,6 +46,7 @@ export function DeskProp({
   children,
   at,
   yaw,
+  lift = 0,
   lamp,
 }: {
   id: AssetId;
@@ -53,6 +55,8 @@ export function DeskProp({
   at?: [number, number];
   /** Yaw in place of the manifest's. */
   yaw?: number;
+  /** Raised off the desk top by this much (m): resting on a sheet or another prop. */
+  lift?: number;
   /** Which lamp this prop is, so its bulb glows only while that lamp is lit. */
   lamp?: LampId;
 }) {
@@ -72,7 +76,7 @@ export function DeskProp({
     const centre = box.getCenter(new Vector3());
     placed.position.set(
       (at?.[0] ?? asset.position[0]) - centre.x,
-      DESK_TOP - box.min.y,
+      DESK_TOP + lift - box.min.y,
       (at?.[1] ?? asset.position[2]) - centre.z,
     );
 
@@ -98,6 +102,9 @@ export function DeskProp({
           if (id === "polaroidCamera" || id === "phone") {
             mat.transparent = false;
             mat.depthWrite = true;
+          } else if (id === "evidenceBag") {
+            // The bags lie face up: only the front is ever seen.
+            mat.side = FrontSide;
           } else mat.forceSinglePass = true;
         }
         // The creeper is a 64x32 pixel texture: sample it unfiltered up close.
@@ -128,7 +135,7 @@ export function DeskProp({
       }
     });
     return { prop: placed, bulbs };
-  }, [scene, asset, id, at, yaw]);
+  }, [scene, asset, id, at, yaw, lift]);
 
   // The bulb goes dark with its light.
   useFrame(() => {

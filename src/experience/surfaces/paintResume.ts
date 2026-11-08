@@ -7,8 +7,8 @@ import { projects } from "../../data/projects";
 
 /**
  * The subject's resume as the typewriter prints it: one A4 page, laid out
- * like a professional resume (name and contact, profile, experience,
- * development projects, skills, college education, certifications) in a
+ * like a professional resume (name and contact, college education,
+ * experience, development projects, skills, certifications) in a
  * typed, old-office style:
  * typewriter capitals for the headings, a book serif for the reading text, on
  * warm paper. Painted from the site's own data, so it never drifts from it.
@@ -176,8 +176,12 @@ function paint(ctx: Ctx, width: number, scale: number) {
     y += lines.length * s(size * 1.25);
   };
 
-  heading("PROFILE");
-  paragraph(profile.about, M, WIDTH, `${s(17.5)}px ${SERIF}`, s(27));
+  heading("EDUCATION");
+  for (const school of degrees()) {
+    titled(school.institution, school.period.toUpperCase(), 16.5);
+    paragraph(school.credential, M, WIDTH, `italic ${s(15.5)}px ${SERIF}`, s(22), MUTED);
+    y += s(6);
+  }
 
   heading("EXPERIENCE");
   for (const job of experienceEntries) {
@@ -216,13 +220,6 @@ function paint(ctx: Ctx, width: number, scale: number) {
     tracking(ctx, 0);
     paragraph(value, M + 230, WIDTH - 230, `${s(16)}px ${SERIF}`, s(23));
     y += s(4);
-  }
-
-  heading("EDUCATION");
-  for (const school of degrees()) {
-    titled(school.institution, school.period.toUpperCase(), 16.5);
-    paragraph(school.credential, M, WIDTH, `italic ${s(15.5)}px ${SERIF}`, s(22), MUTED);
-    y += s(6);
   }
 
   heading("CERTIFICATIONS");

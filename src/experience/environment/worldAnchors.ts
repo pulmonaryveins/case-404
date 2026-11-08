@@ -40,29 +40,30 @@ export const DESK_TOP = 0.778;
  */
 export const ARCHIVE_YAW = -0.67;
 
-/**
- * How far each corner desk is slid along its corner wall, toward the side
- * wall, from the wall's own anchor (`digitalArchive`, mirrored for the left):
- * so its inner end clears the file cabinet on the back wall beside it; at
- * that its outer back corner just meets the side wall. The corner walls stay
- * on the anchor (RoomShell), and so do the things hung on them (the archive's
- * design posters and shelf), so only the desks move.
- */
-export const STATION_SLIDE = 0.28;
-
-/** The computer desk (ArchiveStation), back-right corner, slid along its own +X. */
+/** The computer desk (ArchiveStation), back-right corner, on its corner wall's centre. */
 export const ARCHIVE_STATION = {
-  position: [
-    2.5 + STATION_SLIDE * Math.cos(ARCHIVE_YAW),
-    0,
-    -2.85 - STATION_SLIDE * Math.sin(ARCHIVE_YAW),
-  ] as Vector3Tuple,
+  position: [2.5, 0, -2.85] as Vector3Tuple,
   yaw: ARCHIVE_YAW,
 };
 
-/** The typewriter desk (TypewriterStation): the computer desk mirrored into the back-left corner. */
+/**
+ * How far the typewriter desk sits along its corner wall from the anchor, so it
+ * is centred on the wall's flat run between the two rounded coves (RoomShell:
+ * the coves' tangent points at -0.888 and +0.777 m from the wall's own centre,
+ * which is CORNER_SHIFT 0.08 m past the anchor).
+ */
+const CORNER_CENTRE = 0.025;
+
+/**
+ * The typewriter desk (TypewriterStation): the computer desk's corner mirrored
+ * into the back-left, centred on its wall.
+ */
 export const TYPEWRITER_STATION = {
-  position: [-ARCHIVE_STATION.position[0], 0, ARCHIVE_STATION.position[2]] as Vector3Tuple,
+  position: [
+    -(2.5 + CORNER_CENTRE * Math.cos(ARCHIVE_YAW)),
+    0,
+    -2.85 - CORNER_CENTRE * Math.sin(ARCHIVE_YAW),
+  ] as Vector3Tuple,
   yaw: -ARCHIVE_YAW,
 };
 

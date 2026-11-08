@@ -1,0 +1,151 @@
+/*
+ * The briefing: a case-file card low and centred, above the archive picker's
+ * row. A tungsten-edged strip of dark glass: a small header (tag, line count,
+ * skip), then the line typed in the office's typewriter face with a caret.
+ */
+.subtitles {
+  position: fixed;
+  left: 50%;
+  bottom: 11vh;
+  z-index: 15;
+  width: min(760px, calc(100% - 32px));
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity var(--motion-duration-slow) var(--motion-ease),
+    transform var(--motion-duration-slow) var(--motion-ease);
+}
+
+.subtitles[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.card {
+  position: relative;
+  padding: 0.7rem 1.2rem 0.95rem;
+  background: linear-gradient(180deg, rgba(20, 17, 14, 0.9), rgba(10, 9, 8, 0.86));
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-tungsten);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(217, 168, 96, 0.08);
+  backdrop-filter: blur(3px);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.45rem;
+  font-family: var(--font-terminal);
+  font-size: 0.64rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-tungsten);
+}
+
+/* A recording light, pulsing while the briefing runs. */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-evidence-red);
+  box-shadow: 0 0 6px rgba(178, 52, 44, 0.8);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.count {
+  opacity: 0.7;
+}
+
+.skip {
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px solid transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    color var(--motion-duration-fast),
+    border-color var(--motion-duration-fast);
+}
+
+.skip:hover,
+.skip:focus-visible {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.line {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-terminal);
+  font-size: clamp(0.92rem, 2.3vw, 1.12rem);
+  line-height: 1.55;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* The untyped rest keeps its space, so the card never grows as it types. */
+.rest {
+  visibility: hidden;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin: 0 0.05em -0.18em;
+  background: var(--color-tungsten);
+  opacity: 0.85;
+}
+
+.caret[data-done="true"] {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Phones: clear of the scene rail and its scroll hint on the right. */
+@media (max-width: 640px) {
+  .subtitles {
+    left: 16px;
+    right: 56px;
+    width: auto;
+    transform: translateY(8px);
+  }
+
+  .subtitles[data-visible="true"] {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .caret[data-done="true"] {
+    animation: none;
+  }
+}

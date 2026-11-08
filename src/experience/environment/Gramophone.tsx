@@ -8,7 +8,8 @@ import { gramophone } from "../audio/gramophoneAudio";
 import { useCursor } from "../cursor/cursorStore";
 
 /**
- * A wind-up gramophone on the typewriter desk. Click it to put the
+ * A wind-up gramophone on the file cabinet beside the typewriter desk
+ * (FileCabinets), also switched by the Music button. Click it to put the
  * needle on the record and play "Cool Vibes", and again to lift it: the
  * record spins up and winds down with the music (see gramophoneAudio).
  *
