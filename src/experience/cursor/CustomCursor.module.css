@@ -1,0 +1,117 @@
+.cursor {
+  contain: layout paint style;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Fixed-size box, centred on the pointer. Only transform and opacity ever
+   animate, so a hover never triggers layout. */
+.ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  color: var(--color-tungsten);
+}
+
+.shape {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 225, 211, 0.55);
+  background-color: transparent;
+  /* 30 / 52: the resting ring. */
+  transform: scale(0.58);
+  transition:
+    transform var(--motion-duration-base) var(--motion-ease),
+    border-color var(--motion-duration-base),
+    background-color var(--motion-duration-base);
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--motion-duration-fast),
+    transform var(--motion-duration-base) var(--motion-ease);
+}
+
+.label {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+  color: var(--color-paper);
+  background: rgba(10, 9, 8, 0.82);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-terminal);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translate(-6px, -50%);
+  transition:
+    opacity var(--motion-duration-fast),
+    transform var(--motion-duration-base) var(--motion-ease);
+}
+
+/* Over something clickable: the ring opens round an icon of what the click does. */
+.cursor[data-active="true"] .shape {
+  transform: scale(1);
+  border-color: var(--color-tungsten);
+  background-color: rgba(10, 9, 8, 0.55);
+}
+
+.cursor[data-active="true"] .icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cursor[data-active="true"] .label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.cursor[data-pressed="true"] .shape {
+  transform: scale(0.42);
+}
+
+.cursor[data-active="true"][data-pressed="true"] .shape {
+  transform: scale(0.85);
+}
+
+.cursor[data-hidden="true"] {
+  opacity: 0;
+}
+
+/* The dot is the native pointer, drawn as an image: the OS composites it, so
+   it stays smooth however busy the WebGL frame is (a DOM dot moves only when
+   the page renders a frame). Hidden while the ring is open round an icon. */
+:global(html.has-custom-cursor),
+:global(html.has-custom-cursor *) {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='5' cy='5' r='3.5' fill='%23e8e1d3' stroke='%23000' stroke-opacity='.45'/%3E%3C/svg%3E")
+      5 5,
+    auto !important;
+}
+
+:global(html.has-custom-cursor.cursor-active),
+:global(html.has-custom-cursor.cursor-active *) {
+  cursor: none !important;
+}
+
+.icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

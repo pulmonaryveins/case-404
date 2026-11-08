@@ -3,9 +3,34 @@ export interface Certificate {
   title: string;
   issuer: string;
   year: string;
+  /** The scanned certificate (public/images/certificates), shown in its frame on the shelf. */
+  image: string;
 }
 
-/** Placeholder demo content. */
+/**
+ * The certificates on file, newest first. The two Alliance ones stand framed
+ * on the shelf above the archive terminal (AchievementShelf picks them by id).
+ */
 export const certificates: Certificate[] = [
-  { id: "cert-1", title: "Placeholder Certificate", issuer: "Placeholder Issuer", year: "20XX" },
+  {
+    id: "alliance-merit",
+    title: "Certificate of Merit · Alliance Jumpstart Training Program",
+    issuer: "Alliance Software Inc.",
+    year: "2025",
+    image: "/images/certificates/2.webp",
+  },
+  {
+    id: "alliance-completion",
+    title: "Certificate of Completion · Alliance Jumpstart Training Program",
+    issuer: "Alliance Software Inc.",
+    year: "2025",
+    image: "/images/certificates/3.webp",
+  },
+  {
+    id: "ccna-srwe",
+    title: "CCNA: Switching, Routing, and Wireless Essentials",
+    issuer: "Cisco Networking Academy",
+    year: "2024",
+    image: "/images/certificates/1.webp",
+  },
 ];

@@ -25,6 +25,20 @@ Dev/agent tools only. Not runtime deps of CASE 404 website.
 - Not worked around — no credentials were created/requested per instructions.
 - If the user configures a GitHub SSH key later, retry: `claude plugin install agent-skills@addy-agent-skills`, then select only frontend/React/TS/perf/a11y/debugging skills relevant to CASE 404 (smallest useful set), not all 25.
 
+## GLB Audit Script
+
+- Purpose: dev-only technical audit of source GLBs (mesh/triangle/material/texture counts, embedded cameras/lights, approximate local bounds). Writes `assets-source/case-404/catalog.json` and prints a Markdown table.
+- Location: `scripts/audit-glb.mjs`, run with `node scripts/audit-glb.mjs`.
+- Dependency: `@gltf-transform/core`, `@gltf-transform/extensions`, `@gltf-transform/functions` (devDependencies only — pure Node parsing, no GPU/browser needed).
+- Runtime impact: none. Not imported by the app; Node script only.
+
+## Model Inspector (dev only)
+
+- Purpose: visually inspect real GLBs (orbit/zoom/reset, neutral lighting) before deciding what belongs in the office.
+- Location: `inspector.html` + `src/dev-inspector/`. Run `npm run dev` and open `/inspector.html`.
+- Reads `assets-source/case-404/catalog.json` at runtime via `fetch`.
+- Runtime impact: none — `vite.config.ts` pins the production build's `rollupOptions.input` to `index.html` only, so `inspector.html` and everything under `src/dev-inspector/` are never built or shipped. Verified: production bundle module count is identical with and without the inspector present.
+
 ## OmniRoute
 
 - Status: **intentionally skipped**, not installed.

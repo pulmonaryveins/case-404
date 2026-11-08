@@ -1,0 +1,12 @@
+name = "nigel"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+# The Gemini model N.I.G.E.L. asks. Check Google AI Studio for the current
+# free-tier Flash model and change this if it has moved on.
+GEMINI_MODEL = "gemini-2.5-flash"
+# The site's own origins (comma-separated). Add the deployed site's address.
+ALLOWED_ORIGINS = "http://localhost:5173"
+
+# The key is a secret, not a var: npx wrangler secret put GEMINI_API_KEY

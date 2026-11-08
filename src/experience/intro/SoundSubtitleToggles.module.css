@@ -1,0 +1,74 @@
+.toggles {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 20;
+  display: flex;
+  gap: 0.5rem;
+  transition: opacity var(--motion-duration-slow);
+}
+
+.toggles[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+  color: var(--color-text-muted);
+  background: rgba(10, 9, 8, 0.78);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-terminal);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+  transition:
+    color var(--motion-duration-fast),
+    border-color var(--motion-duration-fast);
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  color: var(--color-text);
+  border-color: var(--color-tungsten);
+}
+
+.svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+}
+
+.toggle[aria-pressed="true"] .svg,
+.toggle[aria-pressed="true"] .state {
+  color: var(--color-tungsten);
+}
+
+/* The state as a small tab, so on and off read at a glance. */
+.state {
+  min-width: 2.2em;
+  padding: 0.05rem 0.35rem;
+  border-left: 1px solid var(--color-border);
+  text-align: center;
+  opacity: 0.9;
+}
+
+.toggle[aria-pressed="false"] .state {
+  opacity: 0.55;
+}
+
+@media (max-width: 480px) {
+  .toggles {
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .label {
+    display: none;
+  }
+}

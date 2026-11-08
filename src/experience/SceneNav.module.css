@@ -1,0 +1,270 @@
+/* Scene rail: replaces the native scrollbar on the right edge. */
+.rail {
+  --progress: 0;
+  position: fixed;
+  top: 50%;
+  right: 26px;
+  z-index: 20;
+  height: min(60vh, 500px);
+  width: 30px;
+  transform: translateY(-50%);
+  transition: opacity var(--motion-duration-base) var(--motion-ease);
+}
+
+.rail[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: rgba(232, 225, 211, 0.14);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--color-tungsten), #b9834a);
+  transform-origin: top;
+  transform: scaleY(var(--progress));
+  box-shadow: 0 0 8px rgba(217, 168, 96, 0.5);
+}
+
+/* ---- Position knob: rides the rail at the current progress. ---- */
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--progress) * 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  /* Under the scene icons: it slides behind them, not across their faces. */
+  z-index: 0;
+}
+
+.knobDot {
+  display: block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-paper);
+  box-shadow: 0 0 6px rgba(232, 225, 211, 0.6);
+  transition:
+    width var(--motion-duration-fast),
+    box-shadow var(--motion-duration-base);
+}
+
+/* Above the rail, clear of the scene names beside it. */
+.percent {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  font-family: var(--font-terminal);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--color-tungsten);
+  opacity: 0.55;
+  transform: translateX(-50%);
+  transition:
+    opacity var(--motion-duration-base),
+    color var(--motion-duration-base);
+}
+
+/* While scrolling: the knob lights up and shows how far through you are. */
+.rail[data-scrolling="true"] .knobDot {
+  width: 20px;
+  box-shadow: 0 0 12px rgba(217, 168, 96, 0.9);
+  background: var(--color-tungsten);
+}
+
+.rail[data-scrolling="true"] .percent,
+.rail:hover .percent {
+  opacity: 1;
+}
+
+/* ---- Scene markers ---- */
+
+.list {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 1;
+}
+
+.item {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-paper-muted);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 225, 211, 0.35);
+  background: rgba(10, 9, 8, 0.82);
+  transition:
+    transform var(--motion-duration-base) var(--motion-ease),
+    color var(--motion-duration-base),
+    background-color var(--motion-duration-base),
+    border-color var(--motion-duration-base),
+    box-shadow var(--motion-duration-base);
+}
+
+.icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.marker:hover .icon,
+.marker:focus-visible .icon {
+  transform: scale(1.12);
+  color: var(--color-paper);
+  border-color: var(--color-tungsten);
+}
+
+.marker[data-active="true"] .icon {
+  color: var(--color-black);
+  background: var(--color-tungsten);
+  border-color: var(--color-tungsten);
+  box-shadow: 0 0 12px rgba(217, 168, 96, 0.7);
+}
+
+.label {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 8px);
+  padding: 0.28rem 0.55rem;
+  white-space: nowrap;
+  font-family: var(--font-terminal);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+  background: rgba(10, 9, 8, 0.8);
+  border: 1px solid var(--color-border);
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration-fast),
+    transform var(--motion-duration-base) var(--motion-ease);
+}
+
+/* Hovering the rail names every scene, so it reads as a menu of places to go. */
+.rail:hover .label,
+.marker:focus-visible .label {
+  opacity: 0.85;
+  transform: translate(0, -50%);
+}
+
+.marker:hover .label {
+  opacity: 1;
+  border-color: var(--color-tungsten);
+}
+
+/* The current scene is named even at rest, quietly. */
+.marker[data-active="true"] .label {
+  opacity: 0.75;
+  transform: translate(0, -50%);
+  color: var(--color-tungsten);
+}
+
+.marker:focus-visible {
+  outline: none;
+}
+
+.marker:focus-visible .icon {
+  outline: 1px solid var(--color-tungsten);
+  outline-offset: 2px;
+}
+
+/* ---- First-visit hint ---- */
+
+.hint {
+  position: absolute;
+  top: calc(100% + 18px);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform: translateX(-50%);
+  font-family: var(--font-terminal);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-muted);
+  pointer-events: none;
+  transition: opacity var(--motion-duration-slow);
+}
+
+.hint svg {
+  width: 14px;
+  height: 14px;
+  animation: nudge 1.6s var(--motion-ease) infinite;
+}
+
+.rail[data-start="false"] .hint {
+  opacity: 0;
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 640px) {
+  .rail {
+    right: 10px;
+    height: 48vh;
+  }
+
+  /* No room for names on a phone; the icons alone still navigate. */
+  .label,
+  .percent {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon,
+  .label,
+  .percent,
+  .knobDot,
+  .rail {
+    transition: none;
+  }
+
+  .hint svg {
+    animation: none;
+  }
+}

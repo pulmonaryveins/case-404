@@ -13,15 +13,88 @@ and gradually uncovers the subject's identity, skills, experience, work,
 and credentials. "404" is a narrative metaphor — identity not found — not
 a hacker/cyberpunk/glitch aesthetic.
 
-## 2. Creative/narrative concept
+## 2. Story plan (core project decision)
 
-Narrative arc: Mystery → Evidence → Identity → Experience → Work →
-Credentials → Contact → Case Solved. Visual language: physical, tactile,
-cinematic, late-night, restrained — not neon, not horror, not generic
-SaaS. Portfolio concepts map to physical objects (About → dossier, Skills
-→ evidence notes, Projects → digital archive/CRT, etc.). See the original
-Phase 0 brief for full creative direction, palette, and chapter sequence;
-this file stays focused on the technical structure that supports it.
+CASE 404 is an investigation through a **physical detective office**, not
+a portfolio where every project lives on one computer. Different kinds of
+work get different physical presentation, and the camera reveals new
+evidence areas as the visitor scrolls deeper into the office. The opening
+frame does not need to show every future area. Visual language: physical,
+tactile, cinematic, late-night, restrained — not neon, horror, or SaaS.
+
+### Narrative flow
+
+`MYSTERY → EVIDENCE → IDENTITY → BACKGROUND → DIGITAL WORK →
+PHYSICAL/CREATIVE WORK → VERIFIED CREDENTIALS → CONTACT → CASE CLOSED`
+
+| #   | Chapter (`ChapterId`)                              | Zone                |
+| --- | -------------------------------------------------- | ------------------- |
+| 01  | Case Opened (`CASE_OPENED`)                        | Main Investigation  |
+| 02  | Evidence Board (`EVIDENCE_BOARD`)                  | Main Investigation  |
+| 03  | Subject Identity (`SUBJECT_PROFILE`)               | Main Investigation  |
+| 04  | Education + Experience (`EDUCATION`, `EXPERIENCE`) | Main Investigation  |
+| 05  | Digital Archive (`DIGITAL_ARCHIVE`)                | Digital Archive     |
+| 06  | Creative Evidence (`CREATIVE_EVIDENCE`)            | Creative Evidence   |
+| 07  | Credential Evidence (`CREDENTIALS`)                | Credential Evidence |
+| 08  | Contact / Final File (`CONTACT`)                   | Main Investigation  |
+| 09  | Case Solved (`CASE_SOLVED`)                        | Main Investigation  |
+
+Source of truth in code: `src/story/chapters.ts` / `storyTypes.ts`.
+
+### Office zones
+
+One office, not separate pages. The camera **travels physically** between
+zones (front view → board → desk/dossier → leaves the opening composition →
+archive → creative evidence → credentials → contact → case solved). No
+teleporting between unrelated scenes where travel can carry the transition.
+
+- **Zone A — Main Investigation.** Desk, evidence board, dossier, working
+  detective props. The desk is the _active investigation_, not a project
+  showcase. Approved future desk inventory, and only this: primary
+  dossier, a few papers, telephone, desk lamp, pens, cigarette. Never on
+  the desk: project disks, merch, certificates, scattered evidence markers,
+  posters, a computer.
+- **Zone B — Digital Archive.** A 1970s data terminal (`computer-terminal.glb`,
+  prepared with `scripts/prepare-terminal.mjs`; it replaced earlier IBM PCjr, flat-coloured
+  PC and 90s PC models) with a slot drawn on its front panel, plus floppy disks, one per project. A second desk
+  (same model as the main one) turned ~38° in the back-right corner, with an
+  angled wall behind it (`ArchiveStation`, `RoomShell`). Separate workstation deeper in the office,
+  **not** on the main desk. Holds **Development, UI/UX, Video Editing**
+  only. Interaction concept: dark computer → disk/drive selected → boot →
+  terminal → ACCESS GRANTED → archive (`> DEVELOPMENT  > UI / UX  > VIDEO
+EDITING`) → project media, title, description, tools, link. Changing
+  project/category may trigger loading / disk change / screen transition.
+- **Zone C — Creative Evidence.** Work that reads better as physical
+  evidence: **Graphic Design posters** as printed paper evidence (real
+  poster images on paper surfaces — texture, bends, depth, shadow,
+  overlap, evidence labels — never thumbnails on a monitor) and **Merch**
+  (pins, T-shirts, hoodies, stickers) as physical objects or evidence
+  photography; final representation decided after reviewing real project
+  assets. Curated, few objects per camera state — not a storage room, not
+  a grid.
+- **Zone D — Credential Evidence.** Certificates as physical documents on
+  a **user-provided 3D certificate-holder asset** (not yet supplied — do
+  not source, substitute, or fake one). Possible later: step through
+  certificates one at a time.
+
+### Main Investigation details
+
+- **Evidence board** (corkboard behind the desk) establishes the mystery of
+  the unknown subject. Its baked generic content (city map, newspaper,
+  documents, photos) is temporary and will be replaced/covered with CASE
+  404 evidence: CASE 404, SUBJECT UNKNOWN, profile photo, discipline clues
+  (Frontend Development, UI/UX Design, Graphic Design, Video Editing), red
+  string, pins, notes, annotations, labels. Dedicated future phase.
+- **Dossier** (`Dossier.tsx`, asset `document_file_folder.glb` — the only
+  folder in the library that can open: its cover has a recorded open/close
+  as 210 per-frame morph targets, scrubbed by blending adjacent frames).
+  Left page = persistent identity, right page = ABOUT with the
+  ABOUT/EDUCATION/EXPERIENCE tab row; both are CanvasTextures painted from
+  `src/data/profile.ts`, revealed only after the cover opens. The cover's
+  third-party label/emblem are painted out at load and the label plate
+  becomes a CASE 404 case label. Story: About → Education → Experience as a physical
+  folder/document (SUBJECT UNKNOWN → dossier discovered → identity
+  revealed → about → education → experience). Never a website card.
 
 ## 3. Technology stack
 
@@ -106,14 +179,29 @@ Three.js use is for anything R3F/drei doesn't already express well
 ## 10. GSAP / ScrollTrigger ownership
 
 `src/lib/gsap.ts` registers `ScrollTrigger` exactly once via
-`registerGsap()`, called from `App.tsx`. No component registers plugins
-itself. Timelines/choreography are Phase 4 work.
+`registerGsap()` (idempotent; called by the Lenis provider and
+StoryController). No component registers plugins itself.
+
+**Opening sequence (Phase 4A).** `StoryController.tsx` owns ONE GSAP
+timeline scrubbed by ONE ScrollTrigger over an 800vh scroll stage; the R3F
+canvas is `position: fixed` behind it. The timeline tweens only the plain
+`storyRig` object (`src/story/storyRig.ts`: camera position/target,
+`dossierOpen`, `profileReveal`); `CameraRig` and `Dossier` read it in
+`useFrame`. Zustand only receives chapter changes (CASE_OPENED →
+EVIDENCE_BOARD → SUBJECT_PROFILE). Everything derives from scroll progress,
+so reverse scroll, scrubbing and mid-page refresh are stateless. Camera
+waypoints live in `cameraAnchors.ts` (`roomOverview → boardApproach →
+evidenceBoard → caseFile → leaveBoard → subjectProfile → dossierOpen`).
+Reduced motion: no camera travel — the same scroll range jumps between
+three states (room, case file, open dossier). `?story` (dev only) shows a
+progress/chapter overlay.
 
 ## 11. Lenis ownership
 
 `src/app/providers/LenisProvider.tsx` is the single owner: it creates one
 `Lenis` instance on mount, drives it from GSAP's ticker (so one RAF loop
-serves both), and destroys it on unmount. No other file may instantiate
+serves both), forwards its scroll events to `ScrollTrigger.update`, and
+destroys it on unmount. No other file may instantiate
 Lenis.
 
 ## 12. Zustand ownership
@@ -167,24 +255,26 @@ change this convention without updating every anchor.
 
 ## 19. World anchors
 
-`worldAnchors.ts` exports placeholder `Vector3Tuple` positions for `room`,
-`desk`, `evidenceBoard`, `dossier`, `workstation`, `credentials`,
-`contact`, `lamp`, `window`, `background`. These are semantic placeholders
-— final coordinates are set after the real GLBs are audited (Phase 1).
+`worldAnchors.ts` exports semantic anchors `mainDesk`, `evidenceBoard`,
+`dossier`, `digitalArchive`, `creativeEvidence`, `credentials`, `contact`.
+Only blocked-out zones have coordinates; the rest are `null` until a
+visual blockout places them. Never fill them with guesses.
 
 ## 20. Camera anchors
 
 `cameraTypes.ts` + `cameraAnchors.ts` define semantic camera states
 (`roomOverview`, `caseOpened`, `evidenceBoard`, `subjectProfile`,
-`education`, `experience`, `workstation`, `credentials`, `contact`,
-`caseSolved`), each with a placeholder position/target/fov. `CameraRig.tsx`
-currently just applies `roomOverview` on mount — cinematic travel between
-anchors is Phase 4.
+`education`, `experience`, `digitalArchive`, `creativeEvidence`,
+`credentials`, `contact`, `caseSolved`). Only `roomOverview` is real (the
+approved Phase 1B.1 frontal opening); the rest are placeholders.
+`CameraRig.tsx` applies `roomOverview` on mount — travel between anchors
+is the scroll-choreography phase.
 
 ## 21. Story / chapter architecture
 
-`story/storyTypes.ts` defines `ChapterId` (9 chapters: `CASE_OPENED` →
-`CASE_SOLVED`) and `Chapter` (id, label, order, cameraAnchor).
+`story/storyTypes.ts` defines `ChapterId` (10 chapters: `CASE_OPENED` →
+`CASE_SOLVED`, see §2), `OfficeZone`, and `Chapter` (id, label, order,
+zone, cameraAnchor).
 `story/chapters.ts` lists them in order. `StoryController.tsx` currently
 only flips `isExperienceReady`; it will own scroll progression, chapter
 activation, and content reveals once ScrollTrigger timelines exist.
@@ -193,25 +283,41 @@ activation, and content reveals once ScrollTrigger timelines exist.
 
 `src/experience/surfaces/README.md` documents the concept: downloaded
 models provide geometry, surfaces provide application-controlled content
-on top of it (`PaperSurface`, `PhotoSurface`, `DossierPage`, `CRTScreen`,
-etc.). Not implemented yet.
+on top of it. First implementation: the CASE 404 evidence board — the
+board's colour atlas is repainted at load into each paper's existing UV
+island (`paintCaseBoard.ts`, content in `src/data/evidenceBoard.ts`), so
+geometry, pins, strings and draw calls are unchanged. The subject's name
+never appears on the board.
 
 ## 23. Office geography
 
-Conceptual layout (center/back: evidence board; center/foreground: desk;
-left: CRT workstation; right: dossier; background: window/storage;
-edges: secondary props) is a creative-direction concern, not yet encoded
-in actual geometry. `worldAnchors.ts` placeholders are a rough
-approximation only.
+Built so far: Zone A's opening composition only — frontal view of the
+investigation board above the antique desk, one dossier, and the room
+(`RoomShell.tsx`): a back wall of 7 repeated plaster modules (GLB), a 12m
+wood-plank floor (plank GLB material, tiled), and temporary primitive side
+walls + ceiling. No window, no cabinet. Architecture derivatives are built
+by `scripts/derive-architecture.mjs`. Zones B–D sit deeper in the office and are not built;
+the opening shot does not reserve empty space for them — the camera
+travels there later (§2).
 
 ## 24. Lighting philosophy
 
-Phase 0 lighting (`OfficeLighting.tsx`) is a flat ambient + directional
-pair, enough to verify the scene renders. Future strategy: warm tungsten
-practical (desk lamp) as primary, restrained cool exterior/window as
-secondary, localized green/blue phosphor for the CRT/archive chapter,
-and a very restrained ambient fill. Prefer deep shadows over uniform
-illumination; avoid many realtime shadow casters.
+Phase 5: the **desk lamp is the dominant, visible source**.
+`DeskLampLight.tsx` is a warm spotlight parented to the lamp prop at its
+measured bulb (just below it — the bulb is closed geometry and would
+shadow a light placed inside it), aimed down across the desk. It is the
+desk's shadow caster; its shadow camera is bounded to the desk's reach
+(`far` 1.6 m), which measured as the difference between 60 and 30 fps.
+
+`OfficeLighting.tsx` only supports it: a dim, broad wash from above that
+keeps the board readable (a desk-height lamp cannot light a board hung
+above and behind it without looking staged), kept as a shadow caster
+because the board's pinned papers need their contact shadows; a low
+neutral-cool hemisphere so shadows stay dark grey; `ContactShadows`
+rendered once for the desk's feet. Two shadow casters total. Spotlight
+targets must be in the scene graph — setting `target-position` alone
+leaves the target at the origin. Later: localized green/blue phosphor for
+the Digital Archive.
 
 ## 25. Loading strategy
 
@@ -276,10 +382,12 @@ only worth adopting if production asset weight actually demands it later.
   reviewed for scale/orientation/materials/composition/lighting/
   performance before any scroll choreography.
 - **Phase 2** — materials + atmosphere + cinematic lighting.
+  2A = opening lighting/shadows, 2B = surfacing/materials.
 - **Phase 3** — evidence board / CASE 404 content.
-- **Phase 4** — scroll choreography + cinematic camera.
+- **Phase 4** — scroll choreography + cinematic camera travel.
 - **Phase 5** — dossier / About / Education / Experience.
-- **Phase 6** — CRT project archive.
-- **Phase 7** — credentials + contact.
+- **Phase 6** — Digital Archive (data terminal and floppy disks; Development, UI/UX, Video).
+- **Phase 7** — Creative Evidence (posters, merch) + Credential Evidence
+  (needs user's certificate-holder asset) + contact.
 - **Phase 8** — case solved.
 - **Phase 9** — responsive + accessibility + performance polish.

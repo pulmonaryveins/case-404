@@ -1,23 +1,72 @@
-import { Grid } from "@react-three/drei";
-import { environmentConfig } from "./environmentConfig";
+import { Model } from "../models/Model";
+import { DeskProps } from "./DeskProps";
+import { ArchiveStation } from "./ArchiveStation";
+import { Carpet } from "./Carpet";
+import { FileCabinets } from "./FileCabinets";
+import { MusketDisplay } from "./MusketDisplay";
+import { WallSconces } from "./WallSconces";
+import { LampPoint } from "./LampSpot";
+import { Dossier } from "./Dossier";
+import { EvidenceBoard } from "./EvidenceBoard";
+import { MoonFill } from "./MoonFill";
+import { MoonWindow } from "./MoonWindow";
+import { RoomShell } from "./RoomShell";
+import { TypewriterStation } from "./TypewriterStation";
 
 /**
- * Phase 0: deliberately near-empty. Real geometry (desk, evidence board,
- * dossier, workstation, props) is introduced in Phase 1 after the GLB
- * audit — nothing here is procedurally recreated in the meantime.
+ * Opening composition: a dark room, the working desk, and the board — read
+ * as one workspace from the front.
+ *
+ * The window on the left wall lets cool moonlight in. The right side is
+ * taken by the archive desk, turned in the back-right corner.
  */
 export function DetectiveOffice() {
   return (
     <group name="detective-office">
-      {environmentConfig.showDevGrid && (
-        <Grid
-          args={[environmentConfig.groundSize, environmentConfig.groundSize]}
-          cellColor="#3a332c"
-          sectionColor="#5f7a85"
-          fadeDistance={25}
-          position={[0, 0, 0]}
+      <RoomShell />
+      <MoonWindow />
+      <MoonFill />
+
+      {/* Rug on the floor, under the main desk. */}
+      <Carpet />
+      {/* The case-file cabinets either side of the evidence board. */}
+      <FileCabinets />
+      {/* The wall lights: a brass twin sconce either side of the board (on
+          from the start, switched together, click either one). */}
+      <WallSconces />
+      {/* An old musket on two brass pegs above the board, as a display piece. */}
+      <MusketDisplay />
+      {/* The sconces' bounce: the light they throw comes back off the walls
+          and ceiling as a soft fill, out in the room (so it makes no pool on
+          any wall), one on each side, a little in from the sconces so the
+          board stays readable: the file cabinets and typewriter desk on the left,
+          the computer, shelf and design posters on the right, the desk between.
+          Dark when the lamps are off, leaving the moonlight and its window
+          shadows as they were. */}
+      {([-1, 1] as const).map((side) => (
+        <LampPoint
+          key={side}
+          lamp="wall"
+          at={[side * 1.0, 2.3, -2.65]}
+          // A little more on the left, where the cabinet fronts face away.
+          intensity={side < 0 ? 1.8 : 1.5}
+          distance={0}
+          decay={2}
+          dimWithDossier
         />
-      )}
+      ))}
+
+      <group name="main-desk">
+        <Model id="desk" />
+        <Dossier />
+        <DeskProps />
+      </group>
+
+      <ArchiveStation />
+      <TypewriterStation />
+      <group name="evidence-board">
+        <EvidenceBoard />
+      </group>
     </group>
   );
 }

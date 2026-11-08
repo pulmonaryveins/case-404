@@ -1,0 +1,51 @@
+/* Hit areas match paintAboutPage's 1024 × 1392 texture coordinates.
+   No background, border or visible text replaces the original 3D paper. */
+.controls {
+  width: 808px;
+  height: 1100px;
+  position: relative;
+  pointer-events: none;
+}
+.tabs {
+  position: absolute;
+  left: 9.765625%;
+  top: 6.4655%;
+  width: 80.46875%;
+  height: 5.02874%;
+  display: flex;
+}
+.controls button {
+  pointer-events: auto;
+  cursor: pointer;
+  color: transparent;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.tabs button {
+  flex: 1;
+  margin: 0 3px;
+}
+.controls button:hover {
+  box-shadow: inset 0 0 0 2px #813b3055;
+}
+.controls button:focus-visible {
+  outline: 3px solid #813b30;
+  outline-offset: 4px;
+}
+.controls button:disabled {
+  cursor: default;
+  box-shadow: none;
+}
+.pagination {
+  position: absolute;
+  left: 55%;
+  top: 89.5%;
+  width: 35%;
+  height: 4.5%;
+  display: flex;
+  justify-content: space-between;
+}
+.pagination button {
+  width: 43%;
+}

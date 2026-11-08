@@ -1,13 +1,41 @@
+import { useState } from "react";
 import { CanvasErrorBoundary } from "../components/common/CanvasErrorBoundary";
 import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
+import { LoadingOverlay } from "./LoadingOverlay";
+import { ScreenFocusControls } from "./ScreenFocusControls";
+import { SceneNav } from "./SceneNav";
+import { SiteLogo } from "./SiteLogo";
+import { CustomCursor } from "./cursor/CustomCursor";
+import { ResumeOverlay } from "./resume/ResumeOverlay";
+import { IntroSubtitles } from "./intro/IntroSubtitles";
+import { SoundSubtitleToggles } from "./intro/SoundSubtitleToggles";
+import styles from "./Experience.module.css";
 
 /**
- * Boundary between the React application and the R3F experience.
+ * Boundary between the React application and the R3F experience. The
+ * canvas is fixed behind the page; the page itself scrolls (StoryController).
  */
 export function Experience() {
+  const [ready, setReady] = useState(false);
   return (
-    <CanvasErrorBoundary>
-      <ExperienceCanvas />
-    </CanvasErrorBoundary>
+    <div className={styles.stage}>
+      <CanvasErrorBoundary>
+        <ExperienceCanvas
+          onReady={() => {
+            performance.mark("scene-ready");
+            setReady(true);
+          }}
+        />
+      </CanvasErrorBoundary>
+      <ScreenFocusControls />
+      <ResumeOverlay />
+      {/* No scroll rail until the scene is on screen. */}
+      <SiteLogo hidden={!ready} />
+      <SceneNav hidden={!ready} />
+      <IntroSubtitles start={ready} />
+      <SoundSubtitleToggles hidden={!ready} />
+      <CustomCursor />
+      <LoadingOverlay done={ready} />
+    </div>
   );
 }

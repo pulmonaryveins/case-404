@@ -1,0 +1,22 @@
+.back {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 5;
+  padding: 0.5rem 1rem;
+  color: var(--color-text);
+  background: rgba(10, 9, 8, 0.78);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-terminal);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-slow);
+}
+
+.back[data-visible="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}

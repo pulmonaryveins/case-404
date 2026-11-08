@@ -1,13 +1,43 @@
+import { ContactShadows } from "@react-three/drei";
+import { LampStory } from "./LampStory";
+import { Mist } from "./Mist";
+
 /**
- * Phase 0: enough lighting to verify the scene renders. See ARCHITECTURE.md
- * "Lighting Philosophy" for the future tungsten/exterior/phosphor strategy —
- * cinematic lighting is Phase 2 work.
+ * Room light. The sources are the two wall sconces beside the board
+ * (WallSconces, with their light; the bounce fill in DetectiveOffice), the
+ * desk lamps (DeskLampLight, parented to each lamp prop; LampStory says when
+ * each is lit) and the moonlight through the window (MoonWindow). This file
+ * adds nothing but a low hemisphere fill, so shadows stay dark grey rather than
+ * black, and the soft grounding under the desk.
  */
 export function OfficeLighting() {
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[3, 5, 2]} intensity={0.8} />
+      {/* Neutral-cool night fill, kept low so the lamp reads as the source:
+          cool from above, deep charcoal from the floor, so corners and shadow
+          interiors stay dark grey rather than crushing to black. */}
+      {/* 0.75 -> 0.58: shadows read as shadow rather than grey haze, while the
+          desk front and floor keep some form. */}
+      <hemisphereLight args={["#8e97a6", "#2b2724", 0.58]} />
+
+      {/* The air: a faint haze, and mist drifting through it. */}
+      <Mist />
+
+      {/* Which lamps are lit for the current chapter. */}
+      <LampStory />
+
+      {/* Grounding: soft occlusion under the desk feet, dense at contact and
+          fading outward. Static scene, so it renders once (frames={1}). */}
+      <ContactShadows
+        position={[0.05, 0.002, -2.05]}
+        scale={[3.2, 2.2]}
+        far={0.9}
+        blur={2.2}
+        opacity={0.85}
+        resolution={512}
+        color="#000000"
+        frames={1}
+      />
     </>
   );
 }
