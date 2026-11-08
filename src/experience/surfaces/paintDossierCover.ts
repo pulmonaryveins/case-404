@@ -1,4 +1,7 @@
-/** Cover artwork for the CASE 404 dossier: embroidered title + typed index card. */
+/**
+ * Cover artwork for the CASE 404 dossier: a typed file header, the embroidered
+ * title, a typed index card and a red CONFIDENTIAL stamp.
+ */
 export const COVER_W = 1024;
 const W = COVER_W;
 const H = 1460;
@@ -63,7 +66,7 @@ function thread(
 /** The embroidered CASE 404 patch: stitched border plus satin-stitched letters. */
 function title(g: Ctx) {
   g.save();
-  g.translate(512, 485);
+  g.translate(512, 440);
   g.rotate(-0.025);
   g.lineWidth = 11;
   g.setLineDash([26, 5]);
@@ -82,7 +85,7 @@ function title(g: Ctx) {
 /** Typed index label glued to the lower cover: the case facts. */
 function caseLabel(g: Ctx) {
   const x = 190;
-  const y = 860;
+  const y = 700;
   const w = 644;
   const h = 330;
   g.save();
@@ -106,16 +109,16 @@ function caseLabel(g: Ctx) {
   g.fillText("No. 404", w - 28, 42);
   g.textAlign = "left";
   const rows: [string, string][] = [
-    ["SUBJECT", "UNKNOWN"],
-    ["STATUS", "OPEN / UNRESOLVED"],
+    ["SUBJECT", "CLASSIFIED"],
+    ["STATUS", "OPEN / UNDER REVIEW"],
     ["DIVISION", "DIGITAL & CREATIVE"],
     ["EVIDENCE", "DEV / UI-UX / VIDEO / DESIGN"],
-    ["RECORD", "01 OF 01 -- INCOMPLETE"],
+    ["FILED", "CEBU FIELD OFFICE"],
   ];
   rows.forEach(([k, v], i) => {
     const ry = 98 + i * 46;
-    g.fillStyle = "rgba(41,40,32,0.6)";
-    g.font = `20px ${TYPE}`;
+    g.fillStyle = "rgba(41,40,32,0.8)";
+    g.font = `bold 19px ${TYPE}`;
     g.fillText(k, 30, ry);
     g.fillStyle = INK;
     g.font = `bold 23px ${TYPE}`;
@@ -137,26 +140,64 @@ export function paintCover() {
   thread(height.g, title, "#9a9a9a", "#ffffff", "#707070", null);
 
   const ctx = color.g;
+  header(ctx);
   ctx.textAlign = "center";
   ctx.fillStyle = INK;
-  ctx.font = 'italic 49px "Segoe Print", "Courier New", cursive';
-  ctx.fillText("INCOMPLETE FILE", 512, 705);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(230, 747);
-  ctx.quadraticCurveTo(510, 715, 798, 749);
-  ctx.stroke();
-
-  caseLabel(ctx);
-  ctx.fillStyle = INK;
-  ctx.textAlign = "center";
-  ctx.globalAlpha = 0.55;
-  ctx.font = `24px ${TYPE}`;
-  ctx.fillText("SUBJECT UNKNOWN / RECORD 01", 512, 1268);
-  ctx.font = `bold 28px ${TYPE}`;
-  ctx.fillText("CONFIDENTIAL", 512, 1315);
+  ctx.globalAlpha = 0.8;
+  ctx.font = `bold 30px ${TYPE}`;
+  (ctx as Ctx & { letterSpacing: string }).letterSpacing = "10px";
+  ctx.fillText("SUBJECT DOSSIER", 517, 625);
+  (ctx as Ctx & { letterSpacing: string }).letterSpacing = "0px";
   ctx.globalAlpha = 1;
 
+  caseLabel(ctx);
+  stamp(ctx);
   return { color: color.c, height: height.c };
+}
+
+/** The typed file header across the top: department, file number, a rule. */
+function header(g: Ctx) {
+  g.save();
+  g.fillStyle = INK;
+  g.globalAlpha = 0.78;
+  g.font = `bold 24px ${TYPE}`;
+  g.textAlign = "left";
+  g.fillText("DEPT. OF INVESTIGATION", 120, 215);
+  g.textAlign = "right";
+  g.fillText("FILE No. 404", 904, 215);
+  g.fillRect(120, 232, 784, 3);
+  g.fillRect(120, 240, 784, 1);
+  g.restore();
+}
+
+/**
+ * A red rubber CONFIDENTIAL stamp, a little crooked, its ink broken up where
+ * the stamp did not meet the card (specks rubbed out of its own layer, never
+ * drawn under a clip).
+ */
+function stamp(target: Ctx) {
+  const { c, g } = layer();
+  g.translate(512, 1180);
+  g.rotate(-0.06);
+  g.strokeStyle = g.fillStyle = "#a3271f";
+  g.lineWidth = 7;
+  g.strokeRect(-250, -62, 500, 124);
+  g.lineWidth = 2.5;
+  g.strokeRect(-236, -48, 472, 96);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.font = `bold 64px ${TYPE}`;
+  g.fillText("CONFIDENTIAL", 0, 4, 440);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = "destination-out";
+  let seed = 404;
+  const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 700; i++) {
+    g.fillStyle = `rgba(0,0,0,${0.3 + r() * 0.6})`;
+    g.fillRect(250 + r() * 524, 1100 + r() * 160, 1 + r() * 4, 1 + r() * 2);
+  }
+  target.save();
+  target.globalAlpha = 0.82;
+  target.drawImage(c, 0, 0);
+  target.restore();
 }

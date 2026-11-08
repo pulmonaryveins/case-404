@@ -1,7 +1,7 @@
 import { MathUtils } from "three";
 
-/** The wall light over the board, and the two desk lamps. */
-export type LampId = "wall" | "main" | "archive";
+/** The wall light over the board, and the three desk lamps (the last at the typewriter). */
+export type LampId = "wall" | "main" | "archive" | "typewriter";
 
 /**
  * The colour every lamp's light shares (a warm tungsten), so the desk lamps
@@ -11,7 +11,7 @@ export type LampId = "wall" | "main" | "archive";
 export const LAMP_COLOUR = "#ffc78f";
 
 /** 0 (off) to 1 (on) per lamp, eased toward its switch each frame. */
-export const lampLit: Record<LampId, number> = { wall: 0, main: 1, archive: 0 };
+export const lampLit: Record<LampId, number> = { wall: 0, main: 1, archive: 0, typewriter: 0 };
 
 /**
  * Switch position per lamp. The story starts with only the main desk lamp on;
@@ -20,7 +20,12 @@ export const lampLit: Record<LampId, number> = { wall: 0, main: 1, archive: 0 };
  * and the viewer clicks it on, and the story never touches it. The viewer can
  * click any lamp to switch it, until the story next moves on.
  */
-export const lampOn: Record<LampId, boolean> = { wall: false, main: true, archive: false };
+export const lampOn: Record<LampId, boolean> = {
+  wall: false,
+  main: true,
+  archive: false,
+  typewriter: false,
+};
 
 export function toggleLamp(id: LampId) {
   lampOn[id] = !lampOn[id];

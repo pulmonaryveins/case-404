@@ -22,7 +22,7 @@ import { paintDossierPage } from "../surfaces/paintDossierPages";
 import { DossierRecords } from "./DossierRecords";
 import { DossierEvidence } from "./DossierEvidence";
 import { DossierTabs } from "./DossierTabs";
-import { dossierReadable, slamHeight, useDossier, whenIdle } from "./dossierState";
+import { dossierReadable, useDossier, whenIdle } from "./dossierState";
 import { useFocusable } from "../camera/focus";
 import { PaperContactShadow } from "./PaperContactShadow";
 import { createPaperBump } from "../surfaces/paperFinish";
@@ -41,13 +41,13 @@ const RIGHT_PAGE: [number, number, number] = [0.02, 0.1, 0.12];
 const LEFT_PAGE: [number, number, number] = [-2.34, 0.14, 0.12];
 
 /**
- * A new sheet is dropped onto the stack from this high (folder-local units; the
- * folder is ~0.24 m wide, so ~13 cm), tilted as it falls, and bounces as it
- * lands. It lands half-way through its time.
+ * A new sheet is laid onto the stack: it comes down from just above it
+ * (folder-local units; the folder is ~0.24 m wide, so ~3 cm), barely tilted,
+ * and settles flat without a bounce.
  */
-const DROP_HEIGHT = 1.2;
-const DROP_TILT = 0.16;
-const DROP_SECONDS = 0.75;
+const DROP_HEIGHT = 0.28;
+const DROP_TILT = 0.035;
+const DROP_SECONDS = 0.3;
 /** The index tabs slide out from under the stack, this far, as the folder opens. */
 const TAB_SLIDE = 0.34;
 
@@ -60,8 +60,8 @@ const parts = {
 
 /**
  * Each sheet is painted once, the first time it is needed (or in idle time
- * once the folder is open), and kept. Its GPU copy is freed while it is not on
- * show and uploads again if it is turned back to.
+ * once the folder is open, when it is also uploaded), and kept, on the GPU
+ * too: there are only a few, and switching to one is then just a swap.
  */
 const canvases = new Map<number, HTMLCanvasElement>();
 const textures = new Map<number, CanvasTexture>();
@@ -79,9 +79,6 @@ function pageTexture(index: number) {
     textures.set(index, map);
   }
   return map;
-}
-function releaseTextures(keep: number) {
-  for (const [index, map] of textures) if (index !== keep) map.dispose();
 }
 
 function pageMaterial(map: CanvasTexture) {
@@ -310,7 +307,6 @@ export function Dossier() {
           // Closed (or closing): nothing to see, just swap the sheet.
           parts.right!.map = pageTexture(state.page);
           turn.current = { t: 1, to: state.page };
-          releaseTextures(state.page);
           return;
         }
         parts.leafFront!.map = pageTexture(state.page);
@@ -328,7 +324,7 @@ export function Dossier() {
     lastProgress.current = -1;
     return () => animated.geometry.dispose();
   }, [animated]);
-  useFrame((_, dt) => {
+  useFrame(({ gl }, dt) => {
     const p = Math.max(0, Math.min(1, storyRig.dossierOpen));
 
     // Readable: the other sheets (and the left cover's items) are painted
@@ -340,8 +336,11 @@ export function Dossier() {
       dossier.setReadable(readable);
       if (readable && canvases.size < dossierPages.length) {
         // One sheet per idle callback (each due within a second or so, spaced
-        // out), so no one frame carries them all.
-        dossierPages.forEach((_, i) => whenIdle(() => pageCanvas(i), 800 + i * 500));
+        // out), so no one frame carries them all; uploaded there and then, so
+        // the first turn to it does not stall on the upload.
+        dossierPages.forEach((_, i) =>
+          whenIdle(() => gl.initTexture(pageTexture(i)), 800 + i * 500),
+        );
       }
     }
     if (p < 0.02 && dossier.page !== 0) dossier.reset();
@@ -353,22 +352,21 @@ export function Dossier() {
       tabs.current.position.x = -TAB_SLIDE * (1 - reveal);
     }
 
-    // A new sheet falls, lands flat and bounces; tilted and a little off-line while up.
+    // A new sheet is laid down: quick at first, easing flat onto the stack.
     const slide = turn.current;
     if (droppingSheet.current) {
       if (slide.t < 1) {
         shadowsChanged();
         slide.t = Math.min(1, slide.t + dt / DROP_SECONDS);
-        const h = slamHeight(slide.t);
+        const h = (1 - slide.t) ** 3;
         droppingSheet.current.position.y = RIGHT_PAGE[1] + 0.006 + DROP_HEIGHT * h;
         droppingSheet.current.rotation.set(DROP_TILT * h, 0.1 * h, -DROP_TILT * 0.7 * h);
-        // Appears at once rather than fading: it is already in the air.
-        parts.leafFront!.opacity = MathUtils.clamp(slide.t / 0.06, 0, 1);
+        // Fades in over the first part of its way down.
+        parts.leafFront!.opacity = MathUtils.clamp(slide.t / 0.35, 0, 1);
         droppingSheet.current.visible = true;
         if (slide.t === 1) {
           droppingSheet.current.visible = false;
           parts.right!.map = pageTexture(slide.to);
-          releaseTextures(slide.to);
         }
       } else droppingSheet.current.visible = false;
     }

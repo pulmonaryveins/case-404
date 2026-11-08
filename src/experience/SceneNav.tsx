@@ -53,12 +53,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M8 4v5h7V4M8 20v-6h8v6" />
     </>,
   ),
-  // Enamel pin: the merch locker.
-  MERCH: svg(
+  // A typed page coming out of the roller: the case closed.
+  CASE_SOLVED: svg(
     <>
-      <circle cx="12" cy="11" r="6.5" />
-      <path d="M12 7.5l1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z" />
-      <path d="M12 17.5V21" />
+      <path d="M7 13V4h10v9" />
+      <path d="M9.5 7h5M9.5 10h4" />
+      <rect x="3" y="13" width="18" height="7" rx="1.5" />
+      <path d="M6 16.5h12" />
     </>,
   ),
   // Palette.

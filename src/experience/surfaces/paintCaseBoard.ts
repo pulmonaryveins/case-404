@@ -1037,25 +1037,15 @@ export function paintStickyNote(lines: string[], seed: number, size = 512) {
 
 /**
  * One evidence image as its own canvas, for the board's 3D posters: the same
- * painted art as the board's photographs (`kind`), inside a thin print border
- * and with the same grain pass. Painted off to the side and then copied in,
- * not under a clip: a clip makes every drawing call slow.
+ * painted art as the board's photographs (`kind`), to the paper's edge, with
+ * the same grain pass. No clip: a clip makes every drawing call slow.
  */
 export function paintEvidenceImage(kind: PieceKind, w: number, h: number, seed: number) {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
-  const inset = Math.round(Math.min(w, h) * 0.04);
-  const iw = w - inset * 2;
-  const ih = h - inset * 2;
-  ctx.fillStyle = "#d9d0bd";
-  ctx.fillRect(0, 0, w, h);
-  const art = document.createElement("canvas");
-  art.width = iw;
-  art.height = ih;
-  paintKind(art.getContext("2d")!, kind, iw, ih, seed);
-  ctx.drawImage(art, inset, inset);
+  paintKind(ctx, kind, w, h, seed);
   grain(ctx, w, h, seed, 0.05);
   return canvas;
 }

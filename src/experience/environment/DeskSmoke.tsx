@@ -1,6 +1,12 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { BufferAttribute, BufferGeometry, type Points, ShaderMaterial } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  DynamicDrawUsage,
+  type Points,
+  ShaderMaterial,
+} from "three";
 import type { Vector3Tuple } from "../../types/common";
 
 /** Enough puffs that the thin thread at the tip overlaps into one line. */
@@ -79,10 +85,15 @@ const smoothstep = (a: number, b: number, x: number) => {
 export function DeskSmoke({ at }: { at: Vector3Tuple }) {
   const { geometry, material, phases } = useMemo(() => {
     const g = new BufferGeometry();
-    g.setAttribute("position", new BufferAttribute(new Float32Array(COUNT * 3), 3));
-    g.setAttribute("aSize", new BufferAttribute(new Float32Array(COUNT), 1));
-    g.setAttribute("aAlpha", new BufferAttribute(new Float32Array(COUNT), 1));
-    g.setAttribute("aAge", new BufferAttribute(new Float32Array(COUNT), 1));
+    // Rewritten every frame: these must be DynamicDraw. A StaticDraw buffer
+    // re-uploaded each frame makes ANGLE/D3D11 wait on the GPU, which halved
+    // the frame rate on integrated graphics.
+    const dynamic = (size: number) =>
+      new BufferAttribute(new Float32Array(COUNT * size), size).setUsage(DynamicDrawUsage);
+    g.setAttribute("position", dynamic(3));
+    g.setAttribute("aSize", dynamic(1));
+    g.setAttribute("aAlpha", dynamic(1));
+    g.setAttribute("aAge", dynamic(1));
     const seeds = new Float32Array(COUNT);
     for (let i = 0; i < COUNT; i++) seeds[i] = ((i * 7919) % 1000) / 1000;
     g.setAttribute("aSeed", new BufferAttribute(seeds, 1));

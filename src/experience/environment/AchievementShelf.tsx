@@ -20,9 +20,10 @@ import { useWallInspect } from "./wallInspect";
 
 /**
  * The achievements: a wooden shelf on the angled wall just above the archive
- * terminal: two framed certificates at each end, standing on it and leaning
- * back against the wall, and the Bismarck model on its plinth between them. In the archive station's frame (see DesignPosters): `x`
- * runs along the wall, the wall's front face is at z = WALL_Z.
+ * terminal: a framed certificate at each end, standing on it and leaning back
+ * against the wall, and the Bismarck model on its plinth between them. In the
+ * archive station's frame (see DesignPosters): `x` runs along the wall, the
+ * wall's front face is at z = WALL_Z.
  */
 const WALL_Z = -0.476;
 /** The shelf's top face: clear of Wall-E on the terminal (its head is at ~1.45 m). */
@@ -35,18 +36,22 @@ const SHELF_MODEL_TOP = 0.016;
  */
 const SHELF_LENGTH_SCALE = 0.9;
 /**
- * Frame centres along the shelf, from its centre, and a slight turn each: two
- * to the left of the ship, one to the right (one per certificate on file).
+ * The certificates on the shelf (ids in data/certificates), one either side
+ * of the ship, each turned a touch toward it: frame centre along the shelf,
+ * from its centre.
  */
 const FRAMES = [
-  { x: -0.655, yaw: 0.04 },
-  { x: -0.43, yaw: -0.02 },
-  { x: 0.54, yaw: -0.03 },
+  { id: "alliance-merit", x: -0.56, yaw: 0.03 },
+  { id: "alliance-completion", x: 0.56, yaw: -0.03 },
 ];
 /** The ship's plinth: centred on the shelf, halfway out from the wall. */
 const SHIP_Z = 0.0625;
-/** Gap between a frame's back and the wall. */
-const FRAME_GAP = 0.012;
+/**
+ * Gap between a frame's foot and the wall, and how far it leans back (rad):
+ * its top edge just touches the wall.
+ */
+const FRAME_GAP = 0.016;
+const FRAME_LEAN = 0.08;
 
 /**
  * The frame model's inner panel (mat and certificate), in its mesh's own
@@ -119,7 +124,7 @@ function Diploma({ cert, x, yaw }: { cert: Certificate; x: number; yaw: number }
     <group
       ref={group}
       position={[x, SHELF_TOP, WALL_Z + FRAME_GAP]}
-      rotation={[0, yaw, 0]}
+      rotation={[-FRAME_LEAN, yaw, 0]}
       {...inspect}
     >
       <primitive object={frame} position={offset} scale={asset.scale} />
@@ -143,9 +148,10 @@ export function AchievementShelf({ x }: { x: number }) {
       <group ref={ship} {...inspectShip}>
         <ShipDisplay at={[0, SHELF_TOP, WALL_Z + SHIP_Z]} yaw={-Math.PI / 2} />
       </group>
-      {FRAMES.map((f, i) =>
-        certificates[i] ? <Diploma key={i} cert={certificates[i]} x={f.x} yaw={f.yaw} /> : null,
-      )}
+      {FRAMES.map((f) => {
+        const cert = certificates.find((c) => c.id === f.id);
+        return cert ? <Diploma key={f.id} cert={cert} x={f.x} yaw={f.yaw} /> : null;
+      })}
     </group>
   );
 }

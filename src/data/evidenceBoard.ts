@@ -109,7 +109,7 @@ export interface RoleCluster {
   role: string;
   /** The role's note card and its own pin, and where the card sits (board face). */
   card: { piece: BoardPieceId; pin: string; s: number; t: number };
-  /** Three posters, a landscape, a portrait and a square, hung round the corner. */
+  /** Three posters hung round the corner (a landscape, a portrait and a square, or three squares). */
   posters: [BoardPoster, BoardPoster, BoardPoster];
 }
 
@@ -196,17 +196,18 @@ export const roleClusters: RoleCluster[] = [
     role: "GRAPHIC",
     card: { piece: "Plane074__0", pin: "Cylinder023__0", s: 0.063, t: 1.565 },
     posters: [
+      // All three square: the design samples are square artwork.
       {
-        shape: "landscape",
+        shape: "square",
         kind: "colorPalette",
         image: "/images/design/9.webp",
         pin: "Cylinder021__0",
         s: 0.498,
-        t: 1.9,
+        t: 1.905,
         roll: 0.07,
       },
       {
-        shape: "portrait",
+        shape: "square",
         kind: "posterLetter",
         image: "/images/design/3.webp",
         pin: "Cylinder022__0",
@@ -220,7 +221,7 @@ export const roleClusters: RoleCluster[] = [
         image: "/images/design/8.webp",
         pin: "Cylinder020__0",
         s: 0.498,
-        t: 1.66,
+        t: 1.655,
         roll: 0.04,
       },
     ],

@@ -6,6 +6,7 @@ import { ScreenFocusControls } from "./ScreenFocusControls";
 import { SceneNav } from "./SceneNav";
 import { CustomCursor } from "./cursor/CustomCursor";
 import { PosterFlipControl } from "./PosterFlipControl";
+import { ResumeOverlay } from "./resume/ResumeOverlay";
 import styles from "./Experience.module.css";
 
 /**
@@ -26,6 +27,7 @@ export function Experience() {
       </CanvasErrorBoundary>
       <ScreenFocusControls />
       <PosterFlipControl />
+      <ResumeOverlay />
       {/* No scroll rail until the scene is on screen. */}
       <SceneNav hidden={!ready} />
       <CustomCursor />

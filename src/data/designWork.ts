@@ -1,8 +1,8 @@
 /**
  * Graphic design work pinned to the evidence wall above the archive terminal
  * (DesignPosters), as files in `public/images/design/`. The order here is
- * the order on the wall (and the sticky-note numbers): top row left to right,
- * then the middle row, then the bottom.
+ * the order on the wall (see LAYOUT there): roughly top to bottom, left to
+ * right, with the Bay Harbor Butcher board (9.webp) as the hub in the middle.
  *
  * The fields are what is written on the back of each print in pencil (flip
  * one over in its close-up). Only what the poster itself shows has been

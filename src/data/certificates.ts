@@ -8,9 +8,8 @@ export interface Certificate {
 }
 
 /**
- * The certificates on file, newest first. They hang as the framed
- * achievements on the shelf above the archive terminal (AchievementShelf):
- * the first two on the left, the third on the right.
+ * The certificates on file, newest first. The two Alliance ones stand framed
+ * on the shelf above the archive terminal (AchievementShelf picks them by id).
  */
 export const certificates: Certificate[] = [
   {

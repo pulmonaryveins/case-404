@@ -84,6 +84,8 @@ export function DeskProp({
         if (id === "revolver" && CHAMBERED_BULLET.test(o.name)) o.visible = false;
         // The pens model ships on a flat display plate; the desk is the ground.
         if (id === "fountainPens" && o.name.startsWith("ground")) o.visible = false;
+        // The typewriter's own blank sheet: ResumePrint feeds the printed one out instead.
+        if (id === "typewriter" && o.name.startsWith("paper")) o.visible = false;
         // A transparent, double-sided material is drawn in two passes (back faces,
         // then front), and three rebuilds its program state on each of them every
         // frame: the phone, the magnifying glass and the instant camera cost ~5 ms

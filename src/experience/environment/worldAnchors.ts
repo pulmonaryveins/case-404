@@ -40,6 +40,32 @@ export const DESK_TOP = 0.778;
  */
 export const ARCHIVE_YAW = -0.67;
 
+/**
+ * How far each corner desk is slid along its corner wall, toward the side
+ * wall, from the wall's own anchor (`digitalArchive`, mirrored for the left):
+ * so its inner end clears the file cabinet on the back wall beside it; at
+ * that its outer back corner just meets the side wall. The corner walls stay
+ * on the anchor (RoomShell), and so do the things hung on them (the archive's
+ * design posters and shelf), so only the desks move.
+ */
+export const STATION_SLIDE = 0.28;
+
+/** The computer desk (ArchiveStation), back-right corner, slid along its own +X. */
+export const ARCHIVE_STATION = {
+  position: [
+    2.5 + STATION_SLIDE * Math.cos(ARCHIVE_YAW),
+    0,
+    -2.85 - STATION_SLIDE * Math.sin(ARCHIVE_YAW),
+  ] as Vector3Tuple,
+  yaw: ARCHIVE_YAW,
+};
+
+/** The typewriter desk (TypewriterStation): the computer desk mirrored into the back-left corner. */
+export const TYPEWRITER_STATION = {
+  position: [-ARCHIVE_STATION.position[0], 0, ARCHIVE_STATION.position[2]] as Vector3Tuple,
+  yaw: -ARCHIVE_YAW,
+};
+
 export const worldAnchors: Record<WorldAnchorId, Vector3Tuple | null> = {
   mainDesk: [0.05, 0, -2.05],
   evidenceBoard: [0, 1.46, -3.74],

@@ -8,7 +8,6 @@ export type ChapterId =
   | "EXPERIENCE"
   | "DIGITAL_ARCHIVE"
   | "GRAPHIC_DESIGN"
-  | "MERCH"
   | "CREATIVE_EVIDENCE"
   | "CREDENTIALS"
   | "CONTACT"

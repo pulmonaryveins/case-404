@@ -8,7 +8,7 @@ import { gramophone } from "../audio/gramophoneAudio";
 import { useCursor } from "../cursor/cursorStore";
 
 /**
- * A wind-up gramophone on top of a merch file cabinet. Click it to put the
+ * A wind-up gramophone on the typewriter desk. Click it to put the
  * needle on the record and play "Cool Vibes", and again to lift it: the
  * record spins up and winds down with the music (see gramophoneAudio).
  *
@@ -27,11 +27,14 @@ const at = new Vector3();
 export function Gramophone({
   position,
   yaw,
+  size = 1,
 }: {
   /** Where its feet stand, world space. */
   position: [number, number, number];
   /** Turn about the vertical; 0 faces its front (-z) away from +z. */
   yaw: number;
+  /** Scale on the manifest's (1 is the 0.6 m gramophone). */
+  size?: number;
 }) {
   const asset = assetManifest.gramophone;
   const { scene } = useGLTF(asset.url);
@@ -106,7 +109,11 @@ export function Gramophone({
 
   return (
     <group ref={group} name="gramophone" position={position} rotation={[0, yaw, 0]} {...handlers}>
-      <primitive object={model} position={[0, FEET * asset.scale, 0]} scale={asset.scale} />
+      <primitive
+        object={model}
+        position={[0, FEET * asset.scale * size, 0]}
+        scale={asset.scale * size}
+      />
     </group>
   );
 }

@@ -1,6 +1,5 @@
 import { profile, profileSkills } from "../../data/profile";
 import { experienceEntries } from "../../data/experience";
-import { education } from "../../data/education";
 import { certificates } from "../../data/certificates";
 import { dossierPages } from "../../data/dossier";
 import { paintPaperFinish } from "./paperFinish";
@@ -360,28 +359,6 @@ function paintCasePage(index: number) {
   return canvas;
 }
 
-/** 02: schools, newest first, each its own entry between dividers: the school, its degree, its years. */
-function paintEducationPage(index: number) {
-  const { canvas, ctx } = sheet(index, "Education: academic record");
-  ctx.font = `bold 20px ${TYPE}`;
-  ctx.fillStyle = MUTED;
-  tracking(ctx, 2);
-  ctx.fillText("TRANSCRIPTS ON FILE / VERIFIED BY THE BUREAU", M, 210);
-  tracking(ctx, 0);
-  let y = 330;
-  for (const school of education) {
-    if (y > FOOT - 140) break;
-    rule(ctx, y - 54);
-    y = headingWithDate(ctx, school.institution, school.period, y, 40);
-    y = paragraph(ctx, school.credential, M, y + 46, WIDTH, 32, MUTED, 1.4, "italic");
-    if (school.detail) y = paragraph(ctx, school.detail, M, y, WIDTH, 26, SOFT, 1.4);
-    y += 100;
-  }
-  rule(ctx, y - 54);
-  endMark(ctx, y - 14);
-  return canvas;
-}
-
 /**
  * What goes under a post's title: its summary, bullets and tools. `y` is the
  * baseline for the first line; returns the baseline after.
@@ -466,7 +443,6 @@ function paintAchievementsPage(index: number) {
 
 const PAINTERS = {
   case: paintCasePage,
-  education: paintEducationPage,
   experience: paintExperiencePage,
   achievements: paintAchievementsPage,
 } as const;

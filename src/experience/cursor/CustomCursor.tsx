@@ -56,7 +56,6 @@ export function CustomCursor() {
   const label = useCursor((s) => s.label);
   const photoFocused = useExperienceStore((s) => s.screenFocused && s.focusKind === "photo");
   const root = useRef<HTMLDivElement>(null);
-  const dot = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
   // An HTML control (Back button etc.) under the pointer.
   const [overControl, setOverControl] = useState(false);
@@ -91,20 +90,24 @@ export function CustomCursor() {
     // The ring trails the dot. The loop runs only while it is catching up,
     // so a still pointer costs nothing (a permanent loop competes with the
     // WebGL frame on a laptop).
-    const tick = () => {
-      const k = reduced ? 1 : 0.28;
+    let lastTick = 0;
+    const tick = (now: number) => {
+      // 0.28 of the gap per 60 Hz frame, scaled to the real frame time, so
+      // the trail feels the same at 30 fps or 144 fps instead of lagging.
+      const dt = lastTick ? Math.min(now - lastTick, 100) : 16.7;
+      lastTick = now;
+      const k = reduced ? 1 : 1 - Math.pow(0.72, dt / 16.7);
       trail.x += (at.x - trail.x) * k;
       trail.y += (at.y - trail.y) * k;
       if (ring.current) ring.current.style.transform = `translate3d(${trail.x}px, ${trail.y}px, 0)`;
-      frame =
-        Math.abs(at.x - trail.x) + Math.abs(at.y - trail.y) > 0.3 ? requestAnimationFrame(tick) : 0;
+      const moving = Math.abs(at.x - trail.x) + Math.abs(at.y - trail.y) > 0.3;
+      frame = moving ? requestAnimationFrame(tick) : 0;
+      if (!moving) lastTick = 0;
     };
 
     const onMove = (e: PointerEvent) => {
       at.x = e.clientX;
       at.y = e.clientY;
-      // The dot follows the pointer immediately, not a frame later.
-      if (dot.current) dot.current.style.transform = `translate3d(${at.x}px, ${at.y}px, 0)`;
       if (!frame) frame = requestAnimationFrame(tick);
       // Any movement means the pointer is in the page: show the cursor again
       // (not only when the element under it changes, which left it hidden
@@ -158,15 +161,21 @@ export function CustomCursor() {
       document.documentElement.removeEventListener("pointerleave", onLeave);
       document.documentElement.removeEventListener("pointerenter", onEnter);
       window.removeEventListener("blur", onBlur);
-      document.documentElement.classList.remove("has-custom-cursor");
+      document.documentElement.classList.remove("has-custom-cursor", "cursor-active");
     };
   }, [enabled]);
 
-  if (!enabled) return null;
   // In a photo close-up every click zooms back out; say so.
   const shown: CursorKind =
     kind !== "default" ? kind : overControl ? "select" : photoFocused ? "zoomOut" : "default";
-  const active = shown !== "default";
+  const active = enabled && shown !== "default";
+
+  // The native dot (see the CSS) gives way to the open ring.
+  useEffect(() => {
+    document.documentElement.classList.toggle("cursor-active", active);
+  }, [active]);
+
+  if (!enabled) return null;
 
   return (
     <div ref={root} className={styles.cursor} data-active={active} aria-hidden>
@@ -179,7 +188,6 @@ export function CustomCursor() {
             <span className={styles.label}>{shown === "zoomOut" ? "Zoom out" : label}</span>
           )}
       </div>
-      <div ref={dot} className={styles.dot} />
     </div>
   );
 }

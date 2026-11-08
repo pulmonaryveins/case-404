@@ -8,6 +8,7 @@ import { lampOn, type LampId } from "./lampState";
 const TURN: Record<Exclude<LampId, "wall">, ChapterId> = {
   main: "CASE_OPENED",
   archive: "DIGITAL_ARCHIVE",
+  typewriter: "CASE_SOLVED",
 };
 
 const orderOf = (id: ChapterId) => chapters.find((c) => c.id === id)?.order ?? 0;
@@ -15,7 +16,8 @@ const orderOf = (id: ChapterId) => chapters.find((c) => c.id === id)?.order ?? 0
 /**
  * Sets which lamps are lit for the chapter the story is in: the main desk
  * lamp is on from the start (the first scene); the archive lamp comes on when
- * the camera reaches the computer desk (DIGITAL_ARCHIVE). Once a lamp's turn
+ * the camera reaches the computer desk (DIGITAL_ARCHIVE); the typewriter's when
+ * the case is closed (CASE_SOLVED). Once a lamp's turn
  * has come it stays on; scrolling back before its chapter puts it out again.
  * The wall light over the board is optional and left to the viewer.
  */

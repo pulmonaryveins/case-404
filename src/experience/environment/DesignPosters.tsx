@@ -19,7 +19,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { assetManifest } from "../../assets/assetManifest";
 import { designWork, designWorkUrl, type DesignPiece } from "../../data/designWork";
 import { useExperienceStore } from "../../store/useExperienceStore";
-import { paintPosterBack, paintStickyNote } from "../surfaces/paintPosterBack";
+import { paintPosterBack } from "../surfaces/paintPosterBack";
 import { useDesignInspect } from "./designInspectState";
 import { useWallInspect } from "./wallInspect";
 import { shadowsChanged } from "../canvas/shadowUpdates";
@@ -27,8 +27,8 @@ import { shadowsChanged } from "../canvas/shadowUpdates";
 /**
  * The design wall: the subject's own design work (data/designWork.ts) printed
  * on square posters and pinned up above the achievements shelf over the
- * terminal like evidence: scattered, tilted, each with a red pin and a
- * numbered sticky note, the pieces tied together with red string. Click one
+ * terminal like evidence: scattered, tilted, each on a red pin, red string
+ * running out from the hub print to every other one like a web. Click one
  * for a close-up; it can be turned over there to read the pencilled notes on
  * its back. In the archive station's frame: the wall's front face is 0.476 m
  * behind the station centre (see RoomShell), `x` runs along the wall, `y` is
@@ -40,62 +40,42 @@ const BASE_Z = WALL_Z + 0.004;
 const MODEL_SIZE = 0.36;
 
 /**
- * Where each print hangs, in the order of `designWork`: four, five, four, in
- * loose rows, each tilted and sized a little differently, the centre piece
- * largest. `note` is the sticky note's tilt; `noteTop` puts it at the top
- * right instead of the bottom right, where it would cover the poster's title.
+ * Where each print hangs, in the order of `designWork`: scattered round the
+ * hub print (the Bay Harbor Butcher board, the largest, in the middle), no
+ * two the same size or tilt, as if pinned up one at a time.
  */
 interface Spot {
   x: number;
   y: number;
   roll: number;
   s: number;
-  note: number;
-  noteTop?: boolean;
 }
 const LAYOUT: Spot[] = [
-  { x: -0.55, y: 2.57, roll: 0.06, s: 0.64, note: 0.14 },
-  { x: -0.2, y: 2.6, roll: -0.05, s: 0.6, note: -0.1 },
-  { x: 0.14, y: 2.55, roll: 0.035, s: 0.64, note: 0.08 },
-  { x: 0.5, y: 2.6, roll: -0.07, s: 0.6, note: -0.16 },
-  { x: -0.66, y: 2.22, roll: -0.05, s: 0.62, note: 0.12 },
-  { x: -0.37, y: 2.27, roll: 0.07, s: 0.6, note: -0.06 },
-  { x: -0.05, y: 2.25, roll: -0.02, s: 0.74, note: 0.1 },
-  { x: 0.29, y: 2.21, roll: 0.05, s: 0.62, note: -0.12 },
-  { x: 0.62, y: 2.26, roll: -0.04, s: 0.62, note: 0.15, noteTop: true },
-  { x: -0.5, y: 1.95, roll: 0.04, s: 0.62, note: -0.08 },
-  { x: -0.17, y: 1.93, roll: -0.06, s: 0.6, note: 0.11 },
-  { x: 0.17, y: 1.96, roll: 0.05, s: 0.62, note: -0.14 },
-  { x: 0.51, y: 1.93, roll: -0.03, s: 0.64, note: 0.09 },
+  { x: -0.53, y: 2.58, roll: 0.08, s: 0.6 },
+  { x: -0.2, y: 2.64, roll: -0.05, s: 0.57 },
+  { x: 0.19, y: 2.6, roll: 0.06, s: 0.62 },
+  { x: 0.55, y: 2.55, roll: -0.09, s: 0.6 },
+  { x: -0.68, y: 2.25, roll: -0.06, s: 0.62 },
+  { x: -0.37, y: 2.33, roll: 0.1, s: 0.56 },
+  { x: 0, y: 2.29, roll: -0.03, s: 0.78 },
+  { x: 0.37, y: 2.23, roll: -0.07, s: 0.58 },
+  { x: 0.69, y: 2.31, roll: 0.05, s: 0.62 },
+  { x: -0.49, y: 1.97, roll: 0.05, s: 0.6 },
+  { x: -0.15, y: 1.94, roll: -0.08, s: 0.62 },
+  { x: 0.2, y: 1.98, roll: 0.04, s: 0.58 },
+  { x: 0.52, y: 1.94, roll: -0.06, s: 0.64 },
 ];
 
-/**
- * Red string between prints (indices into `designWork`): the centre piece is
- * the hub; the rest link by kind (events, the seasonal posts) and neighbour.
- */
-const LINKS: [number, number][] = [
-  [0, 1],
-  [1, 6],
-  [2, 6],
-  [3, 8],
-  [4, 5],
-  [5, 6],
-  [6, 7],
-  [7, 8],
-  [6, 10],
-  [9, 10],
-  [11, 6],
-  [12, 8],
-];
+/** The hub: every string runs from its pin out to each other print's pin. */
+const HUB = designWork.findIndex((p) => p.file === "9.webp");
 
 /**
  * In the poster model's own units: the pin at the top centre, where the paper
- * lies flat (its top-left corner curls off the wall), and the sticky note on
- * the flat lower right. The back sheet sits just behind the print.
+ * lies flat (its top-left corner curls off the wall). The back sheet sits
+ * just behind the print.
  */
 const PIN = new Vector3(0, 0.148, 0.03);
-const NOTE = { x: 0.105, y: -0.115, top: 0.1, z: 0.008, size: 0.1 };
-const STRING_RADIUS = 0.0015;
+const STRING_RADIUS = 0.0009;
 const STRING_COLOR = "#9b2823";
 
 /**
@@ -112,11 +92,10 @@ const FLIP_SECONDS = 0.7;
 const LIFT_TURNED = 0.06;
 const LIFT_ARC = 0.11;
 
-const PIN_HEAD = new SphereGeometry(0.014, 14, 10);
-const PIN_NEEDLE = new CylinderGeometry(0.0025, 0.0025, 0.03, 6);
+const PIN_HEAD = new SphereGeometry(0.009, 14, 10);
+const PIN_NEEDLE = new CylinderGeometry(0.0016, 0.0016, 0.03, 6);
 const PIN_RED = new MeshStandardMaterial({ color: "#b0201a", roughness: 0.35, metalness: 0.2 });
 const PIN_STEEL = new MeshStandardMaterial({ color: "#9a9a9a", roughness: 0.3, metalness: 0.8 });
-const NOTE_PLANE = new PlaneGeometry(NOTE.size, NOTE.size);
 const BACK_PLANE = new PlaneGeometry(MODEL_SIZE * 1.005, MODEL_SIZE);
 
 /**
@@ -184,13 +163,12 @@ function pinAt(i: number) {
   return new Vector3(
     x + (PIN.x * c - PIN.y * n) * s,
     y + (PIN.x * n + PIN.y * c) * s,
-    BASE_Z + (PIN.z + 0.012) * s,
+    BASE_Z + (PIN.z + 0.008) * s,
   );
 }
 
 function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
-  const { x, y, roll, s, note, noteTop } = LAYOUT[index];
-  const number = index + 1;
+  const { x, y, roll, s } = LAYOUT[index];
   const { scene } = useGLTF(assetManifest.posterSquare.url);
   const inspected = useDesignInspect((st) => st.inspected === piece.file);
   const flipped = useDesignInspect((st) => st.inspected === piece.file && st.flipped);
@@ -215,18 +193,6 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
   }, [scene, print]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 
-  const noteMaterial = useMemo(
-    () => new MeshStandardMaterial({ map: toTexture(paintStickyNote(number)), roughness: 0.9 }),
-    [number],
-  );
-  useEffect(
-    () => () => {
-      noteMaterial.map?.dispose();
-      noteMaterial.dispose();
-    },
-    [noteMaterial],
-  );
-
   // The back is only painted once the print is first turned over.
   const [backPainted, setBackPainted] = useState(false);
   if (flipped && !backPainted) setBackPainted(true);
@@ -234,10 +200,10 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
     () =>
       new MeshStandardMaterial({
         // Blank paper (as a texture, so the shader never changes) until painted.
-        map: backPainted ? toTexture(paintPosterBack(piece, number)) : BLANK,
+        map: backPainted ? toTexture(paintPosterBack(piece, index)) : BLANK,
         roughness: 0.95,
       }),
-    [backPainted, piece, number],
+    [backPainted, piece, index],
   );
   useEffect(
     () => () => {
@@ -284,8 +250,8 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
 
   return (
     <group ref={group} position={[x, y, BASE_Z]} rotation={[0, 0, roll]} {...handlers}>
-      {/* The pin through its top, and its strings, stay in the wall when the
-          print is taken down to be turned over. */}
+      {/* The pin, and its strings, stay in the wall when the print is taken
+          down to be turned over. */}
       <group scale={s}>
         <mesh geometry={PIN_HEAD} material={PIN_RED} position={PIN} castShadow />
         <mesh
@@ -298,15 +264,6 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
       <group ref={flipper}>
         <group scale={s}>
           <primitive object={object} />
-          {/* Its number, on a sticky note stuck to the lower right. */}
-          <mesh
-            geometry={NOTE_PLANE}
-            material={noteMaterial}
-            position={[NOTE.x, noteTop ? NOTE.top : NOTE.y, NOTE.z]}
-            rotation={[0, 0, note]}
-            castShadow
-            receiveShadow
-          />
           {/* Its back, facing the wall until it is turned over. */}
           <mesh
             geometry={BACK_PLANE}
@@ -322,36 +279,41 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
 }
 
 /**
- * Red string between the pins of linked prints, sagging, merged into one mesh.
- * It fades back while a print is in the close-up, so it does not cut across it.
+ * Red string from the hub's pin out to every other print's pin, like the
+ * spokes of a web, running over the prints it crosses: nearly taut, bowed
+ * off the wall enough to clear their paper. Merged into one mesh. It fades
+ * out while a print is in the close-up, so nothing cuts across it.
  */
-const STRING_FADED = 0.18;
 const STRING_FADE_SECONDS = 0.4;
 
 function Strings() {
   const inspecting = useDesignInspect((st) => st.inspected !== null);
+  const mesh = useRef<Mesh>(null);
   const material = useRef<MeshStandardMaterial>(null);
   useFrame((_, dt) => {
     const m = material.current;
-    if (!m) return;
-    const target = inspecting ? STRING_FADED : 1;
+    if (!m || !mesh.current) return;
+    const target = inspecting ? 0 : 1;
     if (m.opacity === target) return;
-    const step = (dt / STRING_FADE_SECONDS) * (1 - STRING_FADED);
+    const step = dt / STRING_FADE_SECONDS;
     m.opacity =
       target > m.opacity ? Math.min(target, m.opacity + step) : Math.max(target, m.opacity - step);
+    mesh.current.visible = m.opacity > 0;
   });
 
   const geometry = useMemo(() => {
     const strand = (a: Vector3, b: Vector3) => {
       const mid = a.clone().add(b).multiplyScalar(0.5);
-      mid.y -= a.distanceTo(b) * 0.12;
-      mid.z = Math.max(a.z, b.z) + 0.01;
+      mid.y -= a.distanceTo(b) * 0.03;
+      mid.z = Math.max(a.z, b.z) + 0.02;
       return new TubeGeometry(new QuadraticBezierCurve3(a, mid, b), 18, STRING_RADIUS, 5, false);
     };
     const count = Math.min(designWork.length, LAYOUT.length);
-    const tubes = LINKS.filter(([a, b]) => a < count && b < count).map(([a, b]) =>
-      strand(pinAt(a), pinAt(b)),
-    );
+    if (HUB < 0 || HUB >= count) return null;
+    const hub = pinAt(HUB);
+    const tubes = Array.from({ length: count }, (_, i) => i)
+      .filter((i) => i !== HUB)
+      .map((i) => strand(hub, pinAt(i)));
     if (!tubes.length) return null;
     const merged = mergeGeometries(tubes);
     tubes.forEach((t) => t.dispose());
@@ -360,7 +322,7 @@ function Strings() {
   useEffect(() => () => geometry?.dispose(), [geometry]);
   if (!geometry) return null;
   return (
-    <mesh geometry={geometry} castShadow>
+    <mesh ref={mesh} geometry={geometry} castShadow>
       <meshStandardMaterial
         ref={material}
         color={STRING_COLOR}

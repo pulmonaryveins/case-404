@@ -246,9 +246,8 @@ function BoardPosterModel(props: { poster: BoardPoster; order: number; faceX: nu
 }
 
 /**
- * An image printed on a poster of any shape: fitted whole inside it,
- * centred, on the print's off-white paper (the role photos are cropped to
- * their poster's shape beforehand, so they fill it with an even border).
+ * An image printed on a poster of any shape: printed to the paper's edge (no
+ * white border), cropped from the centre if it is not the poster's shape.
  */
 function ImagePrintModel({
   poster,
@@ -267,10 +266,7 @@ function ImagePrintModel({
     c.width = w;
     c.height = h;
     const ctx = c.getContext("2d")!;
-    ctx.fillStyle = "#e6e0d2";
-    ctx.fillRect(0, 0, w, h);
-    const margin = Math.min(w, h) * 0.05;
-    const k = Math.min((w - margin * 2) / image.width, (h - margin * 2) / image.height);
+    const k = Math.max(w / image.width, h / image.height);
     const dw = image.width * k;
     const dh = image.height * k;
     ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);

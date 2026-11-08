@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { profile, profileSkills } from "../../data/profile";
-import { education } from "../../data/education";
 import { experienceEntries } from "../../data/experience";
 import { certificates } from "../../data/certificates";
 import { dossierPages } from "../../data/dossier";
@@ -34,16 +33,6 @@ export function DossierRecords() {
           <p key={skill.label}>
             {skill.label}: {skill.value}
           </p>
-        ))}
-        <h2>Education</h2>
-        {education.map((school) => (
-          <section key={school.id}>
-            <h3>{school.institution}</h3>
-            <p>
-              {school.credential}. {school.period}.
-            </p>
-            {school.detail && <p>{school.detail}</p>}
-          </section>
         ))}
         <h2>Experience</h2>
         {experienceEntries.map((job) => (

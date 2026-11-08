@@ -15,7 +15,7 @@ export const CHECKPOINTS: { id: ChapterId; label: string; time: number; reduced:
   { id: "SUBJECT_PROFILE", label: "Subject Identity", time: 0.98, reduced: 0.5 },
   { id: "DIGITAL_ARCHIVE", label: "Digital Archive", time: 1.55, reduced: 0.7 },
   { id: "GRAPHIC_DESIGN", label: "Graphic Design", time: 2.2, reduced: 0.84 },
-  { id: "MERCH", label: "Merch Locker", time: 3.05, reduced: 0.95 },
+  { id: "CASE_SOLVED", label: "Case Closed", time: 3.25, reduced: 0.96 },
 ];
 
 /** Length of StoryController's timeline, in timeline seconds. */

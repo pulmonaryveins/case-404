@@ -483,38 +483,19 @@ export const assetManifest = {
     castShadow: true,
     receiveShadow: true,
   },
-  // mannequin_female_torso_stand.glb -> mannequin.glb (512px WebP, a background
-  // piece; 4.7 MB -> ~0.2 MB). Metres, 1.53 m tall, origin at the stand's foot.
-  // Against the back wall, left of the board and the desk: in the opening shot
-  // it stands in the wall space between the window's shadow and the board. Its
-  // front is the model's -X (the bust), turned out into the room, a touch
-  // toward the merch camera. Beside cabinet A, ~13 cm off its side, behind
-  // its front so the drawers clear it.
-  mannequin: {
-    id: "mannequin",
-    url: "/models/case-404/props/mannequin.glb",
+  // typewriter.glb (scripts/optimize-glb.mjs, no simplification: 6550
+  // triangles; six 2048px PNGs -> WebP, colour 1024px, normal and
+  // metal/roughness 512px to stay inside the texture budget; 24 MB -> 0.9 MB). 4.82 units
+  // wide; 0.085 makes it ~41 cm. Its own paper sheet (node paper_paper_0)
+  // is hidden: TypewriterStation feeds the printed resume out instead.
+  typewriter: {
+    id: "typewriter",
+    url: "/models/case-404/props/typewriter.glb",
     category: "props",
     preloadPriority: 3,
-    position: [-1.85, 0, -3.5],
-    // Turned to face the camera: 2.05 faces the opening shot, 1.95 the merch
-    // shot; 2.0 is square to both within 3 degrees.
-    rotation: [0, 2.0, 0],
-    scale: 1,
-    castShadow: true,
-    receiveShadow: true,
-  },
-  // case_boxes.glb -> case-boxes.glb (six 4096px PNGs -> 512px WebP, a
-  // background piece kept inside the texture budget; 110 MB -> ~0.4 MB). Six evidence boxes (three with lids), metres. Taken
-  // apart by CaseBoxes, which reads only the url, and restacked on and beside
-  // the merch cabinets.
-  caseBoxes: {
-    id: "caseBoxes",
-    url: "/models/case-404/props/case-boxes.glb",
-    category: "props",
-    preloadPriority: 3,
-    position: [-2.965, 0.012, -0.568],
-    rotation: [0, Math.PI / 2, 0],
-    scale: 1,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.085,
     castShadow: true,
     receiveShadow: true,
   },
@@ -616,8 +597,8 @@ export const assetManifest = {
   },
   // gramophone.glb (9.9K tris; maps 4096 -> colour 768, others 256, to fit
   // the texture budget). 168 units tall, feet at y -12.3, front (horn mouth,
-  // maker's plate) toward -z. At 0.00357 a 0.6 m gramophone, on merch
-  // cabinet A, by Gramophone (it plays /audio/cool-vibes.mp3, see
+  // maker's plate) toward -z. At 0.00357 a 0.6 m gramophone, set on the
+  // typewriter desk by Gramophone (it plays /audio/cool-vibes.mp3, see
   // gramophoneAudio).
   gramophone: {
     id: "gramophone",

@@ -28,8 +28,8 @@ function chapterAtTime(time: number): ChapterId {
   if (time < 0.5) return "EVIDENCE_BOARD";
   if (time < 1.1) return "SUBJECT_PROFILE";
   if (time < 1.95) return "DIGITAL_ARCHIVE";
-  if (time < 2.35) return "GRAPHIC_DESIGN";
-  return "MERCH";
+  if (time < 2.95) return "GRAPHIC_DESIGN";
+  return "CASE_SOLVED";
 }
 
 const chapterAt = (p: number) => chapterAtTime(p * END);
@@ -45,7 +45,7 @@ const REDUCED: { until: number; anchor: CameraAnchorId; chapter: ChapterId }[] =
   { until: 0.6, anchor: "dossierOpen", chapter: "SUBJECT_PROFILE" },
   { until: 0.77, anchor: "digitalArchive", chapter: "DIGITAL_ARCHIVE" },
   { until: 0.92, anchor: "posterWall", chapter: "GRAPHIC_DESIGN" },
-  { until: Infinity, anchor: "merchCorner", chapter: "MERCH" },
+  { until: Infinity, anchor: "caseSolved", chapter: "CASE_SOLVED" },
 ];
 const reducedBand = (p: number) => REDUCED.find((b) => p < b.until)!;
 
@@ -167,11 +167,11 @@ export function StoryController() {
     travel(["dossierOpen", "digitalArchive"], 1.0, 0.45);
     // Dwell at the terminal for the disks, then pan up to the poster wall.
     travel(["digitalArchive", "posterWall"], 1.75, 0.4);
-    // A beat on the posters, then back across the room to the left side: the
-    // merch cabinet and the mannequin.
-    travel(["posterWall", "merchApproach", "merchCorner"], 2.35, 0.65);
-    // Hold on the merch corner (the timeline runs on to END): arriving needs
-    // no precision, and the drawers get a still scene to be opened in.
+    // A beat on the posters, then the last move, back across the room to the
+    // left corner: the typewriter desk, where the case is closed (the chapter
+    // changes as the camera settles, and the typewriter starts printing).
+    travel(["posterWall", "cornerApproach", "caseSolved"], 2.35, 0.75);
+    // Hold there to the end: arriving needs no precision.
     tl.set({}, {}, END);
 
     return () => {

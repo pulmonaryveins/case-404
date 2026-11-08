@@ -3,25 +3,26 @@ import { useGLTF } from "@react-three/drei";
 import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { assetManifest } from "../../assets/assetManifest";
 
-/** The back wall's face (see RoomShell). */
-const WALL_Z = -3.8;
+/**
+ * The corner wall's face in the typewriter station's frame (TypewriterStation
+ * mounts this inside it, shifted back to the wall's own centre): the desk's
+ * half depth and its gap to the wall behind it (see RoomShell).
+ */
+const WALL_Z = -0.476;
 
 /**
- * Parked for now: not mounted (DetectiveOffice); add `<MedievalPaintings />`
- * back to hang them again.
- *
- * Two old paintings in gilt frames on the back wall, either side of the
- * evidence board, as a detective's office keeps old art it never looks at:
- * Bosch's crowd of jeering faces over the mannequin, and robed monks at work
- * in a hill landscape between the board and the archive corner. Both near
- * square (1.04 and 1.07 : 1). `height`
- * is the frame's height (the models are 1 m tall); `x`, `y` its centre.
+ * Two old paintings in gilt frames on the angled wall above the typewriter
+ * desk, as a detective's office keeps old art it never looks at: Bosch's
+ * crowd of jeering faces and robed monks at work in a hill landscape. Both
+ * near square (1.04 and 1.07 : 1). `height` is the frame's height (the models
+ * are 1 m tall); `x` (along the wall), `y` its centre.
  */
 const PAINTINGS = [
-  // Hung as a pair: same size, same height and the same distance either side
-  // of the board's centre (x 0), so their tops and bottoms line up. Bottoms at 1.55 m, just clear of the mannequin (1.53 m).
-  { node: "cuadro_8", x: -1.6, y: 1.8, height: 0.5 },
-  { node: "cuadro_12", x: 1.6, y: 1.8, height: 0.5 },
+  // Hung as a pair: same size, same height, the same distance either side of
+  // the wall's centre, their bottoms (1.30 m) clear of the gramophone's horn
+  // and the lamp on the desk below.
+  { node: "cuadro_8", x: -0.35, y: 1.56, height: 0.52 },
+  { node: "cuadro_12", x: 0.35, y: 1.56, height: 0.52 },
 ];
 
 /**

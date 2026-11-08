@@ -56,13 +56,6 @@ export const chapters: Chapter[] = [
     cameraAnchor: "posterWall",
   },
   {
-    id: "MERCH",
-    label: "Merch Locker",
-    order: 6.5,
-    zone: "creativeEvidence",
-    cameraAnchor: "merchCorner",
-  },
-  {
     id: "CREATIVE_EVIDENCE",
     label: "Creative Evidence",
     order: 7,
@@ -85,7 +78,7 @@ export const chapters: Chapter[] = [
   },
   {
     id: "CASE_SOLVED",
-    label: "Case Solved",
+    label: "Case Closed",
     order: 10,
     zone: "mainInvestigation",
     cameraAnchor: "caseSolved",

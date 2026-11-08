@@ -79,9 +79,10 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   digitalArchive: {
     id: "digitalArchive",
     // Pull back ~30% and centre slightly toward the terminal so the full
-    // casing and keyboard fit alongside the clickable floppy disks.
-    position: [1.56, 1.64, -1.8],
-    target: [2.52, 1.02, -2.96],
+    // casing and keyboard fit alongside the clickable floppy disks. Moved with
+    // the desk when it was slid along its wall (STATION_SLIDE).
+    position: [1.78, 1.64, -1.63],
+    target: [2.74, 1.02, -2.79],
     fov: 44,
   },
   // Square-on to the angled wall above the terminal, about 2 m out along its
@@ -95,25 +96,11 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     fov: 44,
   },
   // Crossing from the poster wall to the left side: back across the room,
-  // turning toward the merch corner on the way to the arrival shot.
-  merchApproach: {
-    id: "merchApproach",
+  // turning toward the typewriter corner on the way to the last shot.
+  cornerApproach: {
+    id: "cornerApproach",
     position: [0.1, 1.6, -1.2],
     target: [-1.5, 1.2, -3.0],
-    fov: DEFAULT_CAMERA.fov,
-  },
-  // The merch corner: the digital archive shot, mirrored. The camera looks
-  // square-on at the left angled wall (straight along its normal), 2.2 m out,
-  // as the archive shot does at the computer desk. The cabinet is flush to the
-  // middle of that wall and the mannequin to its right, both whole in the
-  // frame from a narrow 1.6:1 window to a wide 2.15:1 one. As in the archive
-  // shot, the wall's rounded ends sit near the frame's edges. Pulled back
-  // 0.4 m along that same line (and aimed 5 cm higher) so the gramophone on
-  // cabinet A is whole in frame too, horn and all.
-  merchCorner: {
-    id: "merchCorner",
-    position: [-0.76, 1.62, -1.0],
-    target: [-2.15, 0.85, -3.1],
     fov: DEFAULT_CAMERA.fov,
   },
   creativeEvidence: {
@@ -129,10 +116,16 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
     fov: DEFAULT_CAMERA.fov,
   },
   contact: { id: "contact", position: [0, 1.6, 4], target: [0, 1, 0], fov: DEFAULT_CAMERA.fov },
+  // The case closed: the typewriter desk in the back-left corner, square on
+  // (along the desk's front, TypewriterStation), from ~2 m (the live camera's
+  // fov is the opening shot's 40): the gramophone, the typed resume rising
+  // out of the typewriter and the lamp across the desk, the two paintings on
+  // the wall above, aimed a little right so the file cabinet left of the
+  // board closes the frame.
   caseSolved: {
     id: "caseSolved",
-    position: [0, 2.2, 9],
-    target: [0, 1, 0],
+    position: [-1.38, 1.7, -1.02],
+    target: [-2.58, 1.2, -2.66],
     fov: DEFAULT_CAMERA.fov,
   },
 };

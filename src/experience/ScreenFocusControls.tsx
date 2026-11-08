@@ -18,7 +18,8 @@ export function ScreenFocusControls() {
     const since = performance.now();
     const onClick = (e: MouseEvent) => {
       if (performance.now() - since < 250) return;
-      if ((e.target as Element | null)?.closest?.("button, a[href]")) return;
+      // Controls, and anything in a dialog over the close-up (the resume), keep their clicks.
+      if ((e.target as Element | null)?.closest?.("button, a[href], [role='dialog']")) return;
       setFocused(false);
     };
     window.addEventListener("click", onClick);

@@ -64,8 +64,8 @@ function grainMask(size: number) {
 }
 
 /**
- * The back of a print: plain off-white stock with its number and the facts
- * about the piece written on it in pencil, and in the space below a rough
+ * The back of a print: plain off-white stock with the facts about the piece
+ * written on it in pencil, and in the space below a rough
  * thumbnail of the layout, as a designer scribbles on the back of a proof.
  *
  * The pencil is laid down on its own layer: thin, light grey, a second faint
@@ -73,12 +73,12 @@ function grainMask(size: number) {
  * it (specks, and short streaks along the pencil's drag), and multiplied onto
  * the paper so the stock's grain shows through.
  */
-export function paintPosterBack(piece: DesignPiece, number: number, size = 1024) {
+export function paintPosterBack(piece: DesignPiece, seed: number, size = 1024) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d")!;
   const k = size / 768;
-  const r = rng(101 + number * 31);
+  const r = rng(101 + seed * 31);
 
   // The stock: off-white with fibres and a little handling grime.
   ctx.fillStyle = PAPER;
@@ -134,25 +134,7 @@ export function paintPosterBack(piece: DesignPiece, number: number, size = 1024)
     lc.globalAlpha = 1;
   };
 
-  // Its number, circled, as on the sticky note on the front; the circle is
-  // drawn round however wide the number is.
-  write(`#${number}`, m, 110 * k, 60 * k, -0.04);
-  lc.font = `${60 * k}px ${HAND}`;
-  const numberWidth = lc.measureText(`#${number}`).width;
-  lc.lineWidth = 1.8 * k;
-  lc.beginPath();
-  lc.ellipse(
-    m + numberWidth / 2,
-    88 * k,
-    numberWidth / 2 + 24 * k,
-    44 * k,
-    -0.08,
-    0.2,
-    Math.PI * 2.05,
-  );
-  lc.stroke();
-
-  let y = 210 * k;
+  let y = 130 * k;
   lc.font = `${48 * k}px ${HAND}`;
   for (const line of wrap(lc, piece.title, width)) {
     write(line, m, y, 48 * k, -0.012);
@@ -235,35 +217,13 @@ export function paintPosterBack(piece: DesignPiece, number: number, size = 1024)
   // shared grain mask, mirrored differently per print so no two backs match.
   lc.globalCompositeOperation = "destination-out";
   lc.save();
-  lc.translate(number % 2 ? size : 0, number % 4 >= 2 ? size : 0);
-  lc.scale(number % 2 ? -1 : 1, number % 4 >= 2 ? -1 : 1);
+  lc.translate(seed % 2 ? size : 0, seed % 4 >= 2 ? size : 0);
+  lc.scale(seed % 2 ? -1 : 1, seed % 4 >= 2 ? -1 : 1);
   lc.drawImage(grainMask(size), 0, 0);
   lc.restore();
 
   ctx.globalCompositeOperation = "multiply";
   ctx.drawImage(layer, 0, 0);
   ctx.globalCompositeOperation = "source-over";
-  return canvas;
-}
-
-/** A yellow sticky note with a number scrawled on it in marker. */
-export function paintStickyNote(number: number, size = 128) {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const g = ctx.createLinearGradient(0, 0, 0, size);
-  g.addColorStop(0, "#f2d45c");
-  g.addColorStop(0.18, "#f6dc6a");
-  g.addColorStop(1, "#e9c64c");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  // The gummed strip along the top reads a touch darker.
-  ctx.fillStyle = "rgba(150,110,20,0.12)";
-  ctx.fillRect(0, 0, size, size * 0.16);
-  ctx.fillStyle = "#1d1a16";
-  ctx.font = `bold ${size * 0.5}px ${HAND}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(String(number), size * 0.5, size * 0.58);
   return canvas;
 }
