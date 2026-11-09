@@ -10,50 +10,105 @@ import { downloadResume } from "../experience/resume/resumeFile";
 import styles from "./MobileSite.module.css";
 
 /**
- * The portfolio for phones and tablets: the same case file as the 3D office,
- * as one plain scrolling page built from the same data, with a note that the
- * office itself is on desktop. Images and videos load only as they are reached.
+ * The portfolio for phones and tablets, built as a filing drawer: the case
+ * file's cover, then one colour-coded folder per kind of evidence. Each
+ * folder's index tab pins to the top as it comes up and the folder slides over
+ * the last. Built from the same data as the 3D office. Images and videos load
+ * only as they are reached.
  */
 const CATEGORIES: ProjectCategory[] = ["Development", "UI/UX", "Video Editing"];
+/** Clips shown per project: a playlist can hold more than a phone needs. */
+const MAX_CLIPS = 6;
+/** Tools listed per project: the main stack, not the whole package file. */
+const MAX_TOOLS = 6;
 
 /** Projects still holding placeholder copy stay off the page. */
 const finished = projects.filter((p) => !/placeholder/i.test(p.description));
+/** Degrees only, as on the resume. */
+const degrees = education.filter((e) => /bachelor|associate|master|doctor/i.test(e.credential));
 const email = /placeholder|example\.com/i.test(contact.email) ? null : contact.email;
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Folder({
+  id,
+  tone,
+  title,
+  note,
+  children,
+}: {
+  id: string;
+  tone: string;
+  title: string;
+  note?: string;
+  children: ReactNode;
+}) {
   return (
-    <section className={styles.section}>
-      <h2 className={styles.heading}>{title}</h2>
-      {children}
+    <section id={id} className={`${styles.folder} ${tone}`}>
+      <div className={styles.tabBar}>
+        <h2 className={styles.tab}>
+          {title}
+          {note && <span className={styles.tabNote}>{note}</span>}
+        </h2>
+      </div>
+      <div className={styles.folderBody}>{children}</div>
     </section>
   );
 }
 
-function ProjectCard({ project }: { project: Project }) {
-  const clip = projectClips(project)[0];
-  const shot = project.screenshots?.[0];
+/** One project's pictures or clips, swiped sideways; the next one shows at the edge. */
+function Rail({ project }: { project: Project }) {
+  const clips = projectClips(project).slice(0, MAX_CLIPS);
+  const shots = project.screenshots ?? [];
+  const count = clips.length || shots.length;
+  if (!count) return null;
+  return (
+    <div
+      className={styles.rail}
+      data-single={count === 1}
+      tabIndex={count > 1 ? 0 : undefined}
+      role="group"
+      aria-label={`${project.title} media`}
+    >
+      {clips.map((clip) => (
+        <figure key={clip.src} className={styles.frame}>
+          <video
+            className={styles.media}
+            // Without a poster, the frame a second in stands for the clip.
+            src={clip.poster ? clip.src : `${clip.src}#t=1`}
+            poster={clip.poster || undefined}
+            preload={clip.poster ? "none" : "metadata"}
+            controls
+            playsInline
+          />
+          {clips.length > 1 && <figcaption className={styles.caption}>{clip.title}</figcaption>}
+        </figure>
+      ))}
+      {clips.length === 0 &&
+        shots.map((shot) => (
+          <figure key={shot.src} className={styles.frame}>
+            <img className={styles.media} src={shot.src} alt={shot.caption} loading="lazy" />
+            <figcaption className={styles.caption}>{shot.caption}</figcaption>
+          </figure>
+        ))}
+    </div>
+  );
+}
+
+function ProjectFile({ project }: { project: Project }) {
+  const type = project.facts?.find(([label]) => label === "Type")?.[1];
   const links = [
     ...(project.link ? [{ label: "Visit project", url: project.link }] : []),
     ...(project.links ?? []),
   ];
   return (
-    <article className={styles.card}>
-      {clip ? (
-        <video
-          className={styles.media}
-          src={clip.src}
-          poster={clip.poster || undefined}
-          preload={clip.poster ? "none" : "metadata"}
-          controls
-          playsInline
-        />
-      ) : (
-        shot && <img className={styles.media} src={shot.src} alt={shot.caption} loading="lazy" />
-      )}
-      <div className={styles.cardBody}>
-        <h4 className={styles.cardTitle}>{project.title}</h4>
-        <p className={styles.text}>{project.tagline ?? project.description}</p>
-        {project.tools.length > 0 && <p className={styles.muted}>{project.tools.join(", ")}</p>}
+    <article className={styles.sheet}>
+      <Rail project={project} />
+      <div className={styles.sheetText}>
+        {type && <p className={styles.typed}>{type}</p>}
+        <h4 className={styles.projectTitle}>{project.title}</h4>
+        <p className={styles.body}>{project.tagline ?? project.description}</p>
+        {project.tools.length > 0 && (
+          <p className={styles.tools}>{project.tools.slice(0, MAX_TOOLS).join(" / ")}</p>
+        )}
         {links.length > 0 && (
           <p className={styles.links}>
             {links.map((link) => (
@@ -75,128 +130,129 @@ export function MobileSite() {
     // A frame first, so the button can say so before the page is painted.
     requestAnimationFrame(() => void downloadResume().finally(() => setSaving(false)));
   };
+  const resumeLabel = saving ? "Preparing PDF…" : "Download resume";
+  const names = profile.name.join(" ").split(" ");
 
   return (
     <main className={styles.page}>
-      <header className={styles.hero}>
-        <div className={styles.brand}>
+      <header className={styles.cover}>
+        <p className={styles.brand}>
           <span className={styles.logo} aria-hidden />
-          <span className={styles.caseNo}>Case 404</span>
+          Case 404
+        </p>
+        <h1 className={styles.name}>
+          {names.map((word) => (
+            <span key={word}>{word} </span>
+          ))}
+        </h1>
+        <div className={styles.print}>
+          <img src="/images/profile/subject-field.jpg" alt="Vince, behind a camera" />
+          <span className={styles.clip} aria-hidden />
+          <span className={styles.stamp} aria-hidden>
+            Identified
+          </span>
         </div>
-        <h1 className={styles.name}>{profile.name.join(" ")}</h1>
-        <p className={styles.roles}>{profile.roles.join("  ·  ")}</p>
-        <p className={styles.muted}>{profile.location}</p>
+        <p className={styles.roles}>
+          {profile.roles.join(" / ")}
+          <br />
+          {profile.location}
+        </p>
         <p className={styles.about}>{profile.about}</p>
-        <button type="button" className={styles.button} onClick={saveResume} disabled={saving}>
-          {saving ? "Preparing PDF…" : "Download resume"}
-        </button>
+        <div className={styles.actions}>
+          <a className={styles.primary} href="#work">
+            See the work
+          </a>
+          <button type="button" className={styles.secondary} onClick={saveResume} disabled={saving}>
+            {resumeLabel}
+          </button>
+        </div>
+        <p className={styles.desktopNote}>
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M3 5h18v11H3zM9 20h6M12 16v4" />
+          </svg>
+          The full 3D experience is available on desktop.
+        </p>
       </header>
 
-      <aside className={styles.notice}>
-        <svg viewBox="0 0 24 24" className={styles.noticeIcon} aria-hidden>
-          <path
-            d="M3 5h18v11H3zM9 20h6M12 16v4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <p>
-          <strong>The full 3D experience is available on desktop.</strong> Open this site on a
-          computer to investigate the detective&apos;s office.
-        </p>
-      </aside>
-
-      <Section title="Education">
-        {education.map((school) => (
-          <div key={school.id} className={styles.entry}>
-            <h3 className={styles.entryTitle}>{school.institution}</h3>
-            <p className={styles.text}>{school.credential}</p>
-            <p className={styles.date}>{school.period}</p>
-            {school.detail && <p className={styles.muted}>{school.detail}</p>}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Experience">
-        {experienceEntries.map((job) => (
-          <div key={job.id} className={styles.entry}>
-            <h3 className={styles.entryTitle}>{job.role}</h3>
-            <p className={styles.text}>{job.organization}</p>
-            <p className={styles.date}>{job.period}</p>
-            {job.summary && <p className={styles.muted}>{job.summary}</p>}
-            {job.bullets && (
-              <ul className={styles.list}>
-                {job.bullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Projects">
+      <Folder id="work" tone={styles.green} title="Work" note={`${finished.length} files`}>
         {CATEGORIES.map((category) => {
           const items = finished.filter((p) => p.category === category);
           return (
             items.length > 0 && (
-              <div key={category}>
-                <h3 className={styles.group}>{category}</h3>
-                <div className={styles.grid}>
-                  {items.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
-                  ))}
-                </div>
+              <div key={category} className={styles.group}>
+                <h3 className={styles.groupTitle}>{category}</h3>
+                {items.map((project) => (
+                  <ProjectFile key={project.id} project={project} />
+                ))}
               </div>
             )
           );
         })}
-      </Section>
+      </Folder>
 
-      <Section title="Graphic design">
-        <div className={styles.designGrid}>
+      <Folder
+        id="design"
+        tone={styles.oxblood}
+        title="Graphic design"
+        note={`${designWork.length} prints`}
+      >
+        <div className={styles.prints}>
           {designWork.map((piece) => (
-            <img
-              key={piece.file}
-              className={styles.design}
-              src={designWorkUrl(piece.file)}
-              alt={piece.title}
-              loading="lazy"
-            />
+            <figure key={piece.file} className={styles.poster}>
+              <img src={designWorkUrl(piece.file)} alt={piece.title} loading="lazy" />
+              <figcaption>{piece.title}</figcaption>
+            </figure>
           ))}
         </div>
-      </Section>
+      </Folder>
 
-      <Section title="Skills">
-        {profileSkills.map((skill) => (
-          <div key={skill.label} className={styles.entry}>
-            <h3 className={styles.date}>{skill.label}</h3>
-            <p className={styles.text}>{skill.value}</p>
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Certifications">
-        <div className={styles.grid}>
+      <Folder id="record" tone={styles.salmon} title="Record">
+        <article className={`${styles.sheet} ${styles.sheetText}`}>
+          <h3 className={styles.sheetHeading}>Education</h3>
+          {degrees.map((school) => (
+            <div key={school.id} className={styles.entry}>
+              <p className={styles.typed}>{school.period}</p>
+              <h4 className={styles.entryTitle}>{school.credential}</h4>
+              <p className={styles.body}>{school.institution}</p>
+            </div>
+          ))}
+          <h3 className={styles.sheetHeading}>Experience</h3>
+          {experienceEntries.map((job) => (
+            <div key={job.id} className={styles.entry}>
+              <p className={styles.typed}>{job.period}</p>
+              <h4 className={styles.entryTitle}>{job.role}</h4>
+              <p className={styles.body}>{job.organization}</p>
+            </div>
+          ))}
+          <h3 className={styles.sheetHeading}>Skills</h3>
+          {profileSkills.map((skill) => (
+            <div key={skill.label} className={styles.entry}>
+              <p className={styles.typed}>{skill.label}</p>
+              <p className={styles.body}>{skill.value}</p>
+            </div>
+          ))}
+        </article>
+        <h3 className={styles.groupTitle}>Certifications</h3>
+        <div className={styles.rail} tabIndex={0} role="group" aria-label="Certifications">
           {certificates.map((cert) => (
-            <article key={cert.id} className={styles.card}>
-              <img className={styles.media} src={cert.image} alt={cert.title} loading="lazy" />
-              <div className={styles.cardBody}>
-                <h4 className={styles.cardTitle}>{cert.title}</h4>
-                <p className={styles.muted}>
-                  {cert.issuer} · {cert.year}
-                </p>
-              </div>
-            </article>
+            <figure key={cert.id} className={`${styles.frame} ${styles.certificate}`}>
+              <img src={cert.image} alt={cert.title} loading="lazy" />
+              <figcaption>
+                {cert.title}
+                <br />
+                {cert.issuer}, {cert.year}
+              </figcaption>
+            </figure>
           ))}
         </div>
-      </Section>
+      </Folder>
 
-      {(email || contact.links.length > 0) && (
-        <Section title="Contact">
+      <Folder id="resume" tone={styles.buff} title="Resume">
+        <p className={styles.closing}>Everything in this file, on one page.</p>
+        <button type="button" className={styles.primary} onClick={saveResume} disabled={saving}>
+          {resumeLabel}
+        </button>
+        {(email || contact.links.length > 0) && (
           <p className={styles.links}>
             {email && <a href={`mailto:${email}`}>{email}</a>}
             {contact.links.map((link) => (
@@ -205,8 +261,8 @@ export function MobileSite() {
               </a>
             ))}
           </p>
-        </Section>
-      )}
+        )}
+      </Folder>
     </main>
   );
 }

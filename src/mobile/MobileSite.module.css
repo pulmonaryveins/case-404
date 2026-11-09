@@ -1,228 +1,506 @@
-/* The case file as a plain page: dark, tungsten accents, typewriter headings. */
+/*
+ * A filing drawer. Six colours, all from the folders themselves; condensed
+ * stencil capitals for what is written on the files, a typewriter for what is
+ * filed on them, a book serif to read.
+ */
 .page {
+  --ink: #1e1a15;
+  --paper: #f0e7d3;
+  --buff: #ddbe85;
+  --green: #8e9673;
+  --oxblood: #7a2e25;
+  --salmon: #d9a58a;
+  --display: "Big Shoulders Display", Impact, sans-serif;
+  --typed: "Courier Prime", "Courier New", monospace;
+  --serif: Newsreader, Georgia, serif;
+  --gutter: 16px;
+  /* Paper fibre, drawn once and tiled. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .13 0 0 0 0 .05 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+
   width: min(720px, 100%);
   margin: 0 auto;
-  padding: 28px 16px 56px;
-  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: var(--serif);
 }
 
-.hero {
-  padding-bottom: 24px;
+.page a:focus-visible,
+.page button:focus-visible,
+.page [tabindex]:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* ---- The cover ---- */
+
+.cover {
+  position: relative;
+  overflow: clip;
+  padding: 20px var(--gutter) 28px;
+  background: var(--grain), var(--buff);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-family: var(--typed);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .logo {
-  width: 44px;
+  width: 38px;
   aspect-ratio: 1;
-  background: var(--color-tungsten);
+  background: var(--ink);
   mask: url("/logo-mark.png") center / contain no-repeat;
 }
 
-.caseNo {
-  color: var(--color-tungsten);
-  font-family: var(--font-terminal);
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 0.3em;
+/* Stencilled across the whole file, each name a line, to the width of the page. */
+.name {
+  margin: 0;
+  font-family: var(--display);
+  font-size: min(24vw, 172px);
+  font-weight: 800;
+  line-height: 0.84;
   text-transform: uppercase;
 }
 
-.name {
-  margin: 0 0 10px;
-  font-family: var(--font-terminal);
-  font-size: clamp(1.75rem, 8.5vw, 2.5rem);
-  line-height: 1.15;
+.name span {
+  display: block;
+}
+
+/* The print, clipped to the file under the name, off square. */
+.print {
+  position: relative;
+  width: 74%;
+  margin: 18px 0 0 auto;
+  padding: 9px 9px 30px;
+  background: #fbf6ea;
+  box-shadow: 0 10px 24px rgb(30 26 21 / 38%);
+  transform: rotate(2.4deg);
+}
+
+.print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+}
+
+/* A wire clip, drawn. */
+.clip {
+  position: absolute;
+  top: -14px;
+  left: 26px;
+  width: 15px;
+  height: 52px;
+  border: 2px solid #6d675c;
+  border-bottom-color: #8b8476;
+  border-radius: 8px;
+}
+
+.clip::after {
+  content: "";
+  position: absolute;
+  inset: 7px 2px 10px;
+  border: 2px solid #6d675c;
+  border-top: 0;
+  border-radius: 0 0 5px 5px;
+}
+
+.stamp {
+  position: absolute;
+  right: -2%;
+  bottom: 5%;
+  padding: 3px 10px 0;
+  border: 3px solid var(--oxblood);
+  color: var(--oxblood);
+  background: rgb(251 246 234 / 72%);
+  font-family: var(--typed);
+  font-size: clamp(1.25rem, 6.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(-9deg);
+  animation: stamped 280ms 500ms cubic-bezier(0.3, 0, 0.3, 1) both;
+}
+
+@keyframes stamped {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.9);
+  }
 }
 
 .roles {
-  margin: 0 0 4px;
-  color: var(--color-tungsten);
-  font-family: var(--font-terminal);
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 0.08em;
+  margin: 26px 0 0;
+  font-family: var(--typed);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-transform: uppercase;
 }
 
 .about {
-  margin: 18px 0 22px;
-  font-family: var(--font-display);
-  font-size: 1.08rem;
-  line-height: 1.6;
+  margin: 14px 0 22px;
+  font-size: 1.28rem;
+  line-height: 1.34;
 }
 
-.button {
-  min-height: 46px;
-  padding: 0 20px;
-  color: var(--color-black);
-  background: var(--color-tungsten);
-  border: 0;
-  font-family: var(--font-terminal);
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.button:disabled {
-  opacity: 0.65;
-}
-
-.notice {
+.actions {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 14px;
-  background: var(--color-charcoal);
-  border: 1px solid var(--color-border);
-  border-left: 2px solid var(--color-tungsten);
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.notice p {
-  margin: 0;
-}
-
-.notice strong {
-  color: var(--color-text);
-}
-
-.noticeIcon {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  color: var(--color-tungsten);
-}
-
-.section {
-  margin-top: 40px;
-}
-
-.heading {
-  margin: 0 0 18px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-tungsten);
-  font-family: var(--font-terminal);
+.primary,
+.secondary {
+  display: inline-flex;
+  flex: 1 1 150px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 2px 16px 0;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  font-family: var(--typed);
   font-size: 0.95rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.group {
-  margin: 24px 0 12px;
-  color: var(--color-text-muted);
-  font-family: var(--font-terminal);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.primary {
+  color: var(--paper);
+  background: var(--ink);
 }
 
-.entry {
-  margin-bottom: 20px;
+.secondary {
+  color: var(--ink);
+  background: none;
 }
 
-.entryTitle {
-  margin: 0 0 3px;
-  font-family: var(--font-display);
-  font-size: 1.08rem;
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
 }
 
-.text {
+.desktopNote {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 18px 0 0;
+  font-family: var(--typed);
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.desktopNote svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- The folders ---- */
+
+.green {
+  --folder: var(--green);
+  --behind: var(--buff);
+  --tab-at: 16px;
+}
+
+.oxblood {
+  --folder: var(--oxblood);
+  --behind: var(--green);
+  --tab-at: 22%;
+}
+
+.salmon {
+  --folder: var(--salmon);
+  --behind: var(--oxblood);
+  --tab-at: 56%;
+}
+
+.buff {
+  --folder: var(--buff);
+  --behind: var(--salmon);
+  --tab-at: 66%;
+}
+
+.folder {
+  position: relative;
+}
+
+/*
+ * The strip behind a tab is the previous folder's colour, so at rest the tab
+ * pokes up from the folder before it, and pinned it still reads as a tab.
+ */
+.tabBar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 8px 0 0 var(--tab-at);
+  background: var(--behind);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
   margin: 0;
-  line-height: 1.5;
+  padding: 6px 16px 2px;
+  border-radius: 7px 7px 0 0;
+  background: var(--folder);
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.muted {
-  margin: 6px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
+.tabNote {
+  font-family: var(--typed);
+  font-size: 0.74rem;
+  font-weight: 400;
+  text-transform: none;
 }
 
-.date {
-  margin: 5px 0 0;
-  color: var(--color-tungsten);
-  font-family: var(--font-terminal);
+.oxblood .tab,
+.oxblood .groupTitle {
+  color: var(--paper);
+}
+
+.folderBody {
+  padding: 20px var(--gutter) 44px;
+  background: var(--grain), var(--folder);
+}
+
+.group + .group {
+  margin-top: 34px;
+}
+
+.groupTitle {
+  margin: 0 0 12px;
+  font-family: var(--typed);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ---- Sheets filed in a folder ---- */
+
+.sheet {
+  margin-bottom: 18px;
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: 0 2px 7px rgb(30 26 21 / 28%);
+}
+
+.sheetText {
+  padding: 15px 16px 18px;
+}
+
+.sheet > .sheetText:only-child {
+  padding-top: 18px;
+}
+
+.typed {
+  margin: 0;
+  font-family: var(--typed);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.projectTitle {
+  margin: 3px 0 7px;
+  font-family: var(--display);
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 0.98;
+  text-transform: uppercase;
+}
+
+.body {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.34;
+}
+
+.tools {
+  margin: 10px 0 0;
+  font-family: var(--typed);
   font-size: 0.78rem;
-  letter-spacing: 0.06em;
-}
-
-.list {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
-}
-
-.grid {
-  display: grid;
-  gap: 14px;
-}
-
-.card {
-  overflow: hidden;
-  background: var(--color-charcoal);
-  border: 1px solid var(--color-border);
-}
-
-.media {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: var(--color-black);
-}
-
-.cardBody {
-  padding: 14px;
-}
-
-.cardTitle {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
+  line-height: 1.45;
 }
 
 .links {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
-  margin: 10px 0 0;
+  gap: 0 18px;
+  margin: 8px 0 -6px;
 }
 
 .links a {
-  padding: 8px 0;
-  color: var(--color-tungsten);
+  display: inline-block;
+  padding: 11px 0;
+  color: var(--oxblood);
+  font-family: var(--typed);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-underline-offset: 3px;
 }
 
-.designGrid {
+/* ---- Swiped pictures ---- */
+
+.rail {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.frame {
+  flex: 0 0 90%;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.rail[data-single="true"] .frame {
+  flex-basis: 100%;
+}
+
+.media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--ink);
+}
+
+.caption {
+  padding: 7px 16px 0;
+  font-family: var(--typed);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.certificate img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.414;
+  object-fit: cover;
+  box-shadow: 0 2px 7px rgb(30 26 21 / 28%);
+}
+
+.certificate figcaption {
+  margin-top: 9px;
+  font-family: var(--typed);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* ---- Design prints: the first one large, the rest in pairs ---- */
+
+.prints {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 16px 10px;
 }
 
-.design {
+.poster {
+  margin: 0;
+}
+
+.poster:first-child,
+.poster:last-child:nth-child(even) {
+  grid-column: 1 / -1;
+}
+
+.poster img {
   display: block;
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: var(--color-charcoal);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+}
+
+.poster figcaption {
+  margin-top: 7px;
+  color: var(--paper);
+  font-family: var(--typed);
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+/* ---- The record ---- */
+
+.sheetHeading {
+  margin: 28px 0 14px;
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sheetHeading:first-child {
+  margin-top: 0;
+}
+
+.entry {
+  margin-bottom: 15px;
+}
+
+.entry:last-child {
+  margin-bottom: 0;
+}
+
+.entryTitle {
+  margin: 2px 0 1px;
+  font-size: 1.22rem;
+  font-weight: 400;
+  line-height: 1.22;
+}
+
+.closing {
+  margin: 4px 0 18px;
+  font-size: 1.4rem;
+  line-height: 1.25;
+}
+
+.folderBody > .primary {
+  width: 100%;
+}
+
+.buff .folderBody {
+  padding-bottom: calc(44px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 600px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .frame {
+    flex-basis: 70%;
   }
 
-  .designGrid {
+  .prints {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .poster:last-child:nth-child(even) {
+    grid-column: auto;
   }
 }
