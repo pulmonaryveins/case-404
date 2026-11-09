@@ -10,8 +10,9 @@ import styles from "./IntroSubtitles.module.css";
  * typewriter, a key's strike for each character and the carriage returned at
  * each line's end, the bell on the last. Each line holds long enough to read,
  * then gives way to the next. Never names the subject (the case is to find out
- * who they are). Off: hidden and silent, not paused. Skip ends it, and so
- * does leaving the opening shot. Reduced motion: each line appears whole.
+ * who they are). Off: hidden and silent, not paused. It runs to its end while
+ * the visitor scrolls; Skip ends it sooner. Reduced motion: each line appears
+ * whole.
  *
  * Screen readers get each whole line once (a hidden live region), not every
  * character as it types.
@@ -25,11 +26,15 @@ const LINES = [
 ];
 /** After the scene is ready: the loading screen's fade, then a beat. */
 const START_MS = 1600;
-/** Per character: a typist's pace, uneven, with a breath at punctuation. */
+/**
+ * Per character: a quick typist on a manual machine (about 12 keys a second,
+ * as fast as type bars can go without jamming), uneven, a little longer after
+ * a word, with a breath at punctuation.
+ */
 const charMs = (char: string) =>
-  34 + Math.random() * 26 + (/[.:]/.test(char) ? 260 : char === "," ? 150 : 0);
+  62 + Math.random() * 44 + (/[.:]/.test(char) ? 280 : char === "," ? 170 : char === " " ? 35 : 0);
 /** Once typed, a line is held for a base time plus a little per character. */
-const holdMs = (line: string) => 1600 + line.length * 28;
+const holdMs = (line: string) => 1300 + line.length * 18;
 /** The gap between lines, while one fades out and the next in. */
 const GAP_MS = 500;
 
@@ -86,19 +91,6 @@ export function IntroSubtitles({ start }: { start: boolean }) {
     setShown(false);
     setFinished(true);
   };
-
-  // It belongs to the opening shot: once the visitor moves on, it ends.
-  useEffect(
-    () =>
-      useExperienceStore.subscribe((s) => {
-        if (s.currentChapter !== "CASE_OPENED") {
-          stop.current();
-          setShown(false);
-          setFinished(true);
-        }
-      }),
-    [],
-  );
 
   if (finished && !shown) return null;
   const line = index >= 0 ? LINES[index] : "";

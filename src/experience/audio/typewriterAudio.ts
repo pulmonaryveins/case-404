@@ -18,18 +18,51 @@ const BELL_CHANCE = 0.35;
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
-/** A key: the type bar's slug striking the platen, the frame's knock, the escapement. */
-function strike(e: Engine, t: number, peak: number) {
-  hiss(e, t, 0.018, "bandpass", rand(2600, 3600), 1800, 1.4, peak, 0.001);
-  tone(e, t, "triangle", rand(1150, 1400), 700, 0.012, peak * 0.22);
-  tone(e, t + 0.002, "sine", rand(170, 210), 90, 0.05, peak * 0.55);
-  hiss(e, t + rand(0.028, 0.04), 0.01, "highpass", 5200, 5200, 0.8, peak * 0.28, 0.001);
+/** Struck metal: full level at once, ringing away at `f` over `decay`. */
+function ring(e: Engine, t: number, f: number, decay: number, peak: number) {
+  const o = e.ctx.createOscillator();
+  o.frequency.value = f;
+  const g = e.ctx.createGain();
+  g.gain.setValueAtTime(peak, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  o.connect(g).connect(e.bus);
+  o.start(t);
+  o.stop(t + decay + 0.01);
 }
 
-/** The space bar: no type bar, just the escapement and a soft knock. */
+/** The carriage stepping on one space: the escapement's small, bright tick and rattle. */
+function escapement(e: Engine, t: number, peak: number) {
+  hiss(e, t, 0.008, "bandpass", 4200, 3400, 3, peak * 0.42, 0.0005);
+  ring(e, t, rand(880, 1040), 0.02, peak * 0.12);
+}
+
+/**
+ * A key, in the order the machine makes it: the key going down, the slug
+ * cracking onto the platen, the type bar and frame ringing (inharmonic, and
+ * pitched by `bar`: no two type bars are the same), the rubber platen's knock,
+ * and the escapement a moment later.
+ */
+function strike(e: Engine, t: number, peak: number, bar = rand(0.93, 1.07)) {
+  hiss(e, t, 0.012, "bandpass", 900, 700, 2, peak * 0.18, 0.001);
+  const hit = t + 0.012;
+  hiss(e, hit, 0.007, "highpass", 1500, 1500, 0.7, peak * 1.1, 0.0005);
+  ring(e, hit, 1720 * bar, 0.045, peak * 0.26);
+  ring(e, hit, 2870 * bar, 0.03, peak * 0.2);
+  ring(e, hit, 4310 * bar, 0.018, peak * 0.13);
+  tone(e, hit, "sine", 300, 120, 0.05, peak * 0.6);
+  escapement(e, hit + rand(0.03, 0.045), peak);
+}
+
+/** The space bar: no type bar, only its soft knock and the escapement. */
 function space(e: Engine, t: number, peak: number) {
-  tone(e, t, "sine", 150, 80, 0.04, peak * 0.4);
-  hiss(e, t + 0.012, 0.01, "highpass", 5000, 5000, 0.8, peak * 0.3, 0.001);
+  tone(e, t, "sine", 170, 90, 0.04, peak * 0.45);
+  escapement(e, t + 0.016, peak * 0.85);
+}
+
+/** The shift key lifting the type basket: a heavy clunk just before a capital. */
+function shift(e: Engine, t: number, peak: number) {
+  tone(e, t, "sine", 190, 80, 0.07, peak * 0.5);
+  hiss(e, t, 0.02, "bandpass", 700, 450, 1.5, peak * 0.3, 0.001);
 }
 
 /** The margin bell: a small struck bell, two inharmonic partials ringing out. */
@@ -49,10 +82,12 @@ function carriageReturn(e: Engine, t: number, dur: number, level = 1) {
   const stop = t + 0.05 + dur * 0.7;
   tone(e, stop, "sine", 140, 60, 0.12, 0.55 * level);
   hiss(e, stop, 0.05, "bandpass", 1800, 900, 1.5, 0.3 * level, 0.001);
+  ring(e, stop, 1240, 0.09, 0.14 * level);
+  ring(e, stop, 2210, 0.06, 0.09 * level);
 }
 
 /** How loud the briefing subtitles type, next to the printing machine. */
-const SUBTITLE_LEVEL = 0.55;
+const SUBTITLE_LEVEL = 0.85;
 
 export const typewriterAudio = {
   /** One line over `seconds`: typing, sometimes the bell, then the return. */
@@ -103,8 +138,14 @@ export const typewriterAudio = {
     const e = get(false);
     if (!e) return;
     const t = e.ctx.currentTime + 0.005;
-    if (char === " ") space(e, t, rand(0.5, 0.65) * SUBTITLE_LEVEL);
-    else strike(e, t, rand(0.55, 0.8) * SUBTITLE_LEVEL);
+    const peak = rand(0.6, 0.85) * SUBTITLE_LEVEL;
+    if (char === " ") return space(e, t, peak);
+    // Capitals need the shift held down, so the basket lifts first.
+    const capital = /[A-Z]/.test(char);
+    if (capital) shift(e, t, peak);
+    // Each character keeps its own type bar's pitch, with a little play in it.
+    const bar = 0.93 + (char.charCodeAt(0) % 13) * 0.0115 + rand(-0.006, 0.006);
+    strike(e, t + (capital ? 0.03 : 0), peak, bar);
   },
 
   /** A briefing line finished: the return, and on the last line the bell first. */

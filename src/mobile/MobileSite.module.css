@@ -1,0 +1,228 @@
+/* The case file as a plain page: dark, tungsten accents, typewriter headings. */
+.page {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 28px 16px 56px;
+  overflow-wrap: anywhere;
+}
+
+.hero {
+  padding-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.logo {
+  width: 44px;
+  aspect-ratio: 1;
+  background: var(--color-tungsten);
+  mask: url("/logo-mark.png") center / contain no-repeat;
+}
+
+.caseNo {
+  color: var(--color-tungsten);
+  font-family: var(--font-terminal);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.name {
+  margin: 0 0 10px;
+  font-family: var(--font-terminal);
+  font-size: clamp(1.75rem, 8.5vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.roles {
+  margin: 0 0 4px;
+  color: var(--color-tungsten);
+  font-family: var(--font-terminal);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}
+
+.about {
+  margin: 18px 0 22px;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.button {
+  min-height: 46px;
+  padding: 0 20px;
+  color: var(--color-black);
+  background: var(--color-tungsten);
+  border: 0;
+  font-family: var(--font-terminal);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.button:disabled {
+  opacity: 0.65;
+}
+
+.notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  background: var(--color-charcoal);
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-tungsten);
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.notice strong {
+  color: var(--color-text);
+}
+
+.noticeIcon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--color-tungsten);
+}
+
+.section {
+  margin-top: 40px;
+}
+
+.heading {
+  margin: 0 0 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-tungsten);
+  font-family: var(--font-terminal);
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.group {
+  margin: 24px 0 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-terminal);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.entry {
+  margin-bottom: 20px;
+}
+
+.entryTitle {
+  margin: 0 0 3px;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+}
+
+.text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.muted {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.date {
+  margin: 5px 0 0;
+  color: var(--color-tungsten);
+  font-family: var(--font-terminal);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  overflow: hidden;
+  background: var(--color-charcoal);
+  border: 1px solid var(--color-border);
+}
+
+.media {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--color-black);
+}
+
+.cardBody {
+  padding: 14px;
+}
+
+.cardTitle {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 10px 0 0;
+}
+
+.links a {
+  padding: 8px 0;
+  color: var(--color-tungsten);
+}
+
+.designGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.design {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--color-charcoal);
+}
+
+@media (min-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .designGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
