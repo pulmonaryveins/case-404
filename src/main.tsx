@@ -2,24 +2,18 @@ import { createRoot } from "react-dom/client";
 import "./styles/globals.css";
 
 /**
- * Touch-only devices (phones, tablets) get the plain portfolio; anything with
- * a mouse gets the 3D office, however narrow its window. Each is its own
- * bundle, so a phone never downloads three.js, the models or the music.
- *
- * Two separate statements on purpose: written as one `a ? import() : import()`
- * expression, the build dropped the first branch's stylesheet from production.
+ * The 3D office (3d/index.html). Phones and tablets (touch only) get the
+ * website instead (index.html, src/site): the 3D scene is for anything with a
+ * mouse, however narrow its window. The 3D code is a separate bundle, so a
+ * phone sent back to the website never downloads three.js, the models or the
+ * music.
  */
 const touchOnly = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-const root = createRoot(document.getElementById("root")!);
 
-async function startMobile() {
-  const site = await import("./mobile/startMobile");
-  site.start(root);
+if (touchOnly) {
+  window.location.replace("/");
+} else {
+  void import("./app/startDesktop").then((m) =>
+    m.start(createRoot(document.getElementById("root")!)),
+  );
 }
-
-async function startDesktop() {
-  const site = await import("./app/startDesktop");
-  site.start(root);
-}
-
-void (touchOnly ? startMobile() : startDesktop());

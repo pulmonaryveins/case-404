@@ -29,6 +29,10 @@ export function Experience() {
       </CanvasErrorBoundary>
       <ScreenFocusControls />
       <ResumeOverlay />
+      {/* Back to the plain website (index.html). */}
+      <a className={styles.siteLink} href="/">
+        ← Website
+      </a>
       {/* No scroll rail until the scene is on screen. */}
       <SiteLogo hidden={!ready} />
       <SceneNav hidden={!ready} />

@@ -200,7 +200,8 @@ export function StoryController() {
         <section className="sr-only" aria-label="Subject profile">
           <h2>{profile.name.join(" ")}</h2>
           <p>
-            {profile.status}, {profile.location}. {profile.roles.join(", ")}.
+            {profile.status}, {profile.location}. {profile.roles.join(", ")}, focused on{" "}
+            {profile.focus}.
           </p>
           <h3>About</h3>
           <p>{profile.about}</p>

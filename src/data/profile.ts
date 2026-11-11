@@ -7,6 +7,8 @@ export interface Profile {
   status: string;
   location: string;
   roles: string[];
+  /** What the role is focused on, said after the title. */
+  focus: string;
   about: string;
   /** Portrait URL under public/. Leave undefined to show the placeholder slot. */
   photo?: string;
@@ -16,7 +18,8 @@ export const profile: Profile = {
   name: ["VINCE BRYANT", "CABUNILAS"],
   status: "IT STUDENT",
   location: "CEBU, PHILIPPINES",
-  roles: ["UI/UX DESIGNER", "FRONTEND DEVELOPER"],
+  roles: ["SOFTWARE ENGINEER"],
+  focus: "FRONTEND & UI/UX",
   about:
     "I build intuitive interfaces and tell visual stories through design and media. My work brings together frontend development, industry training and creative team leadership.",
 };

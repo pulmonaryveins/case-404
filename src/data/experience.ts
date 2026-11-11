@@ -18,14 +18,16 @@ export const experienceEntries: ExperienceEntry[] = [
     role: "Software Engineer",
     organization: "NTV360",
     period: "June 2026–Present",
-    summary: "Builds and maintains software systems end to end.",
+    summary:
+      "Software engineer focused on frontend and UI/UX: builds and maintains software systems end to end.",
   },
   {
     id: "ntv360-intern",
     role: "Frontend Developer Intern",
     organization: "NTV360",
     period: "January–June 2026",
-    summary: "Built and maintained frontend features for team systems.",
+    summary:
+      "Frontend, UI/UX and graphics: built and maintained frontend features for team systems.",
   },
   {
     id: "alliance",

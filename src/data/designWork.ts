@@ -106,3 +106,43 @@ export const designWork: DesignPiece[] = [
 ];
 
 export const designWorkUrl = (file: string) => `/images/design/${file}`;
+
+/**
+ * Apparel and merch designs: shown on the website's design archive after the
+ * prints, and left off the 3D poster wall (which has a fixed set of slots).
+ * Mock-ups, front and back.
+ */
+export const merchWork: DesignPiece[] = [
+  {
+    file: "merch-1.webp",
+    title: "Computer Studies shirt",
+    note: "Mustard T-shirt, front and back: the Computer Studies print.",
+  },
+  {
+    file: "merch-2.webp",
+    title: "Computer Studies shirt, second design",
+    note: "Mustard T-shirt, front and back: a pocket mark and a boxed back print.",
+  },
+  {
+    file: "merch-3.webp",
+    title: "The Paradox shirt",
+    note: "Black T-shirt, front and back, for the College of Computer Studies.",
+  },
+  {
+    file: "merch-4.webp",
+    title: "Webmasters shirt",
+    note: "Black T-shirt, front and back, for the University of Cebu Webmasters.",
+  },
+  {
+    file: "merch-5.webp",
+    title: "PSITS President jersey",
+    client: "PSITS · UC Main",
+    note: "Jersey, front and back.",
+  },
+  {
+    file: "merch-6.webp",
+    title: "CCS Intern jersey",
+    client: "College of Computer Studies · UC Main",
+    note: "Jersey, front and back.",
+  },
+];
