@@ -2450,8 +2450,9 @@
 
 /* The logs as a timeline: a dot on the line for each entry. */
 .log {
+  --log-pad: 1.6rem;
   gap: 0;
-  padding-left: 1.6rem;
+  padding-left: var(--log-pad);
 }
 
 .log li {
@@ -2466,7 +2467,7 @@
 .log li::before {
   content: "";
   position: absolute;
-  left: calc(-1.6rem - 6px);
+  left: calc(-1 * var(--log-pad) - 6px);
   top: 0.35rem;
   width: 10px;
   height: 10px;
@@ -2476,6 +2477,18 @@
   transition:
     background 0.3s,
     border-color 0.3s;
+}
+
+.desktopNote {
+  display: none;
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--accent);
+  border: 1px dashed var(--accent-deep);
+  background: rgba(217, 168, 96, 0.05);
 }
 
 .log li:hover::before {
@@ -3163,6 +3176,19 @@
     display: none !important;
   }
 
+  /* The office section stays as a preview, but there is no way in. */
+  .stage {
+    pointer-events: none;
+  }
+
+  .stageCta {
+    display: none;
+  }
+
+  .desktopNote {
+    display: block;
+  }
+
   /* No pointer to carry the light, so the hero stays lit. */
   .darkness {
     display: none;
@@ -3523,7 +3549,13 @@
   }
 
   .log {
-    padding-left: 1.3rem;
+    --log-pad: 1.3rem;
+  }
+
+  .logTitle {
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
   }
 
   /* The corner readouts would sit over the text as it scrolls. */

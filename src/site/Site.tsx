@@ -771,7 +771,7 @@ function ThreeDSection() {
   return (
     <section
       id="office"
-      className={`${styles.section} ${styles.only3d}`}
+      className={styles.section}
       aria-labelledby="office-title"
     >
       <SectionHead
@@ -803,6 +803,10 @@ function ThreeDSection() {
           <p className={styles.officeLede}>
             The same case file, as a room you can walk through: a 1970s detective&apos;s office.
             Scroll to investigate.
+          </p>
+          <p className={styles.desktopNote}>
+            The 3D office is available on desktop. Open this site on a computer with a mouse to
+            walk through it.
           </p>
           <ol className={styles.steps}>
             {GLIMPSE.map((g, i) => (
@@ -966,7 +970,7 @@ function Contact() {
             <h3>Navigate</h3>
             <ul>
               {FOOTER_LINKS.map(([label, href]) => (
-                <li key={href} className={href === "#office" ? styles.only3d : undefined}>
+                <li key={href}>
                   <a href={href}>{label}</a>
                 </li>
               ))}
