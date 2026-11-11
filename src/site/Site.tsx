@@ -621,6 +621,7 @@ const TECH_ICONS: Record<string, string> = {
   Canva: "canva",
   Git: "git",
   GitHub: "github",
+  "Claude Code": "claude",
 };
 
 function SubjectProfile() {
@@ -645,7 +646,7 @@ function SubjectProfile() {
           <dl className={styles.stats}>
             <div>
               <dt>Class</dt>
-              <dd>Frontend · UI/UX</dd>
+              <dd>{title(profile.roles[0])}</dd>
             </div>
             <div>
               <dt>Level</dt>
