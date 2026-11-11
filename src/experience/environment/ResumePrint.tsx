@@ -13,7 +13,7 @@ import {
 } from "three";
 import { useExperienceStore } from "../../store/useExperienceStore";
 import { storyRig } from "../../story/storyRig";
-import { typewriterAudio } from "../audio/typewriterAudio";
+import { TYPING_SHARE, typewriterAudio } from "../audio/typewriterAudio";
 import { shadowsChanged } from "../canvas/shadowUpdates";
 import { useCursor } from "../cursor/cursorStore";
 import { loadProgress } from "../loading/loadProgress";
@@ -36,11 +36,14 @@ const SHEET_W = 3.0;
 const SHEET_H = (SHEET_W * RESUME_GRID.h) / RESUME_GRID.w;
 /** Lean of the sheet back from the vertical, as it stands out of the machine. */
 const LEAN = 0.7;
-/** Lines it is fed out in, and seconds per line. */
-const LINES = 34;
-const LINE_SECONDS = 0.24;
-/** How much of each line's time the paper moves (the rest is the typing). */
-const FEED_SHARE = 0.35;
+/**
+ * Lines it is fed out in, and seconds per line: each one typed, then the
+ * carriage returned (typewriterAudio), ~15 s for the page.
+ */
+const LINES = 22;
+const LINE_SECONDS = 0.7;
+/** How much of each line's time the paper moves: the return, after the typing. */
+const FEED_SHARE = 1 - TYPING_SHARE;
 /** The sheet starts with a little already showing above the platen. */
 const LEAD = 0.04;
 
@@ -121,8 +124,7 @@ export function ResumePrint() {
       const line = Math.floor(fed.current);
       if (line !== lastLine.current && line < LINES) {
         lastLine.current = line;
-        // One line's sound covers a few lines of paper: a typed line is wider than a fed one.
-        if (line % 3 === 0) typewriterAudio.line(LINE_SECONDS * 3);
+        typewriterAudio.line(LINE_SECONDS);
       }
       if (fed.current >= LINES) useResume.getState().setPrinted();
     }

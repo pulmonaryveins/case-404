@@ -100,6 +100,7 @@ export function LoadingOverlay({ done }: { done: boolean }) {
     >
       <div className={styles.glow} aria-hidden />
       <div className={styles.panel}>
+        <span className={styles.logo} aria-hidden />
         <p className={styles.heading}>
           <span className={styles.name}>Case 404</span>
           <span className={styles.file}>File 404-A</span>

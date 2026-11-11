@@ -4,9 +4,11 @@ import { ExperienceCanvas } from "./canvas/ExperienceCanvas";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { ScreenFocusControls } from "./ScreenFocusControls";
 import { SceneNav } from "./SceneNav";
+import { SiteLogo } from "./SiteLogo";
 import { CustomCursor } from "./cursor/CustomCursor";
-import { PosterFlipControl } from "./PosterFlipControl";
 import { ResumeOverlay } from "./resume/ResumeOverlay";
+import { IntroSubtitles } from "./intro/IntroSubtitles";
+import { SoundSubtitleToggles } from "./intro/SoundSubtitleToggles";
 import styles from "./Experience.module.css";
 
 /**
@@ -26,14 +28,16 @@ export function Experience() {
         />
       </CanvasErrorBoundary>
       <ScreenFocusControls />
-      <PosterFlipControl />
       <ResumeOverlay />
       {/* Back to the plain website (index.html). */}
       <a className={styles.siteLink} href="/">
         ← Website
       </a>
       {/* No scroll rail until the scene is on screen. */}
+      <SiteLogo hidden={!ready} />
       <SceneNav hidden={!ready} />
+      <IntroSubtitles start={ready} />
+      <SoundSubtitleToggles hidden={!ready} />
       <CustomCursor />
       <LoadingOverlay done={ready} />
     </div>

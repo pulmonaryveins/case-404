@@ -79,10 +79,9 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   digitalArchive: {
     id: "digitalArchive",
     // Pull back ~30% and centre slightly toward the terminal so the full
-    // casing and keyboard fit alongside the clickable floppy disks. Moved with
-    // the desk when it was slid along its wall (STATION_SLIDE).
-    position: [1.78, 1.64, -1.63],
-    target: [2.74, 1.02, -2.79],
+    // casing and keyboard fit alongside the clickable floppy disks.
+    position: [1.56, 1.64, -1.8],
+    target: [2.52, 1.02, -2.96],
     fov: 44,
   },
   // Square-on to the angled wall above the terminal, about 2 m out along its
@@ -119,13 +118,15 @@ export const cameraAnchors: Record<CameraAnchorId, CameraAnchor> = {
   // The case closed: the typewriter desk in the back-left corner, square on
   // (along the desk's front, TypewriterStation), from ~2 m (the live camera's
   // fov is the opening shot's 40): the gramophone, the typed resume rising
-  // out of the typewriter and the lamp across the desk, the two paintings on
-  // the wall above, aimed a little right so the file cabinet left of the
-  // board closes the frame.
+  // out of the typewriter, the lamp and the evidence bags across the desk.
+  // Close in on the typewriter: ~1.1 m out along the desk's front normal,
+  // low and only slightly tilted down, so one frame holds the machine and its
+  // rising page and the landscape above it (to 1.58 m at the wall: the top
+  // of a 40 degree frame), the lamp and the globe at its edges.
   caseSolved: {
     id: "caseSolved",
-    position: [-1.38, 1.7, -1.02],
-    target: [-2.58, 1.2, -2.66],
+    position: [-1.83, 1.36, -1.95],
+    target: [-2.52, 1.13, -2.83],
     fov: DEFAULT_CAMERA.fov,
   },
 };

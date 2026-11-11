@@ -5,10 +5,8 @@ import {
   CanvasTexture,
   CylinderGeometry,
   type Group,
-  MathUtils,
   Mesh,
   MeshStandardMaterial,
-  PlaneGeometry,
   QuadraticBezierCurve3,
   SRGBColorSpace,
   SphereGeometry,
@@ -19,25 +17,20 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { assetManifest } from "../../assets/assetManifest";
 import { designWork, designWorkUrl, type DesignPiece } from "../../data/designWork";
 import { useExperienceStore } from "../../store/useExperienceStore";
-import { paintPosterBack } from "../surfaces/paintPosterBack";
 import { useDesignInspect } from "./designInspectState";
 import { useWallInspect } from "./wallInspect";
-import { shadowsChanged } from "../canvas/shadowUpdates";
 
 /**
  * The design wall: the subject's own design work (data/designWork.ts) printed
  * on square posters and pinned up above the achievements shelf over the
  * terminal like evidence: scattered, tilted, each on a red pin, red string
  * running out from the hub print to every other one like a web. Click one
- * for a close-up; it can be turned over there to read the pencilled notes on
- * its back. In the archive station's frame: the wall's front face is 0.476 m
+ * for a close-up. In the archive station's frame: the wall's front face is 0.476 m
  * behind the station centre (see RoomShell), `x` runs along the wall, `y` is
  * a poster's centre above the floor.
  */
 const WALL_Z = -0.476;
 const BASE_Z = WALL_Z + 0.004;
-/** The square poster model is 0.36 m a side at 1. */
-const MODEL_SIZE = 0.36;
 
 /**
  * Where each print hangs, in the order of `designWork`: scattered round the
@@ -71,8 +64,7 @@ const HUB = designWork.findIndex((p) => p.file === "9.webp");
 
 /**
  * In the poster model's own units: the pin at the top centre, where the paper
- * lies flat (its top-left corner curls off the wall). The back sheet sits
- * just behind the print.
+ * lies flat (its top-left corner curls off the wall).
  */
 const PIN = new Vector3(0, 0.148, 0.03);
 const STRING_RADIUS = 0.0009;
@@ -86,17 +78,10 @@ const STRING_COLOR = "#9b2823";
 const PRINT_PX = 512;
 const CLOSE_UP_PX = 1024;
 
-/** Turning a print over: how long, and how far it comes off the wall. */
-const FLIP_SECONDS = 0.7;
-/** Off the wall once turned (m), plus the arc it swings out on in between. */
-const LIFT_TURNED = 0.06;
-const LIFT_ARC = 0.11;
-
 const PIN_HEAD = new SphereGeometry(0.009, 14, 10);
 const PIN_NEEDLE = new CylinderGeometry(0.0016, 0.0016, 0.03, 6);
 const PIN_RED = new MeshStandardMaterial({ color: "#b0201a", roughness: 0.35, metalness: 0.2 });
 const PIN_STEEL = new MeshStandardMaterial({ color: "#9a9a9a", roughness: 0.3, metalness: 0.8 });
-const BACK_PLANE = new PlaneGeometry(MODEL_SIZE * 1.005, MODEL_SIZE);
 
 /**
  * Blank paper, shown until a print has loaded. A texture from the start (not
@@ -148,13 +133,6 @@ function usePrint(url: string, px: number) {
   return texture;
 }
 
-function toTexture(canvas: HTMLCanvasElement) {
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.anisotropy = 8;
-  return texture;
-}
-
 /** Where a print's pin head is, in the station frame (for its strings). */
 function pinAt(i: number) {
   const { x, y, roll, s } = LAYOUT[i];
@@ -171,7 +149,6 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
   const { x, y, roll, s } = LAYOUT[index];
   const { scene } = useGLTF(assetManifest.posterSquare.url);
   const inspected = useDesignInspect((st) => st.inspected === piece.file);
-  const flipped = useDesignInspect((st) => st.inspected === piece.file && st.flipped);
   const print = usePrint(designWorkUrl(piece.file), inspected ? CLOSE_UP_PX : PRINT_PX);
 
   const { object, materials } = useMemo(() => {
@@ -193,48 +170,8 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
   }, [scene, print]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 
-  // The back is only painted once the print is first turned over.
-  const [backPainted, setBackPainted] = useState(false);
-  if (flipped && !backPainted) setBackPainted(true);
-  const backMaterial = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        // Blank paper (as a texture, so the shader never changes) until painted.
-        map: backPainted ? toTexture(paintPosterBack(piece, index)) : BLANK,
-        roughness: 0.95,
-      }),
-    [backPainted, piece, index],
-  );
-  useEffect(
-    () => () => {
-      if (backMaterial.map !== BLANK) backMaterial.map?.dispose();
-      backMaterial.dispose();
-    },
-    [backMaterial],
-  );
-
-  // Turning over: about its own upright, swinging out off the wall and back.
-  const flipper = useRef<Group>(null);
-  const turn = useRef(0);
-  useFrame((_, dt) => {
-    const target = flipped ? 1 : 0;
-    // Back on the wall after the close-up: free its painted back (~4 MB).
-    if (turn.current === 0 && backPainted && !inspected) setBackPainted(false);
-    if (!flipper.current || turn.current === target) return;
-    shadowsChanged();
-    const step = dt / FLIP_SECONDS;
-    turn.current =
-      target > turn.current
-        ? Math.min(target, turn.current + step)
-        : Math.max(target, turn.current - step);
-    const e = MathUtils.smootherstep(turn.current, 0, 1);
-    flipper.current.rotation.y = Math.PI * e;
-    flipper.current.position.z = LIFT_TURNED * e + LIFT_ARC * Math.sin(Math.PI * e);
-  });
-
-  // Click to look closer: the print fills most of the frame.
+  // Click to look closer: the print fills most of the frame, with a margin.
   const group = useRef<Group>(null);
-  // A little wider than the print, so the "Turn over" button below clears it.
   const inspect = useWallInspect(() => group.current, "Inspect design", 1.4);
   const handlers = {
     ...inspect,
@@ -250,8 +187,6 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
 
   return (
     <group ref={group} position={[x, y, BASE_Z]} rotation={[0, 0, roll]} {...handlers}>
-      {/* The pin, and its strings, stay in the wall when the print is taken
-          down to be turned over. */}
       <group scale={s}>
         <mesh geometry={PIN_HEAD} material={PIN_RED} position={PIN} castShadow />
         <mesh
@@ -260,19 +195,7 @@ function DesignPrint({ piece, index }: { piece: DesignPiece; index: number }) {
           position={[PIN.x, PIN.y, PIN.z - 0.015]}
           rotation={[Math.PI / 2, 0, 0]}
         />
-      </group>
-      <group ref={flipper}>
-        <group scale={s}>
-          <primitive object={object} />
-          {/* Its back, facing the wall until it is turned over. */}
-          <mesh
-            geometry={BACK_PLANE}
-            material={backMaterial}
-            position={[0, 0, -0.001]}
-            rotation={[0, Math.PI, 0]}
-            receiveShadow
-          />
-        </group>
+        <primitive object={object} />
       </group>
     </group>
   );

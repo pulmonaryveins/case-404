@@ -3125,3 +3125,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* The 3D office is for a mouse: phones and tablets have no way in, so nothing
+   on the website points there (the 3D page sends them back here anyway). */
+@media (hover: none) and (pointer: coarse) {
+  .only3d {
+    display: none !important;
+  }
+
+  /* No pointer to carry the light, so the hero stays lit, and the hidden
+     notes (which only the light reveals, one of them about the 3D room) go. */
+  .darkness,
+  .ghost {
+    display: none;
+  }
+
+  /* No hover to wake a cover: show them clear, in colour. */
+  .cardMedia,
+  .listBg .cardMedia {
+    filter: grayscale(0.3) brightness(0.65);
+    transform: none;
+  }
+}

@@ -7,6 +7,6 @@ compatibility_date = "2026-10-01"
 # free-tier Flash model and change this if it has moved on.
 GEMINI_MODEL = "gemini-2.5-flash"
 # The site's own origins (comma-separated). Add the deployed site's address.
-ALLOWED_ORIGINS = "http://localhost:5173"
+ALLOWED_ORIGINS = "http://localhost:5173,https://case-404-vince.vercel.app"
 
 # The key is a secret, not a var: npx wrangler secret put GEMINI_API_KEY

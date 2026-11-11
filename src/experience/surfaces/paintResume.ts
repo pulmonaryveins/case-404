@@ -7,8 +7,8 @@ import { projects } from "../../data/projects";
 
 /**
  * The subject's resume, as a plain black-and-white one-page A4 resume (name
- * and contact, profile, experience, development projects, skills, college
- * education, certifications): black sans-serif type on white, bold capital
+ * and contact, college education, experience, development projects, skills,
+ * certifications): black sans-serif type on white, bold capital
  * headings with a thin rule. Painted from the site's own data, so it never
  * drifts from it.
  *
@@ -146,8 +146,12 @@ function paint(ctx: Ctx, width: number, scale: number) {
     y += lines.length * s(size * 1.25);
   };
 
-  heading("PROFILE");
-  paragraph(profile.about, M, WIDTH, `${s(17.5)}px ${SERIF}`, s(27));
+  heading("EDUCATION");
+  for (const school of degrees()) {
+    titled(school.institution, school.period.toUpperCase(), 16.5);
+    paragraph(school.credential, M, WIDTH, `italic ${s(15.5)}px ${SERIF}`, s(22), MUTED);
+    y += s(6);
+  }
 
   heading("EXPERIENCE");
   for (const job of experienceEntries) {
@@ -183,13 +187,6 @@ function paint(ctx: Ctx, width: number, scale: number) {
     text(label, M, y, `bold ${s(15.5)}px ${TYPE}`, INK);
     paragraph(value, M + 230, WIDTH - 230, `${s(16)}px ${SERIF}`, s(23));
     y += s(4);
-  }
-
-  heading("EDUCATION");
-  for (const school of degrees()) {
-    titled(school.institution, school.period.toUpperCase(), 16.5);
-    paragraph(school.credential, M, WIDTH, `italic ${s(15.5)}px ${SERIF}`, s(22), MUTED);
-    y += s(6);
   }
 
   heading("CERTIFICATIONS");

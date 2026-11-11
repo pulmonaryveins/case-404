@@ -100,7 +100,7 @@ function Hud() {
 /** The way into the 3D office, fixed in the corner. */
 function ThreeDCard() {
   return (
-    <a className={styles.threeD} href={CASE_3D}>
+    <a className={`${styles.threeD} ${styles.only3d}`} href={CASE_3D}>
       <svg viewBox="0 0 48 48" className={styles.cube} aria-hidden>
         <path d="M24 4 42 14v20L24 44 6 34V14z M6 14l18 10 18-10 M24 24v20" />
       </svg>
@@ -766,7 +766,11 @@ function ThreeDSection() {
   const [active, setActive] = useState(0);
   const next = () => setActive((i) => (i + 1) % GLIMPSE.length);
   return (
-    <section id="office" className={styles.section} aria-labelledby="office-title">
+    <section
+      id="office"
+      className={`${styles.section} ${styles.only3d}`}
+      aria-labelledby="office-title"
+    >
       <SectionHead
         id="office-title"
         title="The 3D Office"
@@ -951,11 +955,11 @@ function Contact() {
             <h3>Navigate</h3>
             <ul>
               {FOOTER_LINKS.map(([label, href]) => (
-                <li key={href}>
+                <li key={href} className={href === "#office" ? styles.only3d : undefined}>
                   <a href={href}>{label}</a>
                 </li>
               ))}
-              <li>
+              <li className={styles.only3d}>
                 <a href={CASE_3D}>Enter the 3D office ↗</a>
               </li>
             </ul>

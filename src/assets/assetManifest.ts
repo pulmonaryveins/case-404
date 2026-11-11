@@ -469,20 +469,6 @@ export const assetManifest = {
     castShadow: false,
     receiveShadow: true,
   },
-  // file_cabinet.glb -> file-cabinet.glb (1024px WebP; 4.1 MB -> 0.18 MB). Four
-  // drawers as separate meshes (pull along +X). Placed, scaled and opened by
-  // MerchCorner, which reads only the url.
-  fileCabinet: {
-    id: "fileCabinet",
-    url: "/models/case-404/furniture/file-cabinet.glb",
-    category: "furniture",
-    preloadPriority: 3,
-    position: [0, 0, 0],
-    rotation: [0, 0, 0],
-    scale: 1,
-    castShadow: true,
-    receiveShadow: true,
-  },
   // typewriter.glb (scripts/optimize-glb.mjs, no simplification: 6550
   // triangles; six 2048px PNGs -> WebP, colour 1024px, normal and
   // metal/roughness 512px to stay inside the texture budget; 24 MB -> 0.9 MB). 4.82 units
@@ -496,6 +482,70 @@ export const assetManifest = {
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: 0.085,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // plastic_evidence_bag.glb (Sousinho) -> evidence-bag.glb (424 triangles, no
+  // simplification; three 2048px PNGs -> 512px WebP, the colour lossless so its
+  // alpha and print stay clean, roughness 256px; 5.9 MB -> 0.17 MB). Authored
+  // in cm, lying in its XY plane (26 x 45 x 1.7 units, face toward +Z): the -90
+  // degree X turn lays it flat, face up, and 0.007 makes a ~18 x 32 cm bag.
+  // Transparent plastic, so it casts no shadow; drawn single-sided (DeskProp),
+  // as only its face is ever seen. Laid on the typewriter desk (TypewriterStation).
+  evidenceBag: {
+    id: "evidenceBag",
+    url: "/models/case-404/props/evidence-bag.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [-Math.PI / 2, 0, 0],
+    scale: 0.007,
+    castShadow: false,
+    receiveShadow: true,
+  },
+  // wooden_globe.glb (M. Zamzam) -> wooden-globe.glb (scripts/optimize-glb.mjs, no
+  // simplification: 3680 triangles; three 2048px PNGs -> WebP, colour 1024px,
+  // normal and metal/roughness 512px; 11.8 MB -> 0.26 MB). A floor globe in
+  // metres (0.43 x 0.87 x 0.49), base at y 0; 0.44 makes a ~38 cm desk globe.
+  // Its metal map keeps the wood non-metallic (only the brass is metal). At
+  // the right end of the typewriter desk (TypewriterStation).
+  woodenGlobe: {
+    id: "woodenGlobe",
+    url: "/models/case-404/props/wooden-globe.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 0.44,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // free_medieval_paintings_pack.glb -> landscape-painting.glb
+  // (scripts/prepare-landscape-painting.mjs): one of the 23 paintings kept,
+  // cuadro_17, a Flemish village fair in a gilt frame, 1.99 x 1 m, its atlas
+  // cropped to the part it uses (385 x 400). Hung by LandscapePainting.
+  landscapePainting: {
+    id: "landscapePainting",
+    url: "/models/case-404/props/landscape-painting.glb",
+    category: "props",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    castShadow: true,
+    receiveShadow: true,
+  },
+  // file_cabinet.glb -> file-cabinet.glb (1024px WebP; 4.1 MB -> 0.18 MB). Four
+  // drawers as separate meshes (pull along +X). Placed, scaled and opened by
+  // FileCabinets, which reads only the url.
+  fileCabinet: {
+    id: "fileCabinet",
+    url: "/models/case-404/furniture/file-cabinet.glb",
+    category: "furniture",
+    preloadPriority: 3,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
     castShadow: true,
     receiveShadow: true,
   },
@@ -543,22 +593,6 @@ export const assetManifest = {
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: 21,
-    castShadow: true,
-    receiveShadow: true,
-  },
-  // free_medieval_paintings_pack.glb -> paintings.glb: two of the 23
-  // paintings kept (cuadro_8, Bosch's crowd, 1.04 x 1 m; cuadro_12,
-  // robed monks in a landscape, 1.07 x 1 m) and the atlas repacked to the
-  // gold frame strip and their two pictures (1024 -> 512 x 256). Each is
-  // picked out by node name and hung by MedievalPaintings.
-  medievalPaintings: {
-    id: "medievalPaintings",
-    url: "/models/case-404/props/paintings.glb",
-    category: "props",
-    preloadPriority: 3,
-    position: [0, 0, 0],
-    rotation: [0, 0, 0],
-    scale: 1,
     castShadow: true,
     receiveShadow: true,
   },

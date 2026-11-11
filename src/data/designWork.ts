@@ -4,8 +4,8 @@
  * the order on the wall (see LAYOUT there): roughly top to bottom, left to
  * right, with the Bay Harbor Butcher board (9.webp) as the hub in the middle.
  *
- * The fields are what is written on the back of each print in pencil (flip
- * one over in its close-up). Only what the poster itself shows has been
+ * The fields are notes on each piece (N.I.G.E.L. answers from them, see
+ * nigelFile.ts). Only what the poster itself shows has been
  * filled in: titles, and a client or date where it is printed on the poster.
  * Fill in the rest (and check these). Any field left out is simply not
  * written.

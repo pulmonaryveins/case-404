@@ -63,6 +63,16 @@
   animation: appear 700ms var(--motion-ease) both;
 }
 
+/* The site's mark (public/logo-mark.png), as a solid silhouette in tungsten. */
+.logo {
+  justify-self: center;
+  width: 4.5rem;
+  aspect-ratio: 1;
+  background: var(--color-tungsten);
+  mask: url("/logo-mark.png") center / contain no-repeat;
+  opacity: 0.9;
+}
+
 .heading {
   display: flex;
   justify-content: space-between;

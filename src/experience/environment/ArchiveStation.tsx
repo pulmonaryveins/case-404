@@ -55,7 +55,7 @@ import { PowerButton } from "./PowerButton";
 import { WallE } from "./WallE";
 import { PC_MODEL, placeComputer } from "./computerPlacement";
 import { useBlobTexture } from "./useBlobTexture";
-import { ARCHIVE_STATION, DESK_TOP, STATION_SLIDE } from "./worldAnchors";
+import { ARCHIVE_STATION, DESK_TOP } from "./worldAnchors";
 
 /**
  * The second desk stands in the back-right corner, turned ~38 degrees so its
@@ -64,10 +64,6 @@ import { ARCHIVE_STATION, DESK_TOP, STATION_SLIDE } from "./worldAnchors";
  * group's transform is the only place the corner position lives. The
  * angled wall behind it is in RoomShell. Keep in sync with the
  * `digitalArchive` camera anchor.
- *
- * The desk is slid along its wall (STATION_SLIDE) to clear the file cabinet
- * on the back wall; the posters and shelf on the wall are not, so they are
- * shifted back by as much and stay centred on it.
  */
 const STATION_POS = ARCHIVE_STATION.position;
 const STATION_YAW = ARCHIVE_STATION.yaw;
@@ -929,12 +925,9 @@ export function ArchiveStation() {
     <group name="archive-station" position={STATION_POS} rotation={[0, STATION_YAW, 0]}>
       <Model id="archiveDesk" />
       <StationLights />
-      {/* On the wall, not the desk: back to the wall's own centre. */}
-      <group position={[-STATION_SLIDE, 0, 0]}>
-        <DesignPosters />
-        {/* Centred on the wall, under the posters (whose rows centre on x 0). */}
-        <AchievementShelf x={0} />
-      </group>
+      <DesignPosters />
+      {/* Centred on the wall, under the posters (whose rows centre on x 0). */}
+      <AchievementShelf x={0} />
 
       <PersonalComputer
         matrix={poses.matrix}

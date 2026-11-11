@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useLoader } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import {
   BufferGeometry,
@@ -6,7 +7,9 @@ import {
   Float32BufferAttribute,
   FrontSide,
   type Group,
+  ImageLoader,
   Mesh,
+  type MeshPhysicalMaterial,
   type MeshStandardMaterial,
   SRGBColorSpace,
 } from "three";
@@ -19,12 +22,22 @@ import { DESK_TOP } from "./worldAnchors";
  * its node), and where they lie (station frame): x, z, yaw. Loosely
  * scattered round the camera (ArchiveStation's POLAROID_AT) as if just
  * ejected; the first two overlap a little, so each sits above the one before.
+ * `image` is the evidence board's picture each one shows.
  */
 const PRINTS = [
-  { mesh: "Object_4", x: 0.41, z: 0.17, yaw: 0.35 },
-  { mesh: "Object_14", x: 0.47, z: 0.03, yaw: -0.3 },
-  { mesh: "Object_22", x: 0.65, z: 0.24, yaw: 0.6 },
+  { mesh: "Object_4", x: 0.41, z: 0.17, yaw: 0.35, image: "/images/board/photo-left.webp" },
+  {
+    mesh: "Object_14",
+    x: 0.47,
+    z: 0.03,
+    yaw: -0.3,
+    image: "/images/board/photo-right.webp",
+    window: { x: 23, y: 118, w: 458, h: 472 },
+  },
+  { mesh: "Object_22", x: 0.65, z: 0.24, yaw: 0.6, image: "/images/board/photo-bottom.webp" },
 ] as const;
+/** The picture's window on a print's 512 x 616 canvas (measured from the atlas; one differs). */
+const WINDOW = { x: 26, y: 116, w: 459, h: 472 };
 /**
  * Height of the lowest print above the desk, and the step between prints.
  * Millimetres, not fractions of one: the desk top is flat at DESK_TOP, so this
@@ -46,9 +59,10 @@ const FOCUS_FILL = 1.6;
  * The prints also share one small atlas with no padding between cells, so at
  * lower mip levels (which change as the camera moves) neighbours bled into
  * each other's edges. Cut this cell out into a texture of its own, inset a
- * pixel, with its own mipmaps and a UV set running 0..1.
+ * pixel, with its own mipmaps and a UV set running 0..1. The print keeps its
+ * own aged border; `photo` is cropped to fill the picture window.
  */
-function ownPrint(source: Mesh) {
+function ownPrint(source: Mesh, photo: HTMLImageElement, picture: typeof WINDOW) {
   const atlas = (source.material as MeshStandardMaterial).map?.image as
     (CanvasImageSource & { width: number; height: number }) | undefined;
   const src = source.geometry;
@@ -80,6 +94,26 @@ function ownPrint(source: Mesh) {
   if (!ctx) return null;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(atlas, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  const { x, y, w, h } = picture;
+  const fit = Math.max(w / photo.width, h / photo.height);
+  const cropW = w / fit;
+  const cropH = h / fit;
+  ctx.save();
+  // The canvas's top row is the print's near edge: flipped, the picture stands upright.
+  ctx.translate(0, y * 2 + h);
+  ctx.scale(1, -1);
+  ctx.drawImage(
+    photo,
+    (photo.width - cropW) / 2,
+    (photo.height - cropH) / 2,
+    cropW,
+    cropH,
+    x,
+    y,
+    w,
+    h,
+  );
+  ctx.restore();
   const map = new CanvasTexture(canvas);
   map.colorSpace = SRGBColorSpace;
   map.flipY = false;
@@ -115,6 +149,10 @@ function ownPrint(source: Mesh) {
 export function PolaroidPhotos({ interactive }: { interactive: boolean }) {
   const asset = assetManifest.polaroidPhotos;
   const { scene } = useGLTF(asset.url);
+  const photos = useLoader(
+    ImageLoader,
+    PRINTS.map((p) => p.image),
+  );
   const group = useRef<Group>(null);
 
   const prints = useMemo(() => {
@@ -125,10 +163,14 @@ export function PolaroidPhotos({ interactive }: { interactive: boolean }) {
     return PRINTS.flatMap((p, i) => {
       const source = byName.get(p.mesh);
       if (!source) return [];
-      const material = (source.material as MeshStandardMaterial).clone();
+      const material = (source.material as MeshPhysicalMaterial).clone();
       material.side = FrontSide;
       material.roughness = 0.55;
-      const own = ownPrint(source);
+      // The model's shine map covers the whole atlas: on a print's own 0..1 UVs
+      // it would lay the sheet's other pictures over this one.
+      material.specularIntensityMap = null;
+      material.specularIntensity = 0.12;
+      const own = ownPrint(source, photos[i], "window" in p ? p.window : WINDOW);
       if (own) {
         material.map = own.map;
       }
@@ -141,7 +183,7 @@ export function PolaroidPhotos({ interactive }: { interactive: boolean }) {
         },
       ];
     });
-  }, [scene]);
+  }, [scene, photos]);
 
   useEffect(
     () => () =>

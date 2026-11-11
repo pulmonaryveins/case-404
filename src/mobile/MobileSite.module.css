@@ -1,0 +1,160 @@
+/* Plain and direct: white page, one sans-serif, text only. */
+:global(html) {
+  scroll-behavior: smooth;
+}
+
+:global(body) {
+  background: #fff;
+}
+
+.page {
+  --ink: #16181d;
+  --muted: #646b76;
+  --line: #e7e9ed;
+  --accent: #1f5fd1;
+
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 24px;
+  padding: 0 20px;
+  background: rgb(255 255 255 / 94%);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav a {
+  padding: 14px 0;
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.page main {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  padding: 0 20px 56px;
+}
+
+.intro {
+  padding: 32px 0 8px;
+}
+
+.name {
+  margin: 0;
+  font-size: 1.95rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.role {
+  margin: 8px 0 0;
+  font-size: 1.06rem;
+  font-weight: 500;
+}
+
+.about {
+  margin: 16px 0 0;
+  font-size: 1.06rem;
+}
+
+.button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 22px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.button:disabled {
+  opacity: 0.6;
+}
+
+.note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.section {
+  padding-top: 40px;
+  scroll-margin-top: 36px;
+}
+
+.heading {
+  margin: 0 0 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.entry {
+  margin-bottom: 22px;
+}
+
+.entry:last-child {
+  margin-bottom: 0;
+}
+
+.entryTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.text {
+  margin: 0;
+}
+
+.detail {
+  margin: 6px 0 0;
+}
+
+.meta {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin: 2px 0 0;
+}
+
+.links a {
+  padding: 8px 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
