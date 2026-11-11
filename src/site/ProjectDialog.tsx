@@ -104,7 +104,7 @@ export function ProjectDialog({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {link.label} <span aria-hidden>↗</span>
+                  {link.label} <span aria-hidden>↗︎</span>
                 </a>
               ))}
             </aside>

@@ -103,7 +103,7 @@ function ThreeDCard() {
       <svg viewBox="0 0 48 48" className={styles.cube} aria-hidden>
         <path d="M24 4 42 14v20L24 44 6 34V14z M6 14l18 10 18-10 M24 24v20" />
       </svg>
-      Enter the 3D office <span aria-hidden>→</span>
+      Enter the 3D office <span aria-hidden>→︎</span>
     </a>
   );
 }
@@ -475,7 +475,7 @@ function EvidenceBoard({ onOpen }: { onOpen: (p: Project) => void }) {
                     <span className={styles.cardMore}>
                       <span>
                         <span className={styles.cardLine}>{p.tagline ?? p.description}</span>
-                        <span className={styles.cardOpen}>Open file →</span>
+                        <span className={styles.cardOpen}>Open file →︎</span>
                       </span>
                     </span>
                   </span>
@@ -497,7 +497,7 @@ function EvidenceBoard({ onOpen }: { onOpen: (p: Project) => void }) {
                   </span>
                   <span className={styles.listCategory}>{p.category}</span>
                   <span className={styles.listOpen} aria-hidden>
-                    [ Open file ] <span>→</span>
+                    [ Open file ] <span>→︎</span>
                   </span>
                 </button>
               </li>
@@ -557,7 +557,7 @@ function PosterCard({
       <span className={styles.posterImg}>
         <img src={designWorkUrl(piece.file)} alt="" loading="lazy" />
         <span className={styles.posterView} aria-hidden>
-          View print ↗
+          View print ↗︎
         </span>
       </span>
       <span className={styles.posterMeta}>
@@ -769,11 +769,7 @@ function ThreeDSection() {
   const [active, setActive] = useState(0);
   const next = () => setActive((i) => (i + 1) % GLIMPSE.length);
   return (
-    <section
-      id="office"
-      className={styles.section}
-      aria-labelledby="office-title"
-    >
+    <section id="office" className={styles.section} aria-labelledby="office-title">
       <SectionHead
         id="office-title"
         title="The 3D Office"
@@ -795,7 +791,7 @@ function ThreeDSection() {
             <span className={styles.dot} /> Live room · 3D
           </span>
           <span className={styles.stageCta}>
-            Enter the office <span aria-hidden>→</span>
+            Enter the office <span aria-hidden>→︎</span>
           </span>
         </a>
 
@@ -805,8 +801,8 @@ function ThreeDSection() {
             Scroll to investigate.
           </p>
           <p className={styles.desktopNote}>
-            The 3D office is available on desktop. Open this site on a computer with a mouse to
-            walk through it.
+            The 3D office is available on desktop. Open this site on a computer with a mouse to walk
+            through it.
           </p>
           <ol className={styles.steps}>
             {GLIMPSE.map((g, i) => (
@@ -935,7 +931,7 @@ function Contact() {
             <a className={styles.bigMail} href={`mailto:${e.address}`}>
               <span>{e.address}</span>
               <span className={styles.bigMailArrow} aria-hidden>
-                ↗
+                ↗︎
               </span>
             </a>
             <button className={styles.copyMail} onClick={() => void copy(e.address)}>
@@ -975,7 +971,7 @@ function Contact() {
                 </li>
               ))}
               <li className={styles.only3d}>
-                <a href={CASE_3D}>Enter the 3D office ↗</a>
+                <a href={CASE_3D}>Enter the 3D office ↗︎</a>
               </li>
             </ul>
           </nav>
@@ -1014,7 +1010,7 @@ function Contact() {
             © {new Date().getFullYear()} {fullName}
           </span>
           <span className={styles.footerMid}>Case 404 · File 404-A</span>
-          <a href="#main">Back to top ↑</a>
+          <a href="#main">Back to top ↑︎</a>
         </div>
       </footer>
     </section>

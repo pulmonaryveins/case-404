@@ -4,6 +4,8 @@
    high-contrast serif for the headlines, a clean sans for reading, mono for
    the readouts. */
 .site {
+  /* Arrows (↗ → ↑) stay text glyphs: phones otherwise draw them as emoji. */
+  font-variant-emoji: text;
   --bg: #0a0908;
   --panel: rgba(28, 26, 24, 0.78);
   --line: #2a241e;
@@ -1983,6 +1985,7 @@
 }
 
 .footerSocial svg {
+  flex: none;
   width: 1rem;
   height: 1rem;
   fill: none;
@@ -3598,6 +3601,10 @@
   .footer li a {
     display: inline-block;
     padding: 0.45rem 0;
+  }
+
+  .footerSocial li a {
+    display: flex;
   }
 
   .footerBar a {
