@@ -78,7 +78,7 @@ export function ResumeOverlay() {
           <img
             className={styles.page}
             src={preview}
-            alt={`Resume of ${profile.name.join(" ")}: ${profile.roles.join(", ")}, ${profile.location}.`}
+            alt={`Resume of ${profile.name.join(" ")}: ${profile.roles.join(", ")} focused on ${profile.focus}, ${profile.location}.`}
           />
         </div>
         <div className={styles.actions}>

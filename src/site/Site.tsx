@@ -8,13 +8,14 @@ import {
 } from "react";
 import { certificates } from "../data/certificates";
 import { contact } from "../data/contact";
-import { designWork, designWorkUrl, type DesignPiece } from "../data/designWork";
+import { designWork, designWorkUrl, merchWork, type DesignPiece } from "../data/designWork";
 import { education } from "../data/education";
 import { experienceEntries } from "../data/experience";
 import { profile, profileSkills } from "../data/profile";
 import { projects, type Project } from "../data/projects";
 import { downloadResume } from "../experience/resume/resumeFile";
 import { gsap, ScrollTrigger } from "../lib/gsap";
+import { NigelChat } from "./NigelChat";
 import { ProjectDialog } from "./ProjectDialog";
 import { TerminalDialog } from "./TerminalDialog";
 import { cover } from "./projectMedia";
@@ -56,6 +57,7 @@ export function Site() {
         <Contact />
       </main>
       <ThreeDCard />
+      <NigelChat />
       <ProjectDialog
         project={open}
         list={realProjects}
@@ -89,9 +91,6 @@ function Hud() {
       <div className={styles.hudTopRight}>
         <span>{now.toLocaleTimeString("en-GB")}</span>
         <span>CEBU · PH</span>
-      </div>
-      <div className={styles.hudBottomLeft}>
-        <span className={styles.dot} /> ON THE CASE
       </div>
     </div>
   );
@@ -230,23 +229,6 @@ function Hero() {
           </div>
         </div>
       )}
-      <div className={`${styles.ghost} ${styles.ghostNote}`} aria-hidden>
-        EXHIBIT A<br />A portfolio.
-        <br />
-        Handle with care.
-      </div>
-      <div className={`${styles.ghost} ${styles.ghostSeen}`} aria-hidden>
-        LAST SEEN
-        <br />
-        Cebu, PH
-      </div>
-      <div className={`${styles.ghost} ${styles.ghostTip}`} aria-hidden>
-        TIP: there is a
-        <br />
-        room behind this
-        <br />
-        file. Look for the tag.
-      </div>
       <div className={styles.darkness} aria-hidden />
       <p className={styles.tag} data-hero>
         TOP SECRET // CASE #404
@@ -256,15 +238,9 @@ function Hero() {
         <NameLine text={profile.name[1]} />
       </h1>
       <p className={styles.lede} data-hero>
-        <span className={styles.accent}>UI/UX</span> Designer &{" "}
-        <span className={styles.accent}>Frontend</span> Developer.
+        {title(profile.roles[0])} focused on <span className={styles.accent}>Frontend</span> &{" "}
+        <span className={styles.accent}>UI/UX</span>.
         <br />
-        {experienceEntries[0] && (
-          <>
-            {experienceEntries[0].role} at {experienceEntries[0].organization}.
-            <br />
-          </>
-        )}
         <span className={styles.muted}>Based in {title(profile.location)}.</span>
       </p>
       <a className={styles.scrollCue} href="#profile" data-hero>
@@ -563,33 +539,59 @@ function Cover({ project }: { project: Project }) {
 }
 
 /** The graphic design work: the posters, in a masonry wall; each opens full size. */
+/** Every print the viewer pages through: the design work, then the merch. */
+const archive = [...designWork, ...merchWork];
+
+/** One print on the wall: its picture in a frame, its number and title under it. */
+function PosterCard({
+  piece,
+  number,
+  onOpen,
+}: {
+  piece: DesignPiece;
+  number: number;
+  onOpen: (piece: DesignPiece) => void;
+}) {
+  return (
+    <button className={styles.poster} onClick={() => onOpen(piece)} data-poster-id={piece.file}>
+      <span className={styles.posterImg}>
+        <img src={designWorkUrl(piece.file)} alt="" loading="lazy" />
+        <span className={styles.posterView} aria-hidden>
+          View print ↗
+        </span>
+      </span>
+      <span className={styles.posterMeta}>
+        <span className={styles.posterNo}>#{pad(number)}</span>
+        <span className={styles.posterTitle}>{piece.title}</span>
+      </span>
+    </button>
+  );
+}
+
 function DesignArchive({ onOpen }: { onOpen: (piece: DesignPiece) => void }) {
   return (
     <section id="design" className={styles.section} aria-labelledby="design-title">
       <SectionHead
         id="design-title"
         title="Design Archive"
-        meta={["SECTOR: GRAPHIC DESIGN", `PRINTS ON FILE: ${pad(designWork.length)}`]}
+        meta={["SECTOR: GRAPHIC DESIGN", `PRINTS ON FILE: ${pad(archive.length)}`]}
       />
       <ul className={styles.posters} data-stagger>
         {designWork.map((piece, i) => (
           <li key={piece.file} data-feature={i === 0 || undefined}>
-            <button
-              className={styles.poster}
-              onClick={() => onOpen(piece)}
-              data-poster-id={piece.file}
-            >
-              <span className={styles.posterImg}>
-                <img src={designWorkUrl(piece.file)} alt="" loading="lazy" />
-                <span className={styles.posterView} aria-hidden>
-                  View print ↗
-                </span>
-              </span>
-              <span className={styles.posterMeta}>
-                <span className={styles.posterNo}>#{pad(i + 1)}</span>
-                <span className={styles.posterTitle}>{piece.title}</span>
-              </span>
-            </button>
+            <PosterCard piece={piece} number={i + 1} onOpen={onOpen} />
+          </li>
+        ))}
+      </ul>
+
+      <h3 className={styles.merchHead}>
+        <span>Merch &amp; apparel</span>
+        <small>Six designs, front and back</small>
+      </h3>
+      <ul className={styles.merchRow} data-stagger>
+        {merchWork.map((piece, i) => (
+          <li key={piece.file}>
+            <PosterCard piece={piece} number={designWork.length + i + 1} onOpen={onOpen} />
           </li>
         ))}
       </ul>
@@ -893,7 +895,7 @@ function CebuTime() {
  */
 function Contact() {
   const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const save = async () => {
     setSaving(true);
     try {
@@ -902,15 +904,16 @@ function Contact() {
       setSaving(false);
     }
   };
-  const copy = async () => {
+  const copy = async (address: string) => {
     try {
-      await navigator.clipboard.writeText(contact.email);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(address);
+      setCopied(address);
+      window.setTimeout(() => setCopied((c) => (c === address ? null : c)), 1800);
     } catch {
       // Clipboard blocked: the address is still a mailto link.
     }
   };
+
   return (
     <section id="contact" className={styles.contact} aria-labelledby="contact-title">
       <p className={styles.channel} data-reveal>
@@ -920,16 +923,21 @@ function Contact() {
         What if we worked together?
       </h2>
 
-      <div className={styles.mailRow} data-reveal>
-        <a className={styles.bigMail} href={`mailto:${contact.email}`}>
-          <span>{contact.email}</span>
-          <span className={styles.bigMailArrow} aria-hidden>
-            ↗
-          </span>
-        </a>
-        <button className={styles.copyMail} onClick={copy}>
-          {copied ? "Copied" : "Copy"}
-        </button>
+      <div className={styles.mailRows} data-reveal>
+        {contact.emails.map((e) => (
+          <div className={styles.mailRow} key={e.address}>
+            <span className={styles.mailLabel}>{e.label}</span>
+            <a className={styles.bigMail} href={`mailto:${e.address}`}>
+              <span>{e.address}</span>
+              <span className={styles.bigMailArrow} aria-hidden>
+                ↗
+              </span>
+            </a>
+            <button className={styles.copyMail} onClick={() => void copy(e.address)}>
+              {copied === e.address ? "Copied" : "Copy"}
+            </button>
+          </div>
+        ))}
       </div>
 
       <div className={styles.contactActions} data-reveal>
@@ -945,7 +953,9 @@ function Contact() {
         <div className={styles.footerGrid}>
           <div className={styles.footerBrand}>
             <strong>{fullName}</strong>
-            <span>{profile.roles.map(title).join(" & ").replace("Ui/Ux", "UI/UX")}</span>
+            <span>
+              {title(profile.roles.join(" & "))} · {title(profile.focus).replace("Ui/Ux", "UI/UX")}
+            </span>
             <span className={styles.footerStatus}>
               <span className={styles.dot} /> Open to work
             </span>
@@ -1016,7 +1026,9 @@ function PosterDialog({
   onSelect: (p: DesignPiece) => void;
   onClose: () => void;
 }) {
-  const index = piece ? designWork.indexOf(piece) : -1;
+  // The print opened up close (its file name), until clicked again or another is shown.
+  const [zoomed, setZoomed] = useState<string | null>(null);
+  const index = piece ? archive.indexOf(piece) : -1;
   const details = piece
     ? (
         [
@@ -1034,9 +1046,13 @@ function PosterDialog({
       label={piece?.title ?? "Print"}
       step="print"
       onStep={(dir) => {
-        if (index >= 0) onSelect(designWork[(index + dir + designWork.length) % designWork.length]);
+        setZoomed(null);
+        if (index >= 0) onSelect(archive[(index + dir + archive.length) % archive.length]);
       }}
-      onClose={onClose}
+      onClose={() => {
+        setZoomed(null);
+        onClose();
+      }}
     >
       {piece && (
         <>
@@ -1044,7 +1060,7 @@ function PosterDialog({
             <div>
               <p>Top secret // decrypted</p>
               <p>
-                Print #{pad(index + 1)} / {pad(designWork.length)}
+                Print #{pad(index + 1)} / {pad(archive.length)}
               </p>
             </div>
             <span className={styles.terminalBadge}>Graphic design</span>
@@ -1053,8 +1069,30 @@ function PosterDialog({
             {piece.title}
           </h3>
           <div className={styles.printGrid}>
-            <figure className={styles.printFrame} data-terminal-in>
+            <figure
+              className={styles.printFrame}
+              data-terminal-in
+              data-zoomed={zoomed === piece.file || undefined}
+              onClick={() => setZoomed((z) => (z === piece.file ? null : piece.file))}
+              onPointerMove={(e) => {
+                // While zoomed, the picture follows the pointer: move to look around.
+                const box = e.currentTarget.getBoundingClientRect();
+                e.currentTarget.style.setProperty(
+                  "--ox",
+                  `${((e.clientX - box.left) / box.width) * 100}%`,
+                );
+                e.currentTarget.style.setProperty(
+                  "--oy",
+                  `${((e.clientY - box.top) / box.height) * 100}%`,
+                );
+              }}
+            >
               <img src={designWorkUrl(piece.file)} alt={piece.title} />
+              <figcaption aria-hidden>
+                {zoomed === piece.file
+                  ? "Click to zoom out · move to look around"
+                  : "Click to zoom in"}
+              </figcaption>
             </figure>
             <aside className={styles.meta} data-terminal-in>
               <h4>Metadata</h4>

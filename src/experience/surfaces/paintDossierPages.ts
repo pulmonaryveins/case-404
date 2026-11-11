@@ -169,7 +169,9 @@ export function paintProfilePage(onPortrait: () => void) {
   text(ctx, profile.status, px, y, 36);
   text(ctx, profile.location, px, y + 52, 36);
   y += 130;
-  profile.roles.forEach((role, i) => text(ctx, role, px, y + i * 52, 36, TYPE, RED));
+  [...profile.roles, `FOCUS: ${profile.focus}`].forEach((role, i) =>
+    text(ctx, role, px, y + i * 52, 36, TYPE, RED),
+  );
 
   // "Identity found" stamp answers the board's SUBJECT UNKNOWN.
   ctx.save();
@@ -339,7 +341,7 @@ function paintCasePage(index: number) {
   ctx.font = `bold 21px ${TYPE}`;
   ctx.fillStyle = RED;
   tracking(ctx, 3);
-  ctx.fillText("UI/UX DESIGNER & FRONTEND DEVELOPER", M, 276);
+  ctx.fillText(`${profile.roles.join(" & ")} · ${profile.focus}`, M, 276);
   tracking(ctx, 0);
   let y = paragraph(ctx, profile.about, M, 340, WIDTH, 30, SOFT, 1.5) + 36;
 

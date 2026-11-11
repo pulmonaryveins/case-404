@@ -79,6 +79,7 @@ export function TerminalDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const busy = useRef(false);
+  const closing = useRef(false);
   const dir = useRef<1 | -1>(1);
 
   useEffect(() => {
@@ -149,9 +150,16 @@ export function TerminalDialog({
    */
   const close = () => {
     const d = dialog.current;
-    if (!d || id === null || busy.current) return;
+    if (!d || id === null || closing.current) return;
     if (reduced()) return d.close();
-    busy.current = true;
+    closing.current = true;
+    // Closed in the middle of paging: stop that, and fold the record as it is.
+    if (busy.current) {
+      gsap.killTweensOf(d.querySelectorAll("[data-wipe], [data-terminal-in], [data-terminal-bg]"));
+      gsap.set(d.querySelectorAll("[data-wipe]"), { scaleX: 0 });
+      gsap.set(d.querySelectorAll("[data-terminal-in]"), { autoAlpha: 1, x: 0 });
+      busy.current = false;
+    }
     // Bring the card into view first, at once (the page's smooth scrolling
     // would move it while the record is still folding towards it).
     document
@@ -167,7 +175,7 @@ export function TerminalDialog({
         onComplete: () => {
           d.close();
           gsap.set(d, { clearProps: "clipPath,opacity,visibility" });
-          busy.current = false;
+          closing.current = false;
         },
       })
       .to(q("[data-terminal-ui]"), { autoAlpha: 0, duration: 0.2, ease: "power1.out" }, 0)
@@ -184,7 +192,7 @@ export function TerminalDialog({
   /** Pages: the record slides away, a dark wipe sweeps in the same direction, then the parent swaps the item. */
   const go = (to: 1 | -1) => {
     const d = dialog.current;
-    if (id === null || !d || busy.current) return;
+    if (id === null || !d || busy.current || closing.current) return;
     dir.current = to;
     if (reduced()) return onStep(to);
     busy.current = true;
@@ -225,7 +233,11 @@ export function TerminalDialog({
           {bg && <img className={styles.terminalBg} src={bg} alt="" data-terminal-bg />}
           <div className={styles.terminalWipe} data-wipe aria-hidden />
           <button className={styles.terminalClose} onClick={close} data-terminal-ui>
-            Close file [Esc]
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M5 5l14 14M19 5L5 19" />
+            </svg>
+            <span>Close</span>
+            <kbd aria-hidden>Esc</kbd>
           </button>
           <button
             className={`${styles.terminalArrow} ${styles.terminalPrev}`}
@@ -233,7 +245,9 @@ export function TerminalDialog({
             aria-label={`Previous ${step}`}
             data-terminal-ui
           >
-            ‹
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M14.5 5l-7 7 7 7" />
+            </svg>
           </button>
           <button
             className={`${styles.terminalArrow} ${styles.terminalNext}`}
@@ -241,7 +255,9 @@ export function TerminalDialog({
             aria-label={`Next ${step}`}
             data-terminal-ui
           >
-            ›
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M9.5 5l7 7-7 7" />
+            </svg>
           </button>
           <article className={styles.terminalInner} key={id}>
             {children}

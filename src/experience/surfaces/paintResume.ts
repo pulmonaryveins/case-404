@@ -96,7 +96,7 @@ function paint(ctx: Ctx, width: number, scale: number) {
   text(profile.name.join(" ").toUpperCase(), M, y, `bold 46px ${TYPE}`);
   tracking(ctx, 0);
   y += 36;
-  text(profile.roles.join("  |  "), M, y, `bold 19px ${TYPE}`, SOFT);
+  text([...profile.roles, profile.focus].join("  |  "), M, y, `bold 19px ${TYPE}`, SOFT);
   y += 30;
   for (const line of contactLines()) {
     text(line, M, y, `16.5px ${SERIF}`, SOFT);

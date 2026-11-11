@@ -25,7 +25,7 @@ export function nigelCaseFile() {
   lines.push("SUBJECT");
   lines.push(`Name: ${fullName}`);
   lines.push(`Location: ${profile.location}`);
-  lines.push(`Roles: ${profile.roles.join(", ")}`);
+  lines.push(`Role: ${profile.roles.join(", ")}, focused on ${profile.focus}`);
   if (current)
     lines.push(`Current post: ${current.role} at ${current.organization} (${current.period})`);
   lines.push(`About: ${profile.about}`);
@@ -145,6 +145,10 @@ export const NIGEL_GREETING = [
   'Type a question and press ENTER. Type "EXIT" to eject the disk.',
 ];
 
+/** The offline answer when a question matches nothing in the file. */
+export const NIGEL_UNKNOWN =
+  "That is outside the file, detective. Ask about the subject: schooling, employment, skills, certificates or projects.";
+
 /**
  * Offline answers, for when the line to Gemini is down, busy or not set up:
  * the question's words are matched to a topic and answered from the file.
@@ -204,7 +208,7 @@ export function nigelOffline(question: string) {
   if (/\b(who are you|what are you|your name)\b/.test(q))
     return "N.I.G.E.L., detective. Networked Inquiry & General Evidence Locator, Attic Systems Ltd., 1974. I keep the file on the subject. Do ask about them.";
   if (has("who", "name", "about", "subject", " do", "does"))
-    return `The subject is ${fullName}: ${profile.roles.join(" and ").toLowerCase()}.${
+    return `The subject is ${fullName}: ${profile.roles.join(" and ").toLowerCase()} focused on ${profile.focus.toLowerCase()}.${
       current ? ` Presently ${current.role} at ${current.organization}.` : ""
     }`;
   if (has("contact", "email", "hire", "reach", "phone"))
@@ -213,5 +217,5 @@ export function nigelOffline(question: string) {
   // "hi, what can they do?" still gets an answer.
   if (/\b(hello|hi|hey|howdy|good (morning|afternoon|evening))\b/.test(q))
     return "Good day, detective. Ask about the subject, if you would. Their schooling, their posts, their skills.";
-  return "That is outside the file, detective. Ask about the subject: schooling, employment, skills, certificates or projects.";
+  return NIGEL_UNKNOWN;
 }

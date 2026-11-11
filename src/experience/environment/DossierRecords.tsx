@@ -26,7 +26,9 @@ export function DossierRecords() {
     <Html position={[0.02, 0.101, 0.12]} style={{ pointerEvents: "none" }}>
       <article className="sr-only" aria-label="Subject file">
         <h2>Case info: {profile.name.join(" ")}</h2>
-        <p>{profile.roles.join(" & ")}.</p>
+        <p>
+          {profile.roles.join(" & ")}, focused on {profile.focus}.
+        </p>
         <p>{profile.about}</p>
         <h3>Skills</h3>
         {profileSkills.map((skill) => (

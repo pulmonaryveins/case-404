@@ -188,8 +188,7 @@
 }
 
 .hudTopLeft,
-.hudTopRight,
-.hudBottomLeft {
+.hudTopRight {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -205,13 +204,6 @@
   top: 1rem;
   right: 1.25rem;
   text-align: right;
-}
-
-.hudBottomLeft {
-  bottom: 1rem;
-  left: 1.25rem;
-  flex-direction: row;
-  align-items: center;
 }
 
 /* The way into the 3D office: a manila evidence tag with a punched hole. */
@@ -294,7 +286,7 @@
 }
 
 /* Everything readable sits above the dark. */
-.hero > :not(.darkness):not(.ghost):not(.loader):not(.name):not(.tag):not(.lede):not(.scrollCue) {
+.hero > :not(.darkness):not(.loader):not(.name):not(.tag):not(.lede):not(.scrollCue) {
   position: relative;
   z-index: 2;
 }
@@ -364,40 +356,6 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-/* Hidden in the dark; the light reveals them. Index cards pinned to the file. */
-.ghost {
-  position: absolute;
-  z-index: 0;
-  padding: 0.7rem 0.9rem;
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  line-height: 1.6;
-  letter-spacing: 0.08em;
-  color: #d8c9a6;
-  background: rgba(216, 201, 166, 0.07);
-  border: 1px solid rgba(216, 201, 166, 0.22);
-}
-
-.ghostNote {
-  top: 20%;
-  left: 11%;
-  rotate: -4deg;
-}
-
-.ghostSeen {
-  top: 16%;
-  right: 14%;
-  rotate: 3deg;
-  color: var(--stamp);
-  border-color: rgba(178, 70, 60, 0.4);
-}
-
-.ghostTip {
-  bottom: 24%;
-  right: 9%;
-  rotate: -2deg;
 }
 
 /* The loader: the 3D office's own (src/experience/LoadingOverlay), so both
@@ -1814,15 +1772,28 @@
   letter-spacing: -0.01em;
 }
 
-/* The address, the biggest thing on the page. */
+/* The addresses, the biggest thing on the page: work, then personal. */
+.mailRows {
+  margin: 3.5rem 0 2rem;
+  border-top: 1px solid var(--line-strong);
+}
+
 .mailRow {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin: 3.5rem 0 2rem;
-  padding: 1.6rem 0;
-  border-top: 1px solid var(--line-strong);
+  padding: 1.3rem 0;
   border-bottom: 1px solid var(--line-strong);
+}
+
+.mailLabel {
+  flex: none;
+  width: 6.5rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .site .bigMail {
@@ -1833,7 +1804,7 @@
   gap: 1rem;
   min-width: 0;
   font-family: var(--serif);
-  font-size: clamp(1.5rem, 4.4vw, 4rem);
+  font-size: clamp(1.4rem, 3.4vw, 3.1rem);
   line-height: 1.1;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -2071,9 +2042,18 @@
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 700px) {
   .mailRow {
     flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+  }
+
+  .mailLabel {
+    width: 100%;
+  }
+
+  .site .bigMail {
+    flex-basis: 100%;
   }
 }
 
@@ -2576,57 +2556,118 @@
   transform: translateZ(0);
 }
 
+/* Close: top right, an X with its label and the key that does it. */
 .terminalClose {
   position: fixed;
-  top: 1rem;
-  left: 50%;
+  top: 1.1rem;
+  right: 1.25rem;
   z-index: 3;
-  translate: -50% 0;
-  padding: 0.6rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.9rem;
   font-family: var(--mono);
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  background: #0a0908;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.85);
   border: 1px solid var(--line-strong);
-  transition:
-    border-color 0.25s,
-    color 0.25s;
-}
-
-.terminalClose:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.terminalArrow {
-  position: fixed;
-  top: 50%;
-  z-index: 3;
-  width: 3.4rem;
-  height: 3.4rem;
-  margin-top: -1.7rem;
-  font-size: 1.4rem;
-  background: #0a0908;
-  border: 1px solid var(--line-strong);
+  backdrop-filter: blur(8px);
   transition:
     background 0.25s,
     color 0.25s,
     border-color 0.25s;
 }
 
-.terminalArrow:hover {
+.terminalClose svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.terminalClose kbd {
+  padding: 0.15rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+}
+
+.terminalClose:hover,
+.terminalClose:focus-visible {
+  color: #0a0908;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.terminalClose:hover svg {
+  transform: rotate(90deg);
+}
+
+.terminalClose:hover kbd {
+  color: #0a0908;
+  border-color: rgba(10, 9, 8, 0.4);
+}
+
+/* Paging: round buttons with a chevron, standing off the screen's edge. */
+.terminalArrow {
+  position: fixed;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 3.6rem;
+  height: 3.6rem;
+  margin-top: -1.8rem;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.85);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  transition:
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s,
+    transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.terminalArrow svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.terminalArrow:hover,
+.terminalArrow:focus-visible {
   color: #0a0908;
   background: var(--accent);
   border-color: var(--accent);
 }
 
 .terminalPrev {
-  left: 0;
+  left: 1.25rem;
 }
 
 .terminalNext {
-  right: 0;
+  right: 1.25rem;
+}
+
+.terminalPrev:hover {
+  transform: translateX(-3px);
+}
+
+.terminalNext:hover {
+  transform: translateX(3px);
 }
 
 .terminalInner {
@@ -2817,31 +2858,7 @@
 .frame {
   position: relative;
   margin: 0 0 2.6rem;
-  padding: 0.6rem;
-}
-
-.frame::before,
-.frame::after {
-  content: "";
-  position: absolute;
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 2px solid var(--accent);
-  pointer-events: none;
-}
-
-.frame::before {
-  top: 0;
-  left: 0;
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.frame::after {
-  right: 0;
-  bottom: 0;
-  border-left: 0;
-  border-top: 0;
+  padding: 0;
 }
 
 .frame button {
@@ -2887,6 +2904,10 @@
     top: auto;
     bottom: 1rem;
     margin-top: 0;
+  }
+
+  .terminalClose kbd {
+    display: none;
   }
 }
 
@@ -3073,31 +3094,12 @@
 .printFrame {
   position: relative;
   margin: 0;
-  padding: 0.6rem;
+  padding: 0;
 }
 
-.printFrame::before,
-.printFrame::after {
-  content: "";
-  position: absolute;
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 2px solid var(--accent);
-  pointer-events: none;
-}
-
-.printFrame::before {
-  top: 0;
-  left: 0;
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.printFrame::after {
-  right: 0;
-  bottom: 0;
-  border-left: 0;
-  border-top: 0;
+.printFrame {
+  overflow: hidden;
+  cursor: zoom-in;
 }
 
 .printFrame img {
@@ -3107,6 +3109,32 @@
   object-fit: contain;
   object-position: top left;
   background: #000;
+  transform-origin: var(--ox, 50%) var(--oy, 50%);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Zoomed: three times the size, the point under the pointer held in place. */
+.printFrame[data-zoomed] {
+  cursor: zoom-out;
+}
+
+.printFrame[data-zoomed] img {
+  transform: scale(3);
+}
+
+.printFrame figcaption {
+  position: absolute;
+  left: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 1;
+  padding: 0.35rem 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.8);
+  pointer-events: none;
 }
 
 .printGrid .meta {
@@ -3133,10 +3161,8 @@
     display: none !important;
   }
 
-  /* No pointer to carry the light, so the hero stays lit, and the hidden
-     notes (which only the light reveals, one of them about the 3D room) go. */
-  .darkness,
-  .ghost {
+  /* No pointer to carry the light, so the hero stays lit. */
+  .darkness {
     display: none;
   }
 
@@ -3145,5 +3171,438 @@
   .listBg .cardMedia {
     filter: grayscale(0.3) brightness(0.65);
     transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* N.I.G.E.L., the records terminal, in the corner                      */
+/* ------------------------------------------------------------------ */
+
+.site .nigelLauncher {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(10, 9, 8, 0.88);
+  border: 1px solid var(--accent-deep);
+  backdrop-filter: blur(6px);
+  transition:
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s;
+}
+
+.site .nigelLauncher:hover {
+  color: #0a0908;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.nigel {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 4.6rem;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, calc(100vw - 2.5rem));
+  max-height: min(34rem, calc(100svh - 6.5rem));
+  background: #0d0b0a;
+  border: 1px solid var(--accent-deep);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.9);
+  animation: nigelIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes nigelIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.8rem);
+  }
+}
+
+.nigelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.nigelHead span {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+/* The mascot, with a glow, as on the terminal's tube. */
+.nigelFace {
+  flex: none;
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px rgba(217, 168, 96, 0.55));
+}
+
+.nigelAvatar {
+  width: 3.4rem;
+  height: 2.85rem;
+}
+
+.nigelMini {
+  width: 1.6rem;
+  height: 1.35rem;
+  margin-right: 0.7rem;
+  filter: none;
+  color: inherit;
+}
+
+.nigelHead strong {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+}
+
+.nigelHead small {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nigelHead button {
+  width: 1.8rem;
+  height: 1.8rem;
+  background: none;
+  border: 1px solid var(--line-strong);
+}
+
+.nigelHead button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nigelLog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 8rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.nigelLog p {
+  margin: 0;
+}
+
+.nigelRow {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.nigelRow[data-first="false"] {
+  margin-top: -0.35rem;
+}
+
+/* N.I.G.E.L.: his face in a round badge on the left; the visitor: right, in amber. */
+.nigelBadge {
+  flex: none;
+  width: 2.2rem;
+}
+
+.nigelBadgeFace {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0.4rem 0.3rem;
+  box-sizing: border-box;
+  border: 1px solid var(--accent-deep);
+  border-radius: 50%;
+  background: rgba(217, 168, 96, 0.08);
+}
+
+.nigelBubble {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: calc(100% - 2.8rem);
+}
+
+.nigelWho {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nigelRow[data-who="nigel"] .nigelWho {
+  color: var(--accent);
+}
+
+.nigelRow[data-who="nigel"] p {
+  color: var(--text);
+}
+
+.nigelRow[data-who="you"] {
+  justify-content: flex-end;
+}
+
+.nigelRow[data-who="you"] .nigelBubble {
+  justify-items: end;
+  max-width: 85%;
+}
+
+.nigelRow[data-who="you"] p {
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  color: #0a0908;
+  background: var(--accent);
+}
+
+.nigelLog p[data-who="note"] {
+  padding: 0.6rem 0.8rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border-left: 2px solid var(--accent);
+  background: rgba(217, 168, 96, 0.06);
+}
+
+.nigelThinking {
+  animation: blink 1s steps(2, start) infinite;
+}
+
+.nigelChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.nigelChips button {
+  padding: 0.4rem 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-align: left;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line-strong);
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.nigelChips button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nigelForm {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--line-strong);
+}
+
+.nigelForm input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text);
+  background: #14120f;
+  border: 1px solid var(--line-strong);
+}
+
+.nigelForm input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.nigelForm button {
+  padding: 0 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #0a0908;
+  background: var(--accent);
+  border: 0;
+}
+
+.nigelForm button:disabled {
+  opacity: 0.4;
+}
+
+.nigelFoot {
+  margin: 0;
+  padding: 0 1rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .site .nigelLauncher {
+    bottom: 1rem;
+  }
+
+  .nigel {
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 5.6rem;
+    width: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phones                                                               */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 720px) {
+  /* Every size in rem grows a little, so the small mono labels stay readable. */
+  :global(html) {
+    font-size: 18px;
+  }
+
+  /* The corner readouts would sit over the text as it scrolls. */
+  .hud {
+    display: none;
+  }
+
+  /* The feature print is a square here, not the wide band of the tablet layout. */
+  .posters > li[data-feature] .posterImg {
+    aspect-ratio: 1;
+  }
+
+  /* The full-screen record: close at the top right, paging at the bottom,
+     clear of the text. */
+  .terminalClose {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .terminalInner {
+    padding: 4.2rem 0 7rem;
+  }
+
+  .terminalArrow {
+    bottom: 0.9rem;
+    width: 3.4rem;
+    height: 3.4rem;
+  }
+
+  .terminalPrev {
+    left: 0.9rem;
+  }
+
+  .terminalNext {
+    right: 0.9rem;
+  }
+
+  /* Comfortable tap targets. */
+  .footer li a {
+    display: inline-block;
+    padding: 0.45rem 0;
+  }
+
+  .footerBar a {
+    padding: 0.5rem 0;
+  }
+
+  .toggle button {
+    min-height: 2.6rem;
+  }
+
+  .scrollCue {
+    padding: 0.8rem 1rem;
+  }
+
+  .bigMail {
+    padding: 0.25rem 0;
+  }
+
+  /* N.I.G.E.L. as a round button with his face; the chat opens above it. */
+  .site .nigelLauncher {
+    width: 3.4rem;
+    height: 3.4rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0;
+  }
+
+  .nigelMini {
+    margin: 0;
+    width: 1.9rem;
+    height: 1.6rem;
+  }
+}
+
+/* Touch has no hover: the "View print" tag only gets in the way. */
+@media (hover: none) and (pointer: coarse) {
+  .posterView {
+    display: none;
+  }
+
+  /* No hover to bring a print to colour: show them as they are. */
+  .posterImg img {
+    filter: none;
+  }
+}
+
+/* Merch and apparel: three across, under the wall of prints. */
+.merchHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1.2rem;
+  margin: 4rem 0 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line-strong);
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.6rem;
+}
+
+.merchHead small {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.merchRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem 1.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each design is a front and a back side by side: a wide frame. */
+.merchRow .posterImg {
+  aspect-ratio: 2 / 1;
+}
+
+@media (max-width: 720px) {
+  .merchRow {
+    grid-template-columns: 1fr;
   }
 }
