@@ -31,6 +31,8 @@
 /* Film grain over everything, never in the way of the pointer. */
 .site::after {
   content: "";
+  /* Its own layer: the grain never repaints with the page. */
+  transform: translateZ(0);
   position: fixed;
   inset: 0;
   z-index: 30;
@@ -3476,6 +3478,52 @@
   /* Every size in rem grows a little, so the small mono labels stay readable. */
   :global(html) {
     font-size: 18px;
+  }
+
+  /* The name never breaks mid-word: it sets its size from the screen's width. */
+  .name {
+    font-size: clamp(1.7rem, 10vw, 3.6rem);
+  }
+
+  .nameLine {
+    white-space: nowrap;
+  }
+
+  .tag {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+  }
+
+  /* Tighter sections and panels: the text gets the width. */
+  .section {
+    padding: 4rem var(--gutter);
+  }
+
+  .contact {
+    padding: 5rem var(--gutter) 5.5rem;
+  }
+
+  .profile {
+    gap: 1rem;
+  }
+
+  .panel {
+    padding: 1.1rem 1rem;
+  }
+
+  .statement {
+    padding-left: 0.9rem;
+    font-size: 1.25rem;
+  }
+
+  .alertFoot {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .log {
+    padding-left: 1.3rem;
   }
 
   /* The corner readouts would sit over the text as it scrolls. */

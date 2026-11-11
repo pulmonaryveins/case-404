@@ -31,7 +31,7 @@ export const profileSkills = [
       "HTML, CSS, JavaScript, Angular, Tailwind, MySQL, NestJS, PHP, React, Laravel, Supabase, ASP.NET, C#",
   },
   { label: "DESIGN & MEDIA", value: "Figma, Adobe Photoshop, Premiere Pro, After Effects, Canva" },
-  { label: "WORKFLOW", value: "Git, GitHub" },
+  { label: "WORKFLOW", value: "Git, GitHub, Claude Code" },
 ] as const;
 
 /** Right-page records. Only ABOUT has content in Phase 4A. */
