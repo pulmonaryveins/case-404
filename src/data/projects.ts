@@ -38,9 +38,9 @@ export interface Project {
 
 /**
  * Archive projects shown on the floppy-disk rack. Placeholder copy: replace
- * titles, descriptions, tools and links with the real work. The rack holds
- * six disks per column (TIERS in environment/diskRackLayout.ts): add more
- * and the extra ones have nowhere to stand.
+ * titles, descriptions, tools and links with the real work. The rack has a
+ * fixed set of slots per category (PLAN in environment/diskRackLayout.ts):
+ * disks past them lie flat on the desk in front of the rack.
  */
 export const projects: Project[] = [
   {
@@ -450,7 +450,7 @@ export const projects: Project[] = [
       ["Type", "Internal operations tool"],
       ["Role", "Full-stack developer, Angular and Node"],
       ["Team", "Several developers and designers"],
-      ["Status", "In development"],
+      ["Status", "Work in progress"],
     ],
     description:
       "A web platform for N-Compass TV that follows every in-store flyer order from the moment it arrives to the moment it is delivered: who is working on it, how late it is and how the team is performing. The subject is a full-stack developer on it, and it is still being built: new features are added every sprint.",
@@ -550,6 +550,285 @@ export const projects: Project[] = [
       },
       { src: "/images/projects/development/flyers-4.webp", caption: "DESIGN FILE: REPORTS" },
       { src: "/images/projects/development/flyers-5.webp", caption: "DESIGN FILE: SIGN-IN" },
+    ],
+  },
+  {
+    id: "dev-7",
+    title: "Bangon",
+    category: "Development",
+    tagline:
+      "An AI-powered iOS companion that turns your own sleep, food, workout and spending data into small, honest daily nudges.",
+    facts: [
+      ["Type", "AI-powered personal iOS app"],
+      ["Role", "Solo designer and developer"],
+      ["Stack", "Ionic, Angular, Capacitor, Gemini API"],
+      ["Status", "Work in progress: prototype done, native build planned"],
+    ],
+    description:
+      'Bangon (Cebuano and Tagalog for "get up") is an AI-powered iOS app for rebuilding health, sleep, eating and spending habits in one place. Instead of juggling five apps, one AI companion reads your own sleep, food, workout and budget data and answers questions about your mind, body and money with specific, small suggestions. It is a work in progress: the interactive prototype is done and the native build is planned.',
+    sections: [
+      {
+        heading: "Work in progress",
+        text: "Only the idea and an interactive prototype exist so far. The app is not built yet, so what is described here is the plan.",
+      },
+      {
+        heading: "The problem",
+        text: "Poor sleep, stress, unhealthy eating, less exercise and unplanned spending feed into each other, and most apps tackle only one of them. Someone rebuilding all of these at once ends up juggling four or five apps, and quits.",
+      },
+      {
+        heading: "The AI companion",
+        items: [
+          "Knows your data: each answer draws on your recent sleep, spending and workout summaries, never your full history",
+          'Three modes: Mind (overthinking, wind-down routines), Body (what to eat or do today) and Money ("can I afford this?" checked against the real budget)',
+          "Spots patterns, such as headaches after short nights, and nudges toward one small action instead of a full lifestyle overhaul",
+          "Writes weekly summaries and suggests meals that respect your allergies",
+        ],
+      },
+      {
+        heading: "Around the AI",
+        items: [
+          "Summary: today's workout, steps, sleep, calories left and money spent, with a one-tap mood check",
+          "Workout: strength logging, plus run and hike recording with live routes and pins",
+          "Diary: food by barcode scan, checked against your allergy list",
+          "Budget: category bars and a keypad for adding spending in a few taps",
+        ],
+      },
+      {
+        heading: "Safety by design",
+        text: "It is honest, not a cheerleader, and knows its limits. It does not diagnose or treat anything and refers persistent symptoms to a doctor. If someone writes about hopelessness or self-harm, it drops the casual tone and points to real support and a trusted person. Allergy results always say to check the label.",
+      },
+      {
+        heading: "How it is built",
+        text: "Local-first: personal data stays in a database on the phone, and each AI request gets only a short context summary built on the device. Ionic with Angular and Capacitor, HealthKit for steps and sleep, Open Food Facts for barcodes, and the Gemini API free tier powering the companion.",
+      },
+    ],
+    purpose:
+      "Designed from one user's real needs: get active again, eat well around food allergies, sleep better and stop money from disappearing. The first prototype failed, so it was redesigned to remove typing and reuse patterns people already know.",
+    tools: ["Gemini API", "Ionic", "Angular", "Capacitor", "HealthKit", "Figma"],
+    screenshots: [
+      { src: "/images/projects/development/bangon-1.svg", caption: "SCREENSHOTS COMING" },
+    ],
+  },
+  {
+    id: "dev-8",
+    title: "Dashboard V2",
+    category: "Development",
+    tagline:
+      "The next version of N-Compass TV's dashboard for managing its digital signage network.",
+    facts: [
+      ["Company", "NTV360 (N-Compass TV)"],
+      ["Type", "Internal and customer-facing web platform"],
+      ["Role", "Frontend developer"],
+      ["Stack", "Angular 22 with SSR, Tailwind, Auth0"],
+      ["Status", "In development"],
+    ],
+    description:
+      "The second version of the N-Compass TV dashboard: an Angular web app for managing advertisers, dealers, hosts, screens, licenses, playlists, channels, templates and the media library. The subject builds the frontend.",
+    sections: [
+      {
+        heading: "From NTV360",
+        text: "A production platform for N-Compass TV, built in a team and still in active development, so what is described here will change. Screenshots are coming.",
+      },
+      {
+        heading: "What it covers",
+        items: [
+          "Advertisers, dealers, hosts and installations in one place",
+          "Screens and licenses, with a locator map",
+          "Playlists, channels, templates and a media library",
+          "Sign-in with Auth0 and an admin impersonation tool",
+        ],
+      },
+      {
+        heading: "My part",
+        text: "Frontend: building and reworking screens in Angular, using the company's shared component library, so the dashboard looks and behaves the same across every feature.",
+      },
+      {
+        heading: "How it is built",
+        text: "Angular with server-side rendering and a backend-for-frontend layer, so the backend API address and credentials never reach the browser. Deployed with Terraform to AWS.",
+      },
+    ],
+    tools: ["Angular", "TypeScript", "Tailwind CSS", "Auth0", "ApexCharts"],
+    screenshots: [
+      { src: "/images/projects/development/dashboard-v2-1.svg", caption: "SCREENSHOTS COMING" },
+    ],
+  },
+  {
+    id: "dev-9",
+    title: "Kuryente",
+    category: "Development",
+    tagline:
+      "An AI-powered home energy app: see where your electricity goes, and get told how to spend less of it.",
+    facts: [
+      ["Type", "AI-powered energy dashboard, web and mobile"],
+      ["Role", "Solo designer and developer"],
+      ["Stack", "Angular, Node, TimescaleDB, Gemini API"],
+      ["Status", "Idea stage: AI integration planned, nothing built yet"],
+    ],
+    description:
+      "Kuryente (Filipino for electricity) is an AI-powered app that helps a household manage its energy use. A personal dashboard tracks consumption live and by appliance, and an AI assistant explains the bill, spots waste and suggests changes that save money. It is an idea in planning: nothing is built yet.",
+    sections: [
+      {
+        heading: "Idea stage",
+        text: "Only the concept exists so far. Everything below is the plan, and it will change as the idea is tested.",
+      },
+      {
+        heading: "The problem",
+        text: "Most households only learn what they used when the bill arrives, weeks later and as one number. Nobody can tell which appliance, habit or hour of the day caused it, so there is nothing to change.",
+      },
+      {
+        heading: "The dashboard",
+        items: [
+          "Live power draw for the whole home, plus today, this week and this month",
+          "A breakdown by room and appliance, from smart plugs and a main-meter sensor",
+          "Estimated bill so far this month, using the local utility's rate",
+          "A monthly budget in pesos or kWh, with an alert before it is reached",
+        ],
+      },
+      {
+        heading: "The AI",
+        items: [
+          "Explains the bill in plain words: what rose, what fell and why",
+          "Spots waste, such as an aircon running in an empty room or a fridge that has started working harder than before",
+          "Learns the household's routine and suggests when to run the washer or charge devices to cut cost",
+          "Forecasts the next bill from this month's habits",
+          'Answers questions like "what happens to my bill if I raise the aircon by two degrees?"',
+          "Weekly report with one small action to try, not a list of twenty",
+        ],
+      },
+      {
+        heading: "More ideas",
+        items: [
+          "Appliance health: a device's changing power signature can warn that it is wearing out",
+          "Solar check: whether panels and a battery would pay off for this home's usage",
+          "Household challenges: members compete to cut the most, with a shared goal",
+          "Automations: turn off standby devices at night, with the user's approval",
+          "Carbon estimate alongside cost",
+        ],
+      },
+      {
+        heading: "How the AI would fit in",
+        items: [
+          "Chat assistant: a Gemini-powered chat that can look up the home's usage, rates and budget, so answers use real numbers instead of general tips",
+          "Forecasting: a small model on the stored time series predicts the next bill and the day's peak",
+          "Waste detection: unusual draw, such as a device left on or one using more than it used to, is flagged by comparing against that device's own normal pattern",
+          "Appliance recognition: from the whole-home reading alone, learn which appliance switched on, so homes without a plug on everything still get a breakdown",
+          "Privacy: only summarised usage reaches the AI, never raw device data or account details",
+        ],
+      },
+      {
+        heading: "How it could be built",
+        text: "Smart plugs and a clamp meter report to the app over MQTT, readings are stored as time series, and a Node API serves the dashboard and talks to the AI.",
+      },
+    ],
+    purpose:
+      "Electricity is a large, hard-to-see cost, especially in a hot climate where aircon dominates the bill. Showing where it goes, and getting advice from the household's own data, turns a monthly surprise into a habit people can change.",
+    tools: [
+      "Angular",
+      "Ionic",
+      "Capacitor",
+      "TypeScript",
+      "Node.js",
+      "NestJS",
+      "MQTT",
+      "TimescaleDB",
+      "ApexCharts",
+      "Gemini API",
+      "scikit-learn",
+      "Shelly smart plugs",
+      "Figma",
+    ],
+    screenshots: [
+      { src: "/images/projects/development/kuryente-1.svg", caption: "MOCKUPS COMING" },
+    ],
+  },
+  {
+    id: "dev-10",
+    title: "OrgaFlow",
+    category: "Development",
+    tagline:
+      "An integrated event planning and management system for student hospitality organizations, from the first idea to attendee feedback.",
+    facts: [
+      ["Type", "Capstone project, web app"],
+      ["For", "Hospitality management student organizations, University of Cebu"],
+      ["Role", "Full-stack developer"],
+      ["Stack", "Laravel, MySQL, Tailwind CSS, Gemini API"],
+    ],
+    description:
+      "OrgaFlow is an integrated event planning and management system for the hospitality management student organizations of the University of Cebu, built as a capstone project. It puts event details, tasks, calendars, budgets, tickets, announcements and feedback in one platform, so planning an event stops being stressful. It is meant to roll out across three University of Cebu campuses: Main, Lapu-Lapu Mandaue and Banilad. An AI layer is planned to draft event plans, answer questions about an event and summarize feedback. The subject is a full-stack developer on the capstone team.",
+    sections: [
+      {
+        heading: "Overview",
+        text: "Student organizations put on many events a year, and each one needs a plan, a team, a budget, tickets, announcements and a review afterwards. OrgaFlow covers the whole life of an event in one system, for the organizers who run it and the students who attend, using the same kind of tools that professionals in hotels, restaurants and event companies rely on.",
+      },
+      {
+        heading: "The problem",
+        text: "Planning an event is rewarding, but it often turns stressful without the right tools. Details sit in spreadsheets and chat threads, and when things get disorganized, deadlines slip, money is hard to track and nobody has the whole picture.",
+      },
+      {
+        heading: "How it works",
+        items: [
+          "Plan: an organizer creates the event and manages its details, and syncs it with the calendar to stay on schedule",
+          "Organize: tasks are assigned to the team and tracked from 0% to 100% done, so everyone stays connected",
+          "Fund: the budget is planned by category and every expense is tracked against it",
+          "Promote: announcements go out instantly, and tickets are managed, free or paid",
+          "Review: after the event, attendees fill in an evaluation form that organizers publish and email to them",
+        ],
+      },
+      {
+        heading: "What it does",
+        items: [
+          "Event creation and details, with a card for each event",
+          "Merchandise: sell event merchandise and manage orders",
+          "Task assignment and tracking with progress",
+          "Calendar sync and scheduling",
+          "Budget management by category, with progress and expense tracking",
+          "Ticket management, with free and paid tickets",
+          "Instant announcements, with notifications",
+          "Attendee feedback: a published evaluation form that can be emailed to attendees",
+          "RSVP, attendance tracking and polls",
+          "Role-based access, with separate views for organizers and attendees",
+          "Analytics and reporting dashboard",
+        ],
+      },
+      {
+        heading: "Why it matters",
+        text: "Running events builds leadership, teamwork, budgeting and communication skills. OrgaFlow supports student activities and co-curricular learning by giving student teams the tools to practice them, and connects hospitality management students and their organizations under one unified system. Its tagline: student-led event management, more organized, more engaging and more meaningful.",
+      },
+      {
+        heading: "AI integration",
+        items: [
+          "Event planner: describe an event in a sentence and the AI drafts a checklist, task list, timeline and starting budget from the organization's past events",
+          'Assistant chat: organizers ask "what is still unassigned?" or "how much budget is left?" and get answers from the live event data',
+          "Announcement writer: turns event details into a clear announcement, in the right tone for each audience",
+          "Feedback insights: reads attendee comments and ratings and summarizes what worked, what did not and what to change next time",
+          "Turnout forecast: estimates attendance from past events, so the venue and budget fit",
+          "Smart reminders: nudges members about overdue tasks and attendees about upcoming events",
+          "Privacy: only the event's own data is sent to the AI, with student names and contact details left out",
+        ],
+      },
+      {
+        heading: "My part",
+        text: "Full-stack: building both the screens organizers and attendees use and the Laravel backend behind them, as part of a capstone group.",
+      },
+      {
+        heading: "See it",
+        text: "The explainer video for OrgaFlow, 3 minutes 19 seconds from the problem through each feature to the campuses it will serve, is also on this archive, under Video Editing.",
+      },
+    ],
+    purpose:
+      "Made as a capstone for the hospitality management student organizations of the University of Cebu, to make planning events less stressful and to support student activities and co-curricular learning.",
+    tools: ["Laravel", "MySQL", "Tailwind CSS", "Blade", "Gemini API", "Figma"],
+    screenshots: [
+      { src: "/images/projects/development/orgaflow-1.webp", caption: "THE ATTENDEE HOME PAGE" },
+      { src: "/images/projects/development/orgaflow-2.webp", caption: "EVENTS" },
+      { src: "/images/projects/development/orgaflow-3.webp", caption: "CREATING A TASK" },
+      { src: "/images/projects/development/orgaflow-4.webp", caption: "BUDGET MANAGEMENT" },
+      { src: "/images/projects/development/orgaflow-5.webp", caption: "CREATING AN ANNOUNCEMENT" },
+      { src: "/images/projects/development/orgaflow-6.webp", caption: "TICKET PURCHASES" },
+      { src: "/images/projects/development/orgaflow-7.webp", caption: "ANALYTICS DASHBOARD" },
+      { src: "/images/projects/development/orgaflow-8.webp", caption: "MERCHANDISE ORDERS" },
+      { src: "/images/projects/development/orgaflow-9.webp", caption: "AN ORDER" },
+      { src: "/images/projects/development/orgaflow-10.webp", caption: "POST-EVENT FEEDBACK FORM" },
     ],
   },
   {

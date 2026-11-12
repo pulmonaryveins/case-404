@@ -22,7 +22,7 @@ export const COLUMN_TAGS = ["DEV", "UI / UX + DEV", "VIDEO"];
 
 /**
  * Each category's slots, [column, tier] in project order. Disks past a list
- * go on behind the category's last slot's column.
+ * lie on the desk in front of the rack (see `rackSlot`).
  */
 const PLAN: Record<RackColumn, [number, number][]> = {
   Development: [
@@ -98,12 +98,44 @@ export const RACK_DISK_QUAT = new Quaternion()
   .setFromEuler(new Euler(-TILT, 0, 0))
   .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI)));
 
-/** Rest pose (station frame) of a category's `n`th disk. */
-export function rackSlot(category: RackColumn, n: number) {
+/**
+ * Disks past a category's slots do not stack behind the rack: they lie on the
+ * desk in front of it in one line, centred on the rack, each a little over the
+ * edge of the one before (not stacked, just lined up). Face up, label toward
+ * the rack so the text reads upright.
+ *
+ * Nothing floats: the first disk lies flat; every later one rests its left edge
+ * on the previous disk's right edge and its right edge on the desk, so it tilts
+ * by the one disk thickness it is raised over its own width.
+ */
+const LYING_QUAT = new Quaternion()
+  .setFromEuler(new Euler(-Math.PI / 2, 0, 0))
+  .multiply(new Quaternion().setFromEuler(new Euler(0, 0, Math.PI)));
+/** Each disk overlaps the last by a fifth, which keeps the paper labels clear. */
+const LYING_STEP = DISK * 0.8;
+const LYING_IN_FRONT = 0.03 + DISK / 2;
+const LYING_LEAN = Math.atan2(DISK_T, DISK);
+const LYING_LEANED = new Quaternion()
+  .setFromEuler(new Euler(0, 0, -LYING_LEAN))
+  .multiply(LYING_QUAT);
+const ON_DESK = 0.0005;
+
+/**
+ * Rest pose (station frame) of a category's `n`th disk. `total` is how many
+ * disks the category has, so the loose ones can be centred as a line.
+ */
+export function rackSlot(category: RackColumn, n: number, total = n + 1) {
   const plan = PLAN[category];
-  const last = plan[plan.length - 1];
-  const [col, tier] = plan[n] ?? [last[0], last[1] + n - plan.length + 1];
-  return rackPose(col, tier);
+  if (n < plan.length) return rackPose(...plan[n]);
+  const k = n - plan.length;
+  const loose = total - plan.length;
+  const leaning = k > 0;
+  const position = new Vector3(
+    (k - (loose - 1) / 2) * LYING_STEP,
+    ON_DESK + (leaning ? DISK_T : DISK_T / 2),
+    LYING_IN_FRONT,
+  ).add(RACK_AT);
+  return { position, quaternion: (leaning ? LYING_LEANED : LYING_QUAT).clone() };
 }
 
 /** Rest pose (station frame) of the disk in `col`, `tier` places back. */

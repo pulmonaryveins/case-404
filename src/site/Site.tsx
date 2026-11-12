@@ -18,6 +18,7 @@ import { gsap, ScrollTrigger } from "../lib/gsap";
 import { NigelChat } from "./NigelChat";
 import { ProjectDialog } from "./ProjectDialog";
 import { TerminalDialog } from "./TerminalDialog";
+import { isLeanNetwork } from "./leanNetwork";
 import { cover } from "./projectMedia";
 import styles from "./Site.module.css";
 import { useSiteMotion } from "./useSiteMotion";
@@ -524,7 +525,7 @@ function Cover({ project }: { project: Project }) {
     return (
       <img className={styles.cardMedia} src={media.src} alt="" loading="lazy" draggable={false} />
     );
-  if (media?.kind === "video")
+  if (media?.kind === "video" && !isLeanNetwork())
     return (
       <video
         className={styles.cardMedia}

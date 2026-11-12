@@ -831,7 +831,11 @@ export function ArchiveStation() {
     const perRow = { Development: 0, "UI/UX": 0, "Video Editing": 0 };
     const disks = archiveProjects.map((project, index) => {
       const row = project.category as RackColumn;
-      const rest: DiskPose = rackSlot(row, perRow[row]++);
+      const rest: DiskPose = rackSlot(
+        row,
+        perRow[row]++,
+        archiveProjects.filter((p) => p.category === row).length,
+      );
       return { project, index, rest, insert: { position: insertCentre, quaternion: insertQuat } };
     });
     // Top of the terminal's case, where Wall-E stands.

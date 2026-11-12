@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import styles from "./Site.module.css";
+import { isLeanNetwork } from "./leanNetwork";
 
 const fmt = (s: number) =>
   Number.isFinite(s)
@@ -29,7 +30,7 @@ export function VideoPlayer({
   src,
   poster,
   silent = false,
-  preload = "metadata",
+  preload = isLeanNetwork() ? "none" : "metadata",
 }: {
   src: string;
   poster?: string;
