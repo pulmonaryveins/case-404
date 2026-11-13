@@ -1,19 +1,20 @@
 import { NIGEL_PERSONA } from "../../../src/data/nigelFile";
 
 /**
- * N.I.G.E.L.'s line to Gemini: a Cloudflare Worker that takes the visitor's
+ * N.I.G.E.L.'s line to its model: a Cloudflare Worker that takes the visitor's
  * conversation from the site, adds the persona and the case file (built from
- * the site's own data, src/data/nigelFile.ts), asks Gemini, and returns the
- * answer. The Gemini key lives here as a secret and never reaches the browser.
+ * the site's own data, src/data/nigelFile.ts), asks Cloudflare Workers AI, and
+ * returns the answer. No outside key: the model is reached through the `AI`
+ * binding in wrangler.toml.
  *
  * POST { messages: [{ role: "user" | "model", text }] }  ->  { answer }
  */
 
 interface Env {
-  /** Google AI Studio key: `npx wrangler secret put GEMINI_API_KEY`. */
-  GEMINI_API_KEY: string;
-  /** Gemini model id, e.g. gemini-2.5-flash (wrangler.toml [vars]). */
-  GEMINI_MODEL: string;
+  /** Workers AI binding (wrangler.toml [ai]). */
+  AI: { run: (model: string, input: unknown) => Promise<{ response?: string }> };
+  /** Workers AI model id (wrangler.toml [vars]). */
+  AI_MODEL: string;
   /** Comma-separated origins allowed to call this Worker (the site's own). */
   ALLOWED_ORIGINS: string;
 }
@@ -60,78 +61,7 @@ function parse(body: unknown): Message[] | null {
   return out[out.length - 1].role === "user" ? out : null;
 }
 
-/** The model found to work, once the configured one stopped answering. */
-let cachedModel: string | null = null;
-
-/**
- * Time limits (ms). Together they fit inside the 15 s the site waits before
- * falling back to its card index, so a stuck model costs a few seconds, not
- * the whole answer: a short try, the model list, then a longer try on another.
- */
-const FIRST_TRY_MS = 5000;
-const LIST_MS = 1500;
-const LAST_TRY_MS = 8000;
-
-const API = "https://generativelanguage.googleapis.com/v1beta";
-
-/** Gemini's reply, or null if it did not arrive in `ms`. */
-async function ask(env: Env, model: string, contents: unknown, ms: number) {
-  const generationConfig: Record<string, unknown> = { maxOutputTokens: 1024, temperature: 0.7 };
-  // 2.5 Flash "thinks" by default, which spends the output budget; a records
-  // terminal answering from one page does not need it. (Newer models are left
-  // at their defaults, with room in the budget for their thinking.)
-  if (model.includes("2.5-flash")) generationConfig.thinkingConfig = { thinkingBudget: 0 };
-  try {
-    const res = await fetch(`${API}/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: NIGEL_PERSONA }] },
-        contents,
-        generationConfig,
-      }),
-      signal: AbortSignal.timeout(ms),
-    });
-    // Seen with `npx wrangler tail`.
-    console.log(`${model}: ${res.status}`);
-    return res;
-  } catch {
-    console.log(`${model}: no reply in ${ms} ms`);
-    return null;
-  }
-}
-
-/**
- * The newest plain Flash model this key may call (not lite, preview, image,
- * audio or live variants), by version number, other than `except` (the one
- * that just failed); null if none is listed or the list does not arrive.
- */
-async function newestFlash(env: Env, except: string): Promise<string | null> {
-  const res = await fetch(`${API}/models?pageSize=200`, {
-    headers: { "x-goog-api-key": env.GEMINI_API_KEY },
-    signal: AbortSignal.timeout(LIST_MS),
-  }).catch(() => null);
-  if (!res?.ok) return null;
-  const data = (await res.json()) as {
-    models?: { name: string; supportedGenerationMethods?: string[] }[];
-  };
-  const version = (id: string) => parseFloat(id.match(/gemini-(\d+(?:\.\d+)?)/)?.[1] ?? "0");
-  const candidates = (data.models ?? [])
-    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
-    .map((m) => m.name.replace(/^models\//, ""))
-    .filter((id) => id !== except && /^gemini-[\d.]+-flash/.test(id))
-    .filter((id) => !/lite|preview|exp|image|audio|tts|live|thinking/.test(id))
-    .sort((a, b) => version(b) - version(a) || a.length - b.length);
-  if (candidates[0]) return candidates[0];
-  // Only previews on offer: take the newest of those rather than nothing.
-  const previews = (data.models ?? [])
-    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
-    .map((m) => m.name.replace(/^models\//, ""))
-    .filter((id) => id !== except && /^gemini-[\d.]+-flash/.test(id))
-    .filter((id) => !/lite|image|audio|tts|live/.test(id))
-    .sort((a, b) => version(b) - version(a));
-  return previews[0] ?? null;
-}
+const TIMEOUT_MS = 12000;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -151,32 +81,25 @@ export default {
     }
     if (!messages) return json({ error: "bad request" }, 400, headers);
 
-    const contents = messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
-    const model = cachedModel ?? env.GEMINI_MODEL;
-    let res = await ask(env, model, contents, FIRST_TRY_MS);
-    if (!res?.ok) {
-      // Stuck, overloaded, out of quota or retired: ask Google which other
-      // Flash models this key can use, try the newest, remember it if it works.
-      const found = await newestFlash(env, model);
-      if (found) {
-        const next = await ask(env, found, contents, LAST_TRY_MS);
-        if (next?.ok) cachedModel = found;
-        res = next ?? res;
-      }
+    const chat = [
+      { role: "system", content: NIGEL_PERSONA },
+      ...messages.map((m) => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text,
+      })),
+    ];
+    try {
+      const out = await Promise.race([
+        env.AI.run(env.AI_MODEL, { messages: chat, max_tokens: 300, temperature: 0.7 }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), TIMEOUT_MS)),
+      ]);
+      const answer = out.response?.trim();
+      if (!answer) return json({ error: "no answer" }, 502, headers);
+      return json({ answer }, 200, headers);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      console.log(`${env.AI_MODEL}: ${detail}`);
+      return json({ error: "model unavailable", detail: detail.slice(0, 300) }, 502, headers);
     }
-    if (!res) return json({ error: "gemini timeout" }, 504, headers);
-    if (!res.ok) {
-      // 429 when the free quota is spent: the site falls back to its card index.
-      return json({ error: `gemini ${res.status}` }, res.status === 429 ? 429 : 502, headers);
-    }
-    const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const answer = data.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text ?? "")
-      .join("")
-      .trim();
-    if (!answer) return json({ error: "no answer" }, 502, headers);
-    return json({ answer }, 200, headers);
   },
 };
