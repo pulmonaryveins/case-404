@@ -98,7 +98,7 @@ export const projects: Project[] = [
           "The camera follows the story as the visitor scrolls",
           "Papers, photos and screens are painted live on canvas",
           "The sound effects are synthesised as they play, and the music comes from the gramophone",
-          "N.I.G.E.L., the records clerk on the red disk, answers questions about the subject through Google Gemini",
+          "N.I.G.E.L., the records clerk on the red disk, answers questions about the subject through Cloudflare Workers AI",
         ],
       },
     ],
@@ -118,7 +118,7 @@ export const projects: Project[] = [
       "Canvas 2D",
       "glTF-Transform",
       "Cloudflare Workers",
-      "Google Gemini",
+      "Workers AI",
     ],
     screenshots: [
       { src: "/images/projects/development/case-404-1.webp", caption: "THE OFFICE" },

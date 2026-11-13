@@ -3037,6 +3037,7 @@
   background: transparent;
   border: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
 }
 
@@ -3387,8 +3388,18 @@
     padding-top: 5rem;
   }
 
+  /* minmax(0, ...): a bare 1fr can't shrink below its widest child (the
+     thumbnail strip, a long tag row), which pushed the page sideways. */
   .terminalGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .terminalGrid > * {
+    min-width: 0;
+  }
+
+  .terminalTitle {
+    overflow-wrap: anywhere;
   }
 
   .meta {
@@ -4123,6 +4134,11 @@
     top: 0.75rem;
     right: 0.75rem;
     padding: 0.6rem 0.8rem;
+    background: #0a0908;
+  }
+
+  .terminalArrow {
+    background: #0a0908;
   }
 
   .terminalInner {
