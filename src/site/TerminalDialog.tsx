@@ -4,46 +4,49 @@ import styles from "./Site.module.css";
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-type Inset = [number, number, number, number];
-const OPEN: Inset = [0, 0, 0, 0];
+/** expo.inOut and power3.inOut, as CSS easings. */
+const EXPO_IN_OUT = "cubic-bezier(0.87, 0, 0.13, 1)";
+const POWER3_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
 
 /**
- * The inset (top, right, bottom, left, in % of the viewport) that frames an
- * item's card on screen, so the record can zoom out of the card and back into
- * it. A small box mid-screen when the card is out of view.
+ * The transform that shrinks a full-screen panel (origin top left) onto an
+ * item's card, so the record can grow out of the card and back into it. A
+ * small box mid-screen when the card is out of view.
  */
-function cardInset(attr: string, id: string): Inset {
-  const r = document.querySelector(`[${attr}="${CSS.escape(id)}"]`)?.getBoundingClientRect();
+function cardTransform(attr: string, id: string): string {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  if (!r || !r.width || r.right < 0 || r.left > w || r.bottom < 0 || r.top > h)
-    return [42, 42, 42, 42];
-  return [
-    (r.top / h) * 100,
-    ((w - r.right) / w) * 100,
-    ((h - r.bottom) / h) * 100,
-    (r.left / w) * 100,
-  ];
+  const r = document.querySelector(`[${attr}="${CSS.escape(id)}"]`)?.getBoundingClientRect();
+  const off = !r || !r.width || r.right < 0 || r.left > w || r.bottom < 0 || r.top > h;
+  const box = off
+    ? { x: w * 0.42, y: h * 0.42, width: w * 0.16, height: h * 0.16 }
+    : { x: r.left, y: r.top, width: r.width, height: r.height };
+  return `translate(${box.x}px, ${box.y}px) scale(${box.width / w}, ${box.height / h})`;
 }
 
 /**
- * A tween of the dialog's clip from one inset to another. The numbers are
- * tweened and written out by hand: letting GSAP interpolate the clip-path
- * string itself misreads some percentage values.
+ * The zoom is a plain dark panel scaled with a transform: the GPU moves it
+ * without repainting anything. (Clipping the whole record instead repainted
+ * the blurred cover and every line of text on each frame.) The record's
+ * content fades in once the panel has grown, and out before it shrinks.
  */
-function clipTween(el: HTMLElement, from: Inset, to: Inset, vars: gsap.TweenVars) {
-  const o = { p: 0 };
-  const write = () =>
-    (el.style.clipPath = `inset(${from
-      .map((f, i) => `${(f + (to[i] - f) * o.p).toFixed(3)}%`)
-      .join(" ")})`);
-  write();
-  return { target: o, vars: { ...vars, p: 1, onUpdate: write } };
+function zoomAnim(panel: HTMLElement, from: string, to: string, opts: KeyframeAnimationOptions) {
+  return panel.animate([{ transform: from }, { transform: to }], opts);
+}
+
+/**
+ * Puts focus back on the item's card without the keyboard focus ring (the
+ * browser would otherwise restore it as if tabbed to, and the card would sit
+ * lifted, outlined and lit after the record closes).
+ */
+function refocusCard(attr: string, id: string) {
+  const card = document.querySelector<HTMLElement>(`[${attr}="${CSS.escape(id)}"]`);
+  card?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
 }
 
 /**
  * The full-screen record both archives open into (projects and prints): it
- * zooms out of the card that was clicked and back into it on close; pages
+ * grows out of the card that was clicked and back into it on close; pages
  * between items with a dark wipe in the direction of travel; and shows an
  * optional dimmed, blurred cover behind. The content is the caller's: mark
  * what should rise in with `data-terminal-in`. Esc closes, the arrow keys (and
@@ -122,36 +125,39 @@ export function TerminalDialog({
     d.focus({ preventScroll: true });
     d.scrollTo({ top: 0 });
     if (reduced()) return;
-    const open = clipTween(d, cardInset(cardAttr, id), OPEN, {
-      duration: 0.85,
-      ease: "expo.inOut",
-      onComplete: () => void gsap.set(d, { clearProps: "clipPath" }),
-    });
-    gsap.to(open.target, open.vars);
+    const panel = d.querySelector<HTMLElement>("[data-zoom]");
+    if (panel)
+      zoomAnim(panel, cardTransform(cardAttr, id), "none", { duration: 700, easing: EXPO_IN_OUT });
     gsap.fromTo(
       q("[data-terminal-bg]"),
-      { scale: 1.3 },
-      { scale: 1, duration: 1.6, ease: "expo.out" },
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.7, ease: "power1.out", delay: 0.4 },
     );
-    gsap.from(q("[data-terminal-in]"), {
-      autoAlpha: 0,
-      y: 24,
-      duration: 0.7,
-      stagger: 0.06,
-      ease: "power3.out",
-      delay: 0.5,
-    });
-    gsap.from(q("[data-terminal-ui]"), { autoAlpha: 0, duration: 0.4, delay: 0.7 });
+    gsap.fromTo(
+      q("[data-terminal-in]"),
+      { autoAlpha: 0, y: 24 },
+      { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.05, ease: "power3.out", delay: 0.45 },
+    );
+    gsap.fromTo(
+      q("[data-terminal-ui]"),
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.35, delay: 0.6 },
+    );
   }, [id, cardAttr]);
 
   /**
    * Closes: the controls go, the record fades, the cover drifts closer, and
    * the whole thing folds back into its card, fading over the last stretch.
+   * Focus returns to the card, without the keyboard ring.
    */
   const close = () => {
     const d = dialog.current;
     if (!d || id === null || closing.current) return;
-    if (reduced()) return d.close();
+    if (reduced()) {
+      d.close();
+      refocusCard(cardAttr, id);
+      return;
+    }
     closing.current = true;
     // Closed in the middle of paging: stop that, and fold the record as it is.
     if (busy.current) {
@@ -166,27 +172,48 @@ export function TerminalDialog({
       .querySelector(`[${cardAttr}="${CSS.escape(id)}"]`)
       ?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
     const q = (sel: string) => d.querySelectorAll(sel);
-    const fold = clipTween(d, OPEN, cardInset(cardAttr, id), {
-      duration: 0.85,
-      ease: "power3.inOut",
-    });
+    const target = cardTransform(cardAttr, id);
+    const closedId = id;
+    const panel = d.querySelector<HTMLElement>("[data-zoom]");
+    // The record empties first, so the panel shrinks as one flat shape.
     gsap
-      .timeline({
-        onComplete: () => {
-          d.close();
-          gsap.set(d, { clearProps: "clipPath,opacity,visibility" });
-          closing.current = false;
-        },
-      })
-      .to(q("[data-terminal-ui]"), { autoAlpha: 0, duration: 0.2, ease: "power1.out" }, 0)
+      .timeline()
+      .to(q("[data-terminal-ui]"), { autoAlpha: 0, duration: 0.18, ease: "power1.out" }, 0)
       .to(
         q("[data-terminal-in]"),
-        { autoAlpha: 0, duration: 0.3, stagger: 0.015, ease: "power1.out" },
+        { autoAlpha: 0, y: -10, duration: 0.24, stagger: 0.01, ease: "power2.out" },
         0,
       )
-      .to(q("[data-terminal-bg]"), { scale: 1.08, duration: 0.85, ease: "power3.inOut" }, 0)
-      .to(fold.target, fold.vars, 0.1)
-      .to(d, { opacity: 0, duration: 0.25, ease: "power1.in" }, 0.7);
+      .to(q("[data-terminal-bg]"), { autoAlpha: 0, duration: 0.3, ease: "power1.out" }, 0);
+    // Then it folds back into its card and fades over the last stretch, so it
+    // lands on the card instead of covering it with a dark box.
+    const anims = panel
+      ? [
+          zoomAnim(panel, "none", target, {
+            duration: 620,
+            delay: 200,
+            easing: POWER3_IN_OUT,
+            fill: "forwards",
+          }),
+          panel.animate([{ opacity: 1 }, { opacity: 0 }], {
+            duration: 240,
+            delay: 600,
+            easing: "ease-out",
+            fill: "forwards",
+          }),
+        ]
+      : [];
+    void Promise.all(anims.map((a) => a.finished))
+      .catch(() => {})
+      .then(() => {
+        d.close();
+        anims.forEach((a) => a.cancel());
+        gsap.set(q("[data-terminal-ui], [data-terminal-in], [data-terminal-bg]"), {
+          clearProps: "all",
+        });
+        closing.current = false;
+        refocusCard(cardAttr, closedId);
+      });
   };
 
   /** Pages: the record slides away, a dark wipe sweeps in the same direction, then the parent swaps the item. */
@@ -230,6 +257,7 @@ export function TerminalDialog({
     >
       {id !== null && (
         <>
+          <div className={styles.terminalZoom} data-zoom aria-hidden />
           {bg && <img className={styles.terminalBg} src={bg} alt="" data-terminal-bg />}
           <div className={styles.terminalWipe} data-wipe aria-hidden />
           <button className={styles.terminalClose} onClick={close} data-terminal-ui>

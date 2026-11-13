@@ -490,7 +490,7 @@ function EvidenceBoard({ onOpen }: { onOpen: (p: Project) => void }) {
               <li key={p.id}>
                 <button onClick={() => onOpen(p)} data-project-id={p.id}>
                   <span className={styles.listBg} aria-hidden>
-                    <Cover project={p} />
+                    <Cover project={p} screenshot />
                   </span>
                   <span className={styles.listMain}>
                     <span className={styles.listNo}>Evidence #{pad(i + 1)}</span>
@@ -518,8 +518,17 @@ function EvidenceBoard({ onOpen }: { onOpen: (p: Project) => void }) {
   );
 }
 
-/** A project's cover: its first screenshot or video poster, or a frame of its video. */
-function Cover({ project }: { project: Project }) {
+/**
+ * A project's cover: its logo, else its first screenshot or video poster, else a frame of
+ * its video. With `screenshot`, the logo is skipped (the list view shows the real work).
+ */
+function Cover({ project, screenshot }: { project: Project; screenshot?: boolean }) {
+  if (project.logo && !screenshot)
+    return (
+      <span className={styles.cardLogo} aria-hidden>
+        <img src={project.logo.src} alt="" loading="lazy" draggable={false} />
+      </span>
+    );
   const media = cover(project);
   if (media?.kind === "image")
     return (
@@ -690,12 +699,19 @@ function SubjectProfile() {
           <h3 className={styles.logHead}>// FIELD_OPERATIONS [EXPERIENCE]</h3>
           <ul className={styles.log}>
             {experienceEntries.map((job) => (
-              <li key={job.id}>
-                <span className={styles.logTitle}>
-                  [{job.organization}] <span className={styles.badge}>{job.period}</span>
+              <li key={job.id} className={job.logo ? styles.logWithLogo : undefined}>
+                {job.logo && (
+                  <span className={styles.orgLogo} aria-hidden>
+                    <img src={job.logo} alt="" loading="lazy" draggable={false} />
+                  </span>
+                )}
+                <span className={styles.logBody}>
+                  <span className={styles.logTitle}>
+                    [{job.organization}] <span className={styles.badge}>{job.period}</span>
+                  </span>
+                  <span>{job.role}</span>
+                  {job.summary && <span className={styles.muted}>{job.summary}</span>}
                 </span>
-                <span>{job.role}</span>
-                {job.summary && <span className={styles.muted}>{job.summary}</span>}
               </li>
             ))}
           </ul>

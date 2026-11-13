@@ -20,6 +20,14 @@ export interface Project {
    * group it belongs to and a poster frame. Takes the place of `video`.
    */
   videos?: { src: string; title: string; group: string; poster: string; url?: string }[];
+  /**
+   * A logo (under public/) shown in place of a screenshot on the project's card.
+   * Without one, the card falls back to its cover image.
+   */
+  logo?: {
+    src: string;
+    /** A dark logo that needs flipping to read on the dark card. */ invert?: boolean;
+  };
   /** One line under the title on the record: what it is at a glance. */
   tagline?: string;
   /** Label/value rows at the top of the record (type, setting, subject...). */
@@ -45,6 +53,7 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: "dev-1",
+    logo: { src: "/logo-mark.png" },
     title: "CASE 404",
     category: "Development",
     tagline: "An interactive 3D portfolio, told as an open case in a 1970s detective's office.",
@@ -122,6 +131,7 @@ export const projects: Project[] = [
   },
   {
     id: "dev-2",
+    logo: { src: "/images/logos/ntv360.png" },
     title: "NTV360 Dev Portal",
     category: "Development",
     tagline:
@@ -130,28 +140,37 @@ export const projects: Project[] = [
       ["Company", "NTV360 (N-Compass TV)"],
       ["Type", "Internal developer platform"],
       ["Teams", "7 engineering and design teams"],
-      ["Built on", "Angular 21 with server-side rendering"],
+      ["Role", "Frontend developer: UI, document viewer and admin panel"],
+      ["Built on", "Angular 21 with server-side rendering, Supabase"],
     ],
     description:
-      "NTV360's internal developer portal: documentation, project registries, coding standards and onboarding guides for all seven engineering and design teams, in one place, so everyone ships faster.",
+      "NTV360's internal developer portal: documentation, project registries, coding standards and onboarding guides for all seven engineering and design teams, in one signed-in place. The subject has worked on it since May 2026: the interface, the in-page document viewer, the admin panel and the Frontend team's documentation.",
     sections: [
       {
         heading: "From NTV360",
-        text: "A company project of NTV360 (N-Compass TV). Only its public pages are shown here: the documentation inside the portal is private to the company.",
+        text: "A company project of NTV360 (N-Compass TV). The screenshots show the portal's structure; the documents and people inside it are private to the company, and anything personal has been blurred.",
       },
       {
         heading: "What it is",
-        text: "The NTV360 Dev Portal is where engineers and designers find what they need to do their work: how each team builds, which standards to follow, what projects exist and who owns them.\n\nIt replaces scattered notes and tribal knowledge with one signed-in portal that every team maintains for itself.",
+        text: "The NTV360 Dev Portal is where engineers and designers find what they need to do their work: how each team builds, which standards to follow, what projects exist and who owns them.\n\nIt replaces scattered notes and tribal knowledge with one portal that every team maintains for itself.",
       },
       {
         heading: "What's inside",
         items: [
-          "Team documentation: tech stack, getting-started guides, folder structure and coding patterns for each team",
-          "Code standards: the patterns to follow, common mistakes and the approved libraries",
-          "Project registry: each project's status, stack and contacts",
-          "Fast onboarding: new people go from zero to productive in hours, not days",
-          "Cross-team visibility: see how every team works and who to ask",
-          "Always up to date: each team revises its own docs every sprint",
+          "A public landing page with the seven teams, and a sign-in for everything else",
+          "Team pages: documents grouped by section, a project registry with live, dev and revamp status, the tech stack with versions, and team contacts",
+          "Architecture and standards: a diagram of the BFF pattern, signal-based coding patterns with copyable code, and a table of common mistakes and what to do instead",
+          "A document viewer in the page for PDF, Word, Markdown and slides, with fullscreen and slide navigation",
+          "Search across every team's pages with Ctrl K",
+          "A Tools page listing each language and framework, its version and which teams use it",
+        ],
+      },
+      {
+        heading: "The admin side",
+        items: [
+          "Manage portal users: roles, creating, editing and removing accounts",
+          "Add, edit and remove each team's documents, as an uploaded file or an external link",
+          "Arrange the sections a team's documents appear under",
         ],
       },
       {
@@ -167,13 +186,21 @@ export const projects: Project[] = [
         ],
       },
       {
+        heading: "His part",
+        items: [
+          "Redesigning the interface over several rounds, including the team pages and the tech stack view",
+          "The document viewer: PDF, Word and slides in a modal, with fullscreen, slide controls and drag-and-drop",
+          "The admin panel and the per-team document uploaders, plus fixes for Word documents on the production host",
+          "Writing the Frontend team's documentation: coding standards, the BFF diagram and the project registry",
+        ],
+      },
+      {
         heading: "How it is built",
         items: [
-          "A single-page Angular 21 app, rendered on the server for fast first loads",
+          "An Angular 21 app rendered on the server for fast first loads",
           "A Node and Express layer in front of the services (a backend for the frontend)",
-          "Sign-in only: there is no self-registration, an administrator grants access",
-          "Documents open in the page: PDF, Word and Markdown",
-          "Search across every team's documentation",
+          "Supabase for sign-in, roles and document storage: there is no self-registration, an administrator grants access",
+          "PDF.js and Mammoth to show PDFs and Word files in the page, and marked for Markdown",
         ],
       },
     ],
@@ -187,47 +214,82 @@ export const projects: Project[] = [
       "Express",
       "Tailwind CSS",
       "Supabase",
-      "Strapi",
+      "PDF.js",
       "ApexCharts",
       "GSAP",
       "Lottie",
     ],
     screenshots: [
       { src: "/images/projects/development/ntv360-portal-1.webp", caption: "THE LANDING PAGE" },
+      { src: "/images/projects/development/ntv360-portal-2.webp", caption: "THE SEVEN TEAMS" },
+      { src: "/images/projects/development/ntv360-portal-3.webp", caption: "A TEAM PAGE" },
+      { src: "/images/projects/development/ntv360-portal-14.webp", caption: "WHAT'S INSIDE" },
       {
-        src: "/images/projects/development/ntv360-portal-2.webp",
-        caption: "THE SEVEN TEAMS",
+        src: "/images/projects/development/ntv360-portal-11.webp",
+        caption: "THE PI PLAYER TEAM PAGE",
       },
-      { src: "/images/projects/development/ntv360-portal-3.webp", caption: "WHAT'S INSIDE" },
+      {
+        src: "/images/projects/development/ntv360-portal-12.webp",
+        caption: "THE PROJECT REGISTRY",
+      },
       {
         src: "/images/projects/development/ntv360-portal-4.webp",
-        caption: "SIGN-IN, NO SELF-REGISTRATION",
+        caption: "PROJECT REGISTRY, OPENED",
+      },
+      { src: "/images/projects/development/ntv360-portal-5.webp", caption: "TECH STACK" },
+      { src: "/images/projects/development/ntv360-portal-6.webp", caption: "BFF ARCHITECTURE" },
+      { src: "/images/projects/development/ntv360-portal-7.webp", caption: "CODING PATTERNS" },
+      { src: "/images/projects/development/ntv360-portal-15.webp", caption: "COMMON MISTAKES" },
+      {
+        src: "/images/projects/development/ntv360-portal-13.webp",
+        caption: "TOOLS AND TECHNOLOGIES",
+      },
+      { src: "/images/projects/development/ntv360-portal-8.webp", caption: "SEARCH" },
+      { src: "/images/projects/development/ntv360-portal-9.webp", caption: "ADMIN: DOCUMENTS" },
+      {
+        src: "/images/projects/development/ntv360-portal-10.webp",
+        caption: "ADMIN: ADD A DOCUMENT",
       },
     ],
   },
   {
     id: "dev-3",
+    logo: { src: "/images/logos/ntv360.png" },
     title: "Component Pantry",
     category: "Development",
     tagline: "The showcase site for NTV360's Angular component library: live demos, code and docs.",
     facts: [
       ["Company", "NTV360 (N-Compass TV)"],
       ["Type", "Component library showcase"],
-      ["Library", "44 Angular components"],
-      ["Role", "Contributor: restructuring, UI changes and fixes"],
+      ["Library", "44 Angular components, v0.7.16"],
+      ["Role", "Frontend developer: redesign, upgrades and CMS sync scripts"],
+      ["Stack", "Angular 22 with SSR, Tailwind, Strapi 5"],
     ],
     description:
-      "The documentation site for NTV360's Component Pantry, an Angular component library: every component with a live demo, its code and its properties, plus search, a changelog and a reference file for AI coding tools. The subject took the project on part-way and worked on its restructuring, UI changes and fixes.",
+      "The documentation site for NTV360's Component Pantry, an Angular component library: every component with a live demo, its code and its properties, plus search, a changelog and a reference file for AI coding tools. The subject took the project on part-way and has since redesigned much of it, moved it to Angular 22, and kept it in step with each new library release.",
     link: "https://nctv-strapi.onrender.com",
+    links: [
+      { label: "Changelog", url: "https://nctv-strapi.onrender.com/overview/changelogs" },
+      {
+        label: "AI reference file",
+        url: "https://nctv-strapi.onrender.com/COMPONENT_PANTRY_SKILL.md",
+      },
+    ],
     sections: [
       {
         heading: "From NTV360",
-        text: "A company project of NTV360 (N-Compass TV), live on the web. The site and its Strapi backend live in two separate repositories.",
+        text: "A company project of NTV360 (N-Compass TV), live on the web. It is two repositories: the Angular site, and a Strapi CMS that holds its content. Both are private to the company.",
       },
       {
         heading: "His part",
-        text: "He did not build it from scratch. He took the project over part-way through and worked on:",
-        items: ["Restructuring the project", "UI changes", "Fixes"],
+        text: "He did not start it. He joined part-way, in July 2026, and since then has worked on:",
+        items: [
+          "Redesigning the site: the overview pages, component pages, sidebar and scrollbars, and a full showcase redesign",
+          "The NTV360 rebrand, and an animated splash screen drawn in SVG",
+          "Moving the app to Angular 22 and fixing the components that broke",
+          "Keeping the site in step with the library: manifest syncs and design-token fixes for each release, from 0.6 to 0.7.16",
+          "On the CMS side: scripts that create missing showcase entries, read the updated manifests, and store each release's theme tabs",
+        ],
       },
       {
         heading: "What it is",
@@ -236,21 +298,22 @@ export const projects: Project[] = [
       {
         heading: "What's inside",
         items: [
-          "44 component pages, each with a live demo, a View code toggle and a Markdown download",
+          "44 component pages, each with live demos, a View code toggle and a Markdown download",
           "A properties table for every component, with a filter box for names, types and descriptions",
-          "Overview pages: installation, notes, colours and a changelog of every release",
-          "Search across the whole library, opened with the / key",
-          "An AI Reference page: a downloadable file that teaches AI coding tools how to use the library, with setup steps for Claude Code, Cursor, Copilot and others",
+          "Overview pages: installation, notes, colours, documentation and a changelog of every release",
+          "Search across the whole library, opened with the / key, that finds components and their variants",
+          "An AI Reference page: a downloadable file that teaches AI coding tools how to use the library, with setup steps for Claude Code, Cursor, Windsurf, Copilot and others",
           "A layout that works on phones",
         ],
       },
       {
         heading: "How it is built",
         items: [
-          "An Angular app styled with Tailwind CSS",
-          "Content comes from a separate Strapi CMS over a REST API, so pages can change without a new release",
-          "The library's own components power the demos",
-          "Hosted on Render",
+          "An Angular 22 app with server-side rendering, styled with Tailwind CSS",
+          "A small server layer between the browser and the CMS, so the backend address stays off the client",
+          "Content comes from a separate Strapi 5 CMS on PostgreSQL: components, showcases, overview pages and library versions",
+          "The library's own components power the demos, and a script keeps their manifests in sync",
+          "Both parts hosted on Render",
         ],
       },
     ],
@@ -261,6 +324,7 @@ export const projects: Project[] = [
       "TypeScript",
       "Tailwind CSS",
       "Strapi",
+      "PostgreSQL",
       "REST API",
       "Component Pantry",
       "Render",
@@ -273,7 +337,7 @@ export const projects: Project[] = [
       { src: "/images/projects/development/pantry-2.webp", caption: "TABLE: LIVE DEMO" },
       { src: "/images/projects/development/pantry-3.webp", caption: "TABLE: CODE EXAMPLE" },
       { src: "/images/projects/development/pantry-4.webp", caption: "PROPERTIES AND API TABLE" },
-      { src: "/images/projects/development/pantry-5.webp", caption: "CHARTS" },
+      { src: "/images/projects/development/pantry-5.webp", caption: "GRAPH: CHART VARIANTS" },
       { src: "/images/projects/development/pantry-6.webp", caption: "KANBAN BOARD" },
       { src: "/images/projects/development/pantry-7.webp", caption: "SEARCH ACROSS THE LIBRARY" },
       { src: "/images/projects/development/pantry-8.webp", caption: "AI REFERENCE" },
@@ -281,18 +345,28 @@ export const projects: Project[] = [
   },
   {
     id: "dev-4",
+    logo: { src: "/images/logos/ojt-tracker.webp" },
     title: "OJT Tracker",
     category: "Development",
     tagline: "A time tracker for students on On-the-Job Training, on the web and on the phone.",
     facts: [
-      ["Type", "Web app and mobile app"],
+      ["Type", "Web app and Android app"],
       ["Built by", "The subject, both apps"],
       ["For", "Students doing OJT"],
-      ["Backend", "Supabase"],
+      ["Backend", "Supabase, shared by both apps"],
+      ["Web", "Live, updated through April 2026"],
     ],
     description:
-      "A time tracker for students on On-the-Job Training, as a web app and a mobile app: time in and out with breaks, a log and journal for every session, progress towards the required hours, reports as PDF or CSV, and earnings for paid training.",
+      "A time tracker for students on On-the-Job Training, as a web app and a mobile app: log each day's hours with breaks, keep a journal for every session, watch progress towards the required hours, export reports as PDF or CSV, and work out earnings for paid training. The subject built both apps and the backend they share.",
     link: "https://ojt-tracker-web.vercel.app",
+    links: [
+      { label: "Web app on GitHub", url: "https://github.com/pulmonaryveins/ojt-tracker-web" },
+      {
+        label: "Mobile app on GitHub",
+        url: "https://github.com/pulmonaryveins/ojt-tracker-mobile",
+      },
+      { label: "Download the Android app", url: "https://ojt-tracker-mobile.vercel.app" },
+    ],
     sections: [
       {
         heading: "The problem",
@@ -301,26 +375,24 @@ export const projects: Project[] = [
       {
         heading: "On the web",
         items: [
-          "Set-up: required hours, start and end dates, school and workplace",
-          "Time in and time out for each session, with breaks taken off",
-          "A dashboard with total hours, progress, an OJT timeline and recent sessions",
-          "Logs of every session, with CSV export and CSV import to bring in old records",
-          "A journal and report images on each session",
-          "Reports: daily hours, cumulative hours and average by weekday over any date range, as a PDF",
-          "Earnings for paid training: an hourly rate, a currency and pay periods",
-          "Sign-up, sign-in, password reset and a light and dark theme",
+          "Set-up: required hours, start date, school and workplace",
+          "A dashboard with total hours, progress towards the goal, days attended, average per day and an OJT timeline",
+          "Logs of every session in a list or a calendar, with search, paging, CSV export and CSV import to bring in old records",
+          "New sessions with time in, time out and breaks taken off, plus a journal and report images on each one",
+          "Reports over any date range, with total hours, days attended, average per day and a session log, saved as PDF or CSV",
+          "Earnings for paid training: an hourly rate, an effective date and pay periods",
+          "Sign-up, sign-in, password reset and a light and dark theme, on screens from desktop to phone",
         ],
       },
       {
         heading: "On the phone",
         items: [
-          "Time in and out, with a break timer",
-          "A daily log, manual entry for a day missed, and a calendar of logs",
-          "Reports as PDF or CSV",
-          "Works offline and syncs when the connection returns",
-          "Reminder notifications",
+          "A progress dashboard and an OJT timeline with an estimated completion date",
+          "A time tracker with manual entry for each day, and a break timer",
+          "Activity logs as a list or a calendar, with a search and a view for each session",
+          "Reports with quick exports for today, the past 7 days and the past 30, and a custom period, as PDF or CSV",
+          "Works offline and syncs when the connection returns, with reminder notifications",
           "Light and dark themes with a choice of accent colours",
-          "A motivation screen with cat pictures, for a long day",
         ],
       },
       {
@@ -329,7 +401,12 @@ export const projects: Project[] = [
           "Web: React and TypeScript on Vite, with Tailwind CSS, TanStack Query for data, Zustand for state and Framer Motion for movement, deployed on Vercel",
           "Phone: React Native with Expo and Expo Router, styled with NativeWind, built as an Android app",
           "One Supabase backend behind both, for accounts and data",
+          "Reports are made in the browser with jsPDF",
         ],
+      },
+      {
+        heading: "About the screenshots",
+        text: "The web screens are from a demo account, with the name blurred. The phone screens are mockups of the Android app.",
       },
     ],
     purpose:
@@ -350,16 +427,27 @@ export const projects: Project[] = [
       "Vercel",
     ],
     screenshots: [
-      { src: "/images/projects/development/ojt-1.webp", caption: "WEB APP: SIGN-IN" },
-      { src: "/images/projects/development/ojt-2.webp", caption: "WEB APP: SIGN-UP" },
+      { src: "/images/projects/development/ojt-4.webp", caption: "WEB: THE DASHBOARD" },
+      { src: "/images/projects/development/ojt-5.webp", caption: "WEB: LOGS, LIST VIEW" },
+      { src: "/images/projects/development/ojt-6.webp", caption: "WEB: LOGS, CALENDAR VIEW" },
+      { src: "/images/projects/development/ojt-7.webp", caption: "WEB: EARNINGS" },
+      { src: "/images/projects/development/ojt-1.webp", caption: "WEB: SIGN-IN" },
+      { src: "/images/projects/development/ojt-2.webp", caption: "WEB: SIGN-UP" },
+      { src: "/images/projects/development/ojt-8.webp", caption: "ANDROID: THE APP ICON" },
       {
-        src: "/images/projects/development/ojt-3.webp",
-        caption: "ANDROID APP: DOWNLOAD PAGE",
+        src: "/images/projects/development/ojt-9.webp",
+        caption: "ANDROID: DASHBOARD, TIME TRACKER, LOGS",
       },
+      {
+        src: "/images/projects/development/ojt-10.webp",
+        caption: "ANDROID: LOGS, REPORTS, PROFILE",
+      },
+      { src: "/images/projects/development/ojt-3.webp", caption: "ANDROID: DOWNLOAD PAGE" },
     ],
   },
   {
     id: "dev-5",
+    logo: { src: "/images/logos/lamoy.webp" },
     title: "Lamoy Ordering",
     category: "Development",
     tagline: "Lamoy: a simple food ordering system, from the Alliance Jumpstart program.",
@@ -441,6 +529,7 @@ export const projects: Project[] = [
   },
   {
     id: "dev-6",
+    logo: { src: "/images/logos/ntv360.png" },
     title: "Flyers Dashboard",
     category: "Development",
     tagline:
@@ -553,196 +642,8 @@ export const projects: Project[] = [
     ],
   },
   {
-    id: "dev-7",
-    title: "Bangon",
-    category: "Development",
-    tagline:
-      "An AI-powered iOS companion that turns your own sleep, food, workout and spending data into small, honest daily nudges.",
-    facts: [
-      ["Type", "AI-powered personal iOS app"],
-      ["Role", "Solo designer and developer"],
-      ["Stack", "Ionic, Angular, Capacitor, Gemini API"],
-      ["Status", "Work in progress: prototype done, native build planned"],
-    ],
-    description:
-      'Bangon (Cebuano and Tagalog for "get up") is an AI-powered iOS app for rebuilding health, sleep, eating and spending habits in one place. Instead of juggling five apps, one AI companion reads your own sleep, food, workout and budget data and answers questions about your mind, body and money with specific, small suggestions. It is a work in progress: the interactive prototype is done and the native build is planned.',
-    sections: [
-      {
-        heading: "Work in progress",
-        text: "Only the idea and an interactive prototype exist so far. The app is not built yet, so what is described here is the plan.",
-      },
-      {
-        heading: "The problem",
-        text: "Poor sleep, stress, unhealthy eating, less exercise and unplanned spending feed into each other, and most apps tackle only one of them. Someone rebuilding all of these at once ends up juggling four or five apps, and quits.",
-      },
-      {
-        heading: "The AI companion",
-        items: [
-          "Knows your data: each answer draws on your recent sleep, spending and workout summaries, never your full history",
-          'Three modes: Mind (overthinking, wind-down routines), Body (what to eat or do today) and Money ("can I afford this?" checked against the real budget)',
-          "Spots patterns, such as headaches after short nights, and nudges toward one small action instead of a full lifestyle overhaul",
-          "Writes weekly summaries and suggests meals that respect your allergies",
-        ],
-      },
-      {
-        heading: "Around the AI",
-        items: [
-          "Summary: today's workout, steps, sleep, calories left and money spent, with a one-tap mood check",
-          "Workout: strength logging, plus run and hike recording with live routes and pins",
-          "Diary: food by barcode scan, checked against your allergy list",
-          "Budget: category bars and a keypad for adding spending in a few taps",
-        ],
-      },
-      {
-        heading: "Safety by design",
-        text: "It is honest, not a cheerleader, and knows its limits. It does not diagnose or treat anything and refers persistent symptoms to a doctor. If someone writes about hopelessness or self-harm, it drops the casual tone and points to real support and a trusted person. Allergy results always say to check the label.",
-      },
-      {
-        heading: "How it is built",
-        text: "Local-first: personal data stays in a database on the phone, and each AI request gets only a short context summary built on the device. Ionic with Angular and Capacitor, HealthKit for steps and sleep, Open Food Facts for barcodes, and the Gemini API free tier powering the companion.",
-      },
-    ],
-    purpose:
-      "Designed from one user's real needs: get active again, eat well around food allergies, sleep better and stop money from disappearing. The first prototype failed, so it was redesigned to remove typing and reuse patterns people already know.",
-    tools: ["Gemini API", "Ionic", "Angular", "Capacitor", "HealthKit", "Figma"],
-    screenshots: [
-      { src: "/images/projects/development/bangon-1.svg", caption: "SCREENSHOTS COMING" },
-    ],
-  },
-  {
-    id: "dev-8",
-    title: "Dashboard V2",
-    category: "Development",
-    tagline:
-      "The next version of N-Compass TV's dashboard for managing its digital signage network.",
-    facts: [
-      ["Company", "NTV360 (N-Compass TV)"],
-      ["Type", "Internal and customer-facing web platform"],
-      ["Role", "Frontend developer"],
-      ["Stack", "Angular 22 with SSR, Tailwind, Auth0"],
-      ["Status", "In development"],
-    ],
-    description:
-      "The second version of the N-Compass TV dashboard: an Angular web app for managing advertisers, dealers, hosts, screens, licenses, playlists, channels, templates and the media library. The subject builds the frontend.",
-    sections: [
-      {
-        heading: "From NTV360",
-        text: "A production platform for N-Compass TV, built in a team and still in active development, so what is described here will change. Screenshots are coming.",
-      },
-      {
-        heading: "What it covers",
-        items: [
-          "Advertisers, dealers, hosts and installations in one place",
-          "Screens and licenses, with a locator map",
-          "Playlists, channels, templates and a media library",
-          "Sign-in with Auth0 and an admin impersonation tool",
-        ],
-      },
-      {
-        heading: "My part",
-        text: "Frontend: building and reworking screens in Angular, using the company's shared component library, so the dashboard looks and behaves the same across every feature.",
-      },
-      {
-        heading: "How it is built",
-        text: "Angular with server-side rendering and a backend-for-frontend layer, so the backend API address and credentials never reach the browser. Deployed with Terraform to AWS.",
-      },
-    ],
-    tools: ["Angular", "TypeScript", "Tailwind CSS", "Auth0", "ApexCharts"],
-    screenshots: [
-      { src: "/images/projects/development/dashboard-v2-1.svg", caption: "SCREENSHOTS COMING" },
-    ],
-  },
-  {
-    id: "dev-9",
-    title: "Kuryente",
-    category: "Development",
-    tagline:
-      "An AI-powered home energy app: see where your electricity goes, and get told how to spend less of it.",
-    facts: [
-      ["Type", "AI-powered energy dashboard, web and mobile"],
-      ["Role", "Solo designer and developer"],
-      ["Stack", "Angular, Node, TimescaleDB, Gemini API"],
-      ["Status", "Idea stage: AI integration planned, nothing built yet"],
-    ],
-    description:
-      "Kuryente (Filipino for electricity) is an AI-powered app that helps a household manage its energy use. A personal dashboard tracks consumption live and by appliance, and an AI assistant explains the bill, spots waste and suggests changes that save money. It is an idea in planning: nothing is built yet.",
-    sections: [
-      {
-        heading: "Idea stage",
-        text: "Only the concept exists so far. Everything below is the plan, and it will change as the idea is tested.",
-      },
-      {
-        heading: "The problem",
-        text: "Most households only learn what they used when the bill arrives, weeks later and as one number. Nobody can tell which appliance, habit or hour of the day caused it, so there is nothing to change.",
-      },
-      {
-        heading: "The dashboard",
-        items: [
-          "Live power draw for the whole home, plus today, this week and this month",
-          "A breakdown by room and appliance, from smart plugs and a main-meter sensor",
-          "Estimated bill so far this month, using the local utility's rate",
-          "A monthly budget in pesos or kWh, with an alert before it is reached",
-        ],
-      },
-      {
-        heading: "The AI",
-        items: [
-          "Explains the bill in plain words: what rose, what fell and why",
-          "Spots waste, such as an aircon running in an empty room or a fridge that has started working harder than before",
-          "Learns the household's routine and suggests when to run the washer or charge devices to cut cost",
-          "Forecasts the next bill from this month's habits",
-          'Answers questions like "what happens to my bill if I raise the aircon by two degrees?"',
-          "Weekly report with one small action to try, not a list of twenty",
-        ],
-      },
-      {
-        heading: "More ideas",
-        items: [
-          "Appliance health: a device's changing power signature can warn that it is wearing out",
-          "Solar check: whether panels and a battery would pay off for this home's usage",
-          "Household challenges: members compete to cut the most, with a shared goal",
-          "Automations: turn off standby devices at night, with the user's approval",
-          "Carbon estimate alongside cost",
-        ],
-      },
-      {
-        heading: "How the AI would fit in",
-        items: [
-          "Chat assistant: a Gemini-powered chat that can look up the home's usage, rates and budget, so answers use real numbers instead of general tips",
-          "Forecasting: a small model on the stored time series predicts the next bill and the day's peak",
-          "Waste detection: unusual draw, such as a device left on or one using more than it used to, is flagged by comparing against that device's own normal pattern",
-          "Appliance recognition: from the whole-home reading alone, learn which appliance switched on, so homes without a plug on everything still get a breakdown",
-          "Privacy: only summarised usage reaches the AI, never raw device data or account details",
-        ],
-      },
-      {
-        heading: "How it could be built",
-        text: "Smart plugs and a clamp meter report to the app over MQTT, readings are stored as time series, and a Node API serves the dashboard and talks to the AI.",
-      },
-    ],
-    purpose:
-      "Electricity is a large, hard-to-see cost, especially in a hot climate where aircon dominates the bill. Showing where it goes, and getting advice from the household's own data, turns a monthly surprise into a habit people can change.",
-    tools: [
-      "Angular",
-      "Ionic",
-      "Capacitor",
-      "TypeScript",
-      "Node.js",
-      "NestJS",
-      "MQTT",
-      "TimescaleDB",
-      "ApexCharts",
-      "Gemini API",
-      "scikit-learn",
-      "Shelly smart plugs",
-      "Figma",
-    ],
-    screenshots: [
-      { src: "/images/projects/development/kuryente-1.svg", caption: "MOCKUPS COMING" },
-    ],
-  },
-  {
     id: "dev-10",
+    logo: { src: "/images/logos/orgaflow.webp" },
     title: "OrgaFlow",
     category: "Development",
     tagline:
@@ -832,11 +733,214 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "dev-7",
+    logo: { src: "/images/logos/bangon.svg" },
+    title: "Bangon",
+    category: "Development",
+    tagline:
+      "An AI-powered iOS companion that turns your own sleep, food, workout and spending data into small, honest daily nudges.",
+    facts: [
+      ["Type", "AI-powered personal iOS app"],
+      ["Role", "Solo designer and developer"],
+      ["Stack", "Ionic, Angular, Capacitor, Gemini API"],
+      ["Status", "Work in progress: prototype done, native build planned"],
+    ],
+    description:
+      'Bangon (Cebuano and Tagalog for "get up") is an AI-powered iOS app for rebuilding health, sleep, eating and spending habits in one place. Instead of juggling five apps, one AI companion reads your own sleep, food, workout and budget data and answers questions about your mind, body and money with specific, small suggestions. It is a work in progress: the interactive prototype is done and the native build is planned.',
+    sections: [
+      {
+        heading: "Work in progress",
+        text: "Only the idea and an interactive prototype exist so far. The app is not built yet, so what is described here is the plan.",
+      },
+      {
+        heading: "The problem",
+        text: "Poor sleep, stress, unhealthy eating, less exercise and unplanned spending feed into each other, and most apps tackle only one of them. Someone rebuilding all of these at once ends up juggling four or five apps, and quits.",
+      },
+      {
+        heading: "The AI companion",
+        items: [
+          "Knows your data: each answer draws on your recent sleep, spending and workout summaries, never your full history",
+          'Three modes: Mind (overthinking, wind-down routines), Body (what to eat or do today) and Money ("can I afford this?" checked against the real budget)',
+          "Spots patterns, such as headaches after short nights, and nudges toward one small action instead of a full lifestyle overhaul",
+          "Writes weekly summaries and suggests meals that respect your allergies",
+        ],
+      },
+      {
+        heading: "Around the AI",
+        items: [
+          "Summary: today's workout, steps, sleep, calories left and money spent, with a one-tap mood check",
+          "Workout: strength logging, plus run and hike recording with live routes and pins",
+          "Diary: food by barcode scan, checked against your allergy list",
+          "Budget: category bars and a keypad for adding spending in a few taps",
+        ],
+      },
+      {
+        heading: "Safety by design",
+        text: "It is honest, not a cheerleader, and knows its limits. It does not diagnose or treat anything and refers persistent symptoms to a doctor. If someone writes about hopelessness or self-harm, it drops the casual tone and points to real support and a trusted person. Allergy results always say to check the label.",
+      },
+      {
+        heading: "How it is built",
+        text: "Local-first: personal data stays in a database on the phone, and each AI request gets only a short context summary built on the device. Ionic with Angular and Capacitor, HealthKit for steps and sleep, Open Food Facts for barcodes, and the Gemini API free tier powering the companion.",
+      },
+    ],
+    purpose:
+      "Designed from one user's real needs: get active again, eat well around food allergies, sleep better and stop money from disappearing. The first prototype failed, so it was redesigned to remove typing and reuse patterns people already know.",
+    tools: ["Gemini API", "Ionic", "Angular", "Capacitor", "HealthKit", "Figma"],
+    screenshots: [
+      { src: "/images/projects/development/bangon-1.svg", caption: "SCREENSHOTS COMING" },
+    ],
+  },
+  {
+    id: "dev-9",
+    logo: { src: "/images/logos/kuryente.svg" },
+    title: "Kuryente",
+    category: "Development",
+    tagline:
+      "An AI-powered home energy app: see where your electricity goes, and get told how to spend less of it.",
+    facts: [
+      ["Type", "AI-powered energy dashboard, web and mobile"],
+      ["Role", "Solo designer and developer"],
+      ["Stack", "Angular, Node, TimescaleDB, Gemini API"],
+      ["Status", "Idea stage: AI integration planned, nothing built yet"],
+    ],
+    description:
+      "Kuryente (Filipino for electricity) is an AI-powered app that helps a household manage its energy use. A personal dashboard tracks consumption live and by appliance, and an AI assistant explains the bill, spots waste and suggests changes that save money. It is an idea in planning: nothing is built yet.",
+    sections: [
+      {
+        heading: "Idea stage",
+        text: "Only the concept exists so far. Everything below is the plan, and it will change as the idea is tested.",
+      },
+      {
+        heading: "The problem",
+        text: "Most households only learn what they used when the bill arrives, weeks later and as one number. Nobody can tell which appliance, habit or hour of the day caused it, so there is nothing to change.",
+      },
+      {
+        heading: "The dashboard",
+        items: [
+          "Live power draw for the whole home, plus today, this week and this month",
+          "A breakdown by room and appliance, from smart plugs and a main-meter sensor",
+          "Estimated bill so far this month, using the local utility's rate",
+          "A monthly budget in pesos or kWh, with an alert before it is reached",
+        ],
+      },
+      {
+        heading: "The AI",
+        items: [
+          "Explains the bill in plain words: what rose, what fell and why",
+          "Spots waste, such as an aircon running in an empty room or a fridge that has started working harder than before",
+          "Learns the household's routine and suggests when to run the washer or charge devices to cut cost",
+          "Forecasts the next bill from this month's habits",
+          'Answers questions like "what happens to my bill if I raise the aircon by two degrees?"',
+          "Weekly report with one small action to try, not a list of twenty",
+        ],
+      },
+      {
+        heading: "More ideas",
+        items: [
+          "Appliance health: a device's changing power signature can warn that it is wearing out",
+          "Solar check: whether panels and a battery would pay off for this home's usage",
+          "Household challenges: members compete to cut the most, with a shared goal",
+          "Automations: turn off standby devices at night, with the user's approval",
+          "Carbon estimate alongside cost",
+        ],
+      },
+      {
+        heading: "How the AI would fit in",
+        items: [
+          "Chat assistant: a Gemini-powered chat that can look up the home's usage, rates and budget, so answers use real numbers instead of general tips",
+          "Forecasting: a small model on the stored time series predicts the next bill and the day's peak",
+          "Waste detection: unusual draw, such as a device left on or one using more than it used to, is flagged by comparing against that device's own normal pattern",
+          "Appliance recognition: from the whole-home reading alone, learn which appliance switched on, so homes without a plug on everything still get a breakdown",
+          "Privacy: only summarised usage reaches the AI, never raw device data or account details",
+        ],
+      },
+      {
+        heading: "How it could be built",
+        text: "Smart plugs and a clamp meter report to the app over MQTT, readings are stored as time series, and a Node API serves the dashboard and talks to the AI.",
+      },
+    ],
+    purpose:
+      "Electricity is a large, hard-to-see cost, especially in a hot climate where aircon dominates the bill. Showing where it goes, and getting advice from the household's own data, turns a monthly surprise into a habit people can change.",
+    tools: [
+      "Angular",
+      "Ionic",
+      "Capacitor",
+      "TypeScript",
+      "Node.js",
+      "NestJS",
+      "MQTT",
+      "TimescaleDB",
+      "ApexCharts",
+      "Gemini API",
+      "scikit-learn",
+      "Shelly smart plugs",
+      "Figma",
+    ],
+    screenshots: [
+      { src: "/images/projects/development/kuryente-1.svg", caption: "MOCKUPS COMING" },
+    ],
+  },
+  {
     id: "ux-1",
-    title: "UI/UX Project One",
+    logo: { src: "/images/logos/pulse-check.svg" },
+    title: "Pulse Check",
     category: "UI/UX",
-    description: "Placeholder description of the first UI/UX project.",
-    tools: ["Figma", "Prototyping"],
+    tagline:
+      "A dark, glass-style control room for watching a fleet of signage players: where they are, how they are doing, and what to tell them.",
+    facts: [
+      ["Type", "Web dashboard, UI design"],
+      ["Role", "UI/UX design"],
+      ["Screens", "Login, OTP, map, devices, dealers, users, command"],
+      ["Format", "Desktop, 1920 × 1080, sidebar full or collapsed"],
+      ["Tool", "Figma"],
+    ],
+    description:
+      "Pulse Check is a monitoring dashboard for networked display players (Raspberry Pi boxes), grouped by dealer. The design runs from secure sign-in to a live map, per-device telemetry and a command terminal, in one dark glass-and-orange look.",
+    sections: [
+      {
+        heading: "What it covers",
+        items: [
+          "Sign-in with an operator ID and access code, then a one-time code",
+          "A map view with clustered device counts and an online, offline and total strip",
+          "Device lists, dealers and users, with a register flow for new devices",
+          "Per-device telemetry: temperature, CPU, RAM, storage and network over 24 hours, 7 days or all time",
+          "A command centre and terminal to reboot, sync, restart or clear a device, one or many at a time",
+        ],
+      },
+      {
+        heading: "Design choices",
+        items: [
+          "Monospace type and spaced capitals, so it reads like instrument readings, not a web page",
+          "One accent colour (orange) for action; green, red and amber only mean status",
+          "Every dealer has its own colour, carried from the sidebar to the map to the lists",
+          "The sidebar collapses to icons to give the data more room",
+        ],
+      },
+    ],
+    tools: ["Figma", "Design system", "Data visualisation"],
+    screenshots: [
+      { src: "/images/projects/ui-ux/alliance-1.webp", caption: "SIGN-IN" },
+      { src: "/images/projects/ui-ux/alliance-9.webp", caption: "ONE-TIME CODE" },
+      { src: "/images/projects/ui-ux/alliance-2.webp", caption: "MAP VIEW" },
+      {
+        src: "/images/projects/ui-ux/alliance-11.webp",
+        caption: "MAP VIEW: ZOOMED IN, DEVICE GROUPS",
+      },
+      { src: "/images/projects/ui-ux/alliance-10.webp", caption: "MAP VIEW: SIDEBAR COLLAPSED" },
+      { src: "/images/projects/ui-ux/alliance-3.webp", caption: "DEVICES" },
+      { src: "/images/projects/ui-ux/alliance-13.webp", caption: "DEVICES: SIDEBAR COLLAPSED" },
+      { src: "/images/projects/ui-ux/alliance-4.webp", caption: "DEALERS" },
+      { src: "/images/projects/ui-ux/alliance-14.webp", caption: "DEALERS: THEIR DEVICES" },
+      { src: "/images/projects/ui-ux/alliance-5.webp", caption: "USERS" },
+      { src: "/images/projects/ui-ux/alliance-12.webp", caption: "REGISTER A NEW PLAYER" },
+      { src: "/images/projects/ui-ux/alliance-6.webp", caption: "DEVICE TELEMETRY" },
+      { src: "/images/projects/ui-ux/alliance-7.webp", caption: "DEVICE COMMAND CENTRE" },
+      {
+        src: "/images/projects/ui-ux/alliance-15.webp",
+        caption: "DEVICE TERMINAL: SIDEBAR COLLAPSED",
+      },
+      { src: "/images/projects/ui-ux/alliance-8.webp", caption: "COMMAND: MANY DEVICES" },
+    ],
   },
   {
     id: "ux-2",
@@ -847,6 +951,7 @@ export const projects: Project[] = [
   },
   {
     id: "vid-1",
+    logo: { src: "/images/logos/ntv360.png" },
     title: "NCTV Work PH",
     category: "Video Editing",
     tagline: "Short videos for nctvwork.ph, NTV360's Facebook page for its interns.",
@@ -890,25 +995,7 @@ export const projects: Project[] = [
       },
     ],
     purpose: "To share the work and life of NTV360's interns in short, regular videos.",
-    links: [
-      { label: "Page", url: "https://www.facebook.com/profile.php?id=61579509335512" },
-      { label: "Reel 01", url: "https://www.facebook.com/reel/1518087259985090" },
-      { label: "Reel 02", url: "https://www.facebook.com/reel/1622589376145087" },
-      { label: "Reel 03", url: "https://www.facebook.com/reel/1869615257736374" },
-      { label: "Reel 04", url: "https://www.facebook.com/reel/1611889630396836" },
-      { label: "Reel 05", url: "https://www.facebook.com/reel/1052919084230978" },
-      { label: "Reel 06", url: "https://www.facebook.com/reel/1969562727082130" },
-      { label: "Reel 07", url: "https://www.facebook.com/reel/1058227353328324" },
-      { label: "Reel 08", url: "https://www.facebook.com/reel/998583966557079" },
-      { label: "Reel 09", url: "https://www.facebook.com/reel/2910587549276730" },
-      { label: "Reel 10", url: "https://www.facebook.com/reel/1064005306158783" },
-      { label: "Reel 11", url: "https://www.facebook.com/reel/2051620328796149" },
-      { label: "Reel 12", url: "https://www.facebook.com/reel/1272977314906840" },
-      { label: "Reel 13", url: "https://www.facebook.com/reel/959507240129332" },
-      { label: "Reel 14", url: "https://www.facebook.com/reel/2700486267033340" },
-      { label: "Reel 15", url: "https://www.facebook.com/reel/1600466354961777" },
-      { label: "Reel 16", url: "https://www.facebook.com/reel/1615828929650892" },
-    ],
+    links: [{ label: "Page", url: "https://www.facebook.com/profile.php?id=61579509335512" }],
     tools: ["Adobe Premiere Pro", "Adobe After Effects"],
     videos: [
       {
@@ -1017,6 +1104,7 @@ export const projects: Project[] = [
   },
   {
     id: "vid-2",
+    logo: { src: "/images/logos/psits.webp" },
     title: "Face of CCS",
     category: "Video Editing",
     tagline: "An animated title for The Face of CCS.",
@@ -1039,6 +1127,7 @@ export const projects: Project[] = [
   },
   {
     id: "vid-3",
+    logo: { src: "/images/logos/orgaflow.webp" },
     title: "OrgaFlow",
     category: "Video Editing",
     tagline:

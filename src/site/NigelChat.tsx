@@ -234,6 +234,7 @@ export function NigelChat() {
         className={styles.nigelLauncher}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        data-open={open}
       >
         <NigelFace
           expression={open ? "idle" : blink ? "blink" : "idle"}

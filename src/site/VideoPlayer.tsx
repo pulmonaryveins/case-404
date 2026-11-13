@@ -31,12 +31,15 @@ export function VideoPlayer({
   poster,
   silent = false,
   preload = isLeanNetwork() ? "none" : "metadata",
+  autoPlay = false,
 }: {
   src: string;
   poster?: string;
   /** The clip has no sound track: no sound button. */
   silent?: boolean;
   preload?: "none" | "metadata";
+  /** Start as soon as it mounts (the visitor just picked this clip). */
+  autoPlay?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -49,6 +52,10 @@ export function VideoPlayer({
   useEffect(() => {
     if (video.current) video.current.muted = muted;
   }, [muted]);
+  useEffect(() => {
+    // Picked from a playlist: a click, so the browser lets it play with sound.
+    if (autoPlay) void video.current?.play().catch(() => {});
+  }, [autoPlay]);
 
   const toggle = () => {
     const v = video.current;

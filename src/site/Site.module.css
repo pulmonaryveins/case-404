@@ -314,6 +314,85 @@
       rgba(5, 4, 4, 0.6) 40%,
       rgba(5, 4, 4, 0.94) 100%
     );
+  /* Thinner under the overhead lamp's beam: strongest at the top, fading out
+     down through the first line of the name, so its top catches the light. */
+  -webkit-mask-image: radial-gradient(
+    ellipse 32rem 36rem at 50% 4%,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.5) 55%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 32rem 36rem at 50% 4%,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.5) 55%,
+    #000 100%
+  );
+}
+
+/* An overhead lamp: a warm source just above the top edge and a soft cone of
+   light falling from it toward the name. Over the dark (screened), so it
+   lifts what it touches; it breathes slowly, like a filament. */
+.hero::before,
+.hero::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 1;
+  pointer-events: none;
+  translate: -50% 0;
+}
+
+/* The cone. */
+.hero::before {
+  width: min(90rem, 160vw);
+  height: 85%;
+  background:
+    /* Where the beam lands on the top line of the name: a warm pool. */
+    radial-gradient(ellipse 30rem 9rem at 50% 50%, rgba(255, 196, 70, 0.1), transparent 70%),
+    conic-gradient(
+      from 180deg at 50% -12%,
+      transparent 162deg,
+      rgba(255, 204, 92, 0.1) 171deg,
+      rgba(255, 218, 110, 0.19) 180deg,
+      rgba(255, 204, 92, 0.1) 189deg,
+      transparent 198deg
+    );
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+  animation: lampBreath 7s ease-in-out infinite;
+}
+
+/* The source: a bright, tight glow at the top edge. */
+.hero::after {
+  width: min(34rem, 80vw);
+  height: 14rem;
+  translate: -50% -55%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(255, 240, 170, 0.28) 0%,
+    rgba(255, 206, 90, 0.12) 35%,
+    transparent 70%
+  );
+  animation: lampBreath 7s ease-in-out infinite;
+}
+
+@keyframes lampBreath {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before,
+  .hero::after {
+    animation: none;
+  }
 }
 
 .tag {
@@ -873,6 +952,38 @@
   transition:
     filter 0.7s,
     transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* A project's logo, centred on the card in place of a photo. */
+.cardLogo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 14% 22%;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(217, 168, 96, 0.1), transparent 65%), #0d0b0a;
+}
+
+.cardLogo img {
+  /* Every logo scales to fit the same box, so wide wordmarks and square icons read as equals. */
+  width: 10rem;
+  height: 5.25rem;
+  object-fit: contain;
+  opacity: 0.9;
+  /* Black and white so the logos read as a set; colour comes back on hover. */
+  filter: grayscale(1) brightness(1.25) contrast(1.05) drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+  transition:
+    opacity 0.5s,
+    filter 0.5s,
+    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card:hover .cardLogo img,
+.card:focus-visible .cardLogo img {
+  opacity: 1;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+  transform: scale(1.05);
 }
 
 .card::after {
@@ -2153,25 +2264,32 @@
 
 /* The facts as a row of tiles. */
 
-.shots {
+/* A section: its heading in a left column, its text beside it. */
+
+/* ------------------------------------------------------------------ */
+/* A record's media: one stage, a counter and a strip of thumbnails      */
+/* ------------------------------------------------------------------ */
+
+.gallery {
+  margin: 0 0 2.8rem;
+  outline: none;
+}
+
+/* Fixed shape, so wide web shots and phone mockups do not jump in size. */
+.galleryStage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(217, 168, 96, 0.06), transparent 70%), #070605;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.galleryOpen {
+  position: absolute;
+  inset: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 1rem;
-  margin: 0 0 3rem;
-  padding: 0;
-  list-style: none;
-}
-
-.shots > li:first-child:not(:only-child) {
-  grid-column: 1 / -1;
-}
-
-.shots figure {
-  margin: 0;
-}
-
-.shots figure button {
-  display: block;
+  place-items: center;
   width: 100%;
   padding: 0;
   background: none;
@@ -2179,39 +2297,303 @@
   cursor: zoom-in;
 }
 
-.shots img,
-.shots video,
-.feature {
+.galleryOpen img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  animation: rise 0.35s ease-out;
+}
+
+.galleryZoom {
+  position: absolute;
+  right: 0.8rem;
+  top: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.75);
+  border: 1px solid var(--line-strong);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.galleryStage:hover .galleryZoom {
+  opacity: 1;
+}
+
+.galleryArrow,
+.lightboxArrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  padding: 0;
+  translate: 0 -50%;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.72);
+  border: 1px solid var(--line-strong);
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.galleryArrow[data-dir="prev"],
+.lightboxArrow[data-dir="prev"] {
+  left: 0.8rem;
+}
+
+.galleryArrow[data-dir="next"],
+.lightboxArrow[data-dir="next"] {
+  right: 0.8rem;
+}
+
+.galleryArrow:hover,
+.galleryArrow:focus-visible,
+.lightboxArrow:hover,
+.lightboxArrow:focus-visible {
+  color: #0a0908;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.galleryArrow svg,
+.lightboxArrow svg,
+.galleryStep svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.galleryCaption,
+.lightboxCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  margin: 0.8rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.terminalMain .galleryCaption {
+  margin: 0.8rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.galleryCount {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.galleryGroup {
+  padding: 0.15rem 0.45rem;
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+}
+
+.site .galleryLink {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.site .galleryLink:hover {
+  text-decoration: underline;
+}
+
+.galleryStep {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.galleryStep button {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--line-strong);
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.galleryStep button:hover,
+.galleryStep button:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* The strip of thumbnails: scrolls sideways, the current one lit. */
+.galleryThumbs {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
+  padding: 0 0 0.6rem;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-deep) transparent;
+}
+
+.terminalMain .galleryThumbs {
+  margin: 0.9rem 0 0;
+  padding: 0 0 0.6rem;
+}
+
+.galleryThumbs li {
+  flex: none;
+  width: 8.5rem;
+  scroll-snap-align: start;
+}
+
+.galleryThumbs[data-videos] li {
+  width: 11rem;
+}
+
+.galleryThumbs button {
+  position: relative;
   display: block;
   width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  background: #070605;
   border: 1px solid var(--line);
-  background: #000;
   transition:
-    border-color 0.3s,
+    border-color 0.25s,
+    opacity 0.25s;
+}
+
+.galleryThumbs img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+  filter: grayscale(0.6);
+  transition:
+    opacity 0.25s,
+    filter 0.25s,
     transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.shots figure button:hover img {
-  border-color: var(--accent-deep);
-  transform: translateY(-3px);
+.galleryThumbs button:hover img,
+.galleryThumbs button:focus-visible img {
+  opacity: 0.9;
+  filter: none;
+  transform: scale(1.04);
 }
 
-.feature {
-  margin-bottom: 3rem;
+.galleryThumbs button[aria-current] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-.shots figcaption {
-  margin-top: 0.5rem;
+.galleryThumbs button[aria-current] img {
+  opacity: 1;
+  filter: none;
+}
+
+.thumbPlay {
+  position: absolute;
+  left: 0.4rem;
+  bottom: 0.4rem;
+  padding: 0.15rem 0.4rem;
   font-family: var(--mono);
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   letter-spacing: 0.12em;
-  color: var(--muted);
   text-transform: uppercase;
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.78);
 }
 
-/* A section: its heading in a left column, its text beside it. */
+.galleryThumbs button[aria-current] .thumbPlay {
+  color: #0a0908;
+  background: var(--accent);
+}
 
-/* A screenshot at full size. */
+.thumbTitle,
+.terminalMain .thumbTitle {
+  display: -webkit-box;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--muted);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.playlist + .playlist {
+  margin-top: 0.4rem;
+}
+
+.playlistHead {
+  margin: 1.2rem 0 0;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.playlistHead span {
+  margin-left: 0.4rem;
+  color: var(--muted);
+}
+
+/* A video on the stage: portrait reels fit its height, letterboxed. */
+.videoStage {
+  margin: 0 0 2.6rem;
+}
+
+/* Inside a playlist the caption sits right under it. */
+.gallery .videoStage {
+  margin: 0;
+}
+
+.videoStage .player {
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.videoStage .player video {
+  width: 100%;
+  height: auto;
+  max-height: min(68vh, 40rem);
+  object-fit: contain;
+}
+
+.videoStage + .gallery,
+.gallery + .gallery {
+  margin-top: 2.2rem;
+}
+
+/* A screenshot at full size, over the record. */
 .lightbox {
   position: fixed;
   inset: 0;
@@ -2220,27 +2602,96 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
-  padding: 2rem;
-  background: rgba(6, 5, 4, 0.96);
-  border: 0;
+  gap: 0.4rem;
+  padding: 4.5rem 5.5rem 2rem;
+  background: rgba(6, 5, 4, 0.97);
+  outline: none;
   cursor: zoom-out;
   animation: rise 0.25s ease-out;
 }
 
 .lightbox img {
   max-width: 100%;
-  max-height: calc(100vh - 6rem);
+  max-height: calc(100vh - 9rem);
   object-fit: contain;
   border: 1px solid var(--line-strong);
 }
 
-.lightbox span {
+.lightboxCaption {
+  margin-top: 0.6rem;
+}
+
+.lightboxArrow {
+  position: fixed;
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.lightboxArrow[data-dir="prev"] {
+  left: 1.2rem;
+}
+
+.lightboxArrow[data-dir="next"] {
+  right: 1.2rem;
+}
+
+.lightboxClose {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
   font-family: var(--mono);
   font-size: 0.72rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text);
+  background: rgba(10, 9, 8, 0.75);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.lightboxClose:hover,
+.lightboxClose:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.lightboxClose kbd {
+  padding: 0.05rem 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  border: 1px solid var(--line-strong);
+}
+
+@media (max-width: 720px) {
+  .galleryArrow {
+    width: 2.3rem;
+    height: 2.3rem;
+  }
+
+  .galleryThumbs li {
+    width: 6.5rem;
+  }
+
+  .galleryThumbs[data-videos] li {
+    width: 8.5rem;
+  }
+
+  .lightbox {
+    padding: 4rem 0.8rem 1.5rem;
+  }
+
+  .lightboxArrow {
+    top: auto;
+    bottom: 1rem;
+    translate: none;
+  }
 }
 
 .posterFull {
@@ -2491,6 +2942,47 @@
     border-color 0.3s;
 }
 
+/* An entry with the organization's logo: the logo beside the text. */
+.logWithLogo {
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 0.9rem !important;
+}
+
+.logBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.orgLogo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-strong);
+}
+
+.orgLogo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  opacity: 0.9;
+  filter: grayscale(1) brightness(1.25) contrast(1.05);
+  transition:
+    opacity 0.3s,
+    filter 0.3s;
+}
+
+.log li:hover .orgLogo img {
+  opacity: 1;
+  filter: none;
+}
+
 .desktopNote {
   display: none;
   margin: 0;
@@ -2532,7 +3024,6 @@
 /* ------------------------------------------------------------------ */
 
 .terminal {
-  will-change: clip-path, opacity;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -2542,10 +3033,21 @@
   margin: 0;
   padding: 0;
   color: var(--text);
-  background: #0a0908;
+  /* The dark comes from the zoom panel below, so it can grow from the card. */
+  background: transparent;
   border: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* The record's dark ground: a panel scaled (transform only) from the card. */
+.terminalZoom {
+  position: fixed;
+  inset: 0;
+  background: #0a0908;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
 }
 
 .terminal:focus {
@@ -2600,7 +3102,6 @@
   color: var(--text);
   background: rgba(10, 9, 8, 0.85);
   border: 1px solid var(--line-strong);
-  backdrop-filter: blur(8px);
   transition:
     background 0.25s,
     color 0.25s,
@@ -2656,7 +3157,6 @@
   background: rgba(10, 9, 8, 0.85);
   border: 1px solid var(--line-strong);
   border-radius: 50%;
-  backdrop-filter: blur(8px);
   transition:
     background 0.25s,
     color 0.25s,
@@ -2879,38 +3379,6 @@
 .mission::before {
   content: ">> ";
   letter-spacing: 0;
-}
-
-/* The lead screenshot, with corner brackets. */
-.frame {
-  position: relative;
-  margin: 0 0 2.6rem;
-  padding: 0;
-}
-
-.frame button {
-  display: block;
-  width: 100%;
-  padding: 0;
-  background: none;
-  border: 0;
-  cursor: zoom-in;
-}
-
-.frame img,
-.frame video {
-  display: block;
-  width: 100%;
-  background: #000;
-}
-
-.frame figcaption {
-  margin-top: 0.6rem;
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 @media (max-width: 900px) {
@@ -3500,11 +3968,68 @@
     bottom: 1rem;
   }
 
+  /* A bottom sheet: solid, full width, dimming the page behind it. The
+     launcher steps aside while it is open (the header's close button and
+     Escape shut it). */
+  .site .nigelLauncher[data-open="true"] {
+    display: none;
+  }
+
   .nigel {
-    left: 0.6rem;
-    right: 0.6rem;
-    bottom: 5.6rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: auto;
+    height: min(38rem, 88dvh);
+    max-height: 88dvh;
+    border-width: 1px 0 0;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+    padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior: contain;
+  }
+
+  .nigelHead {
+    flex: none;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .nigelAvatar {
+    width: 2.8rem;
+    height: 2.35rem;
+  }
+
+  .nigelHead button {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+
+  .nigelLog {
+    flex: 1;
+    min-height: 0;
+    padding: 0.9rem;
+  }
+
+  .nigelChips button {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .nigelForm {
+    flex: none;
+    padding: 0.6rem 0.9rem;
+  }
+
+  /* 16px or more, or iOS zooms the page when the field is focused. */
+  .nigelForm input {
+    font-size: 16px;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .nigelForm button {
+    min-width: 4.2rem;
+  }
+
+  .nigelFoot {
+    flex: none;
   }
 }
 

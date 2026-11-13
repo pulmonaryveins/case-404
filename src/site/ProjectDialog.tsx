@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Project } from "../data/projects";
 import { cover } from "./projectMedia";
+import { Lightbox, ScreenshotGallery, VideoGallery } from "./MediaGallery";
 import styles from "./Site.module.css";
 import { TerminalDialog } from "./TerminalDialog";
 import { VideoPlayer } from "./VideoPlayer";
@@ -11,9 +12,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * One piece of evidence opened, full screen: the record zooms out of its card
  * and back into it on close. Its cover, dimmed, behind; the file's heading;
  * the metadata (facts, stack, links) in a panel on the left; the mission
- * report, the screenshots and the sections on the right. Arrows at the edges
- * (and the arrow keys) page through the files; Esc closes; a screenshot opens
- * full size.
+ * report, the videos and screenshots (each as a gallery) and the sections on
+ * the right. Arrows at the edges (and the arrow keys) page through the files;
+ * Esc closes; a screenshot opens full size and pages on its own.
  */
 export function ProjectDialog({
   project,
@@ -26,7 +27,8 @@ export function ProjectDialog({
   onSelect: (p: Project) => void;
   onClose: () => void;
 }) {
-  const [zoom, setZoom] = useState<{ id: string; src: string; caption: string } | null>(null);
+  // The screenshot open full size, by position, for this record only.
+  const [zoom, setZoom] = useState<{ id: string; index: number } | null>(null);
   const index = project ? list.findIndex((p) => p.id === project.id) : -1;
   const bg = project ? cover(project) : null;
   const links = project
@@ -48,17 +50,15 @@ export function ProjectDialog({
       }}
       onClose={onClose}
       overlay={
-        project &&
+        project?.screenshots &&
         zoom &&
         zoom.id === project.id && (
-          <button
-            className={styles.lightbox}
-            onClick={() => setZoom(null)}
-            aria-label="Close image"
-          >
-            <img src={zoom.src} alt={zoom.caption} />
-            <span>{zoom.caption}</span>
-          </button>
+          <Lightbox
+            shots={project.screenshots}
+            index={zoom.index}
+            onIndex={(index) => setZoom({ id: project.id, index })}
+            onClose={() => setZoom(null)}
+          />
         )
       }
     >
@@ -115,7 +115,11 @@ export function ProjectDialog({
                 <p>{project.tagline ?? project.description}</p>
               </section>
 
-              <Media project={project} onZoom={(shot) => setZoom({ id: project.id, ...shot })} />
+              <Media
+                key={project.id}
+                project={project}
+                onZoom={(index) => setZoom({ id: project.id, index })}
+              />
 
               {(project.sections ?? [{ heading: "Overview", text: project.description }]).map(
                 (s) => (
@@ -149,61 +153,24 @@ export function ProjectDialog({
 }
 
 /**
- * The first screenshot large, in a bracketed frame, the rest in a grid; a
- * single video to play; or a set of videos by their posters.
+ * The record's media: its videos as a playlist with one stage, its screenshots
+ * as a gallery with one stage, or its single clip.
  */
-function Media({
-  project,
-  onZoom,
-}: {
-  project: Project;
-  onZoom: (shot: { src: string; caption: string }) => void;
-}) {
-  if (project.screenshots?.length) {
-    const [first, ...rest] = project.screenshots;
-    return (
-      <>
-        <figure className={styles.frame} data-terminal-in>
-          <button onClick={() => onZoom(first)} aria-label={`Enlarge: ${first.caption}`}>
-            <img src={first.src} alt={first.caption} />
-          </button>
-          <figcaption>{first.caption}</figcaption>
-        </figure>
-        {rest.length > 0 && (
-          <ul className={styles.shots} data-terminal-in>
-            {rest.map((shot) => (
-              <li key={shot.src}>
-                <figure>
-                  <button onClick={() => onZoom(shot)} aria-label={`Enlarge: ${shot.caption}`}>
-                    <img src={shot.src} alt={shot.caption} loading="lazy" />
-                  </button>
-                  <figcaption>{shot.caption}</figcaption>
-                </figure>
-              </li>
-            ))}
-          </ul>
-        )}
-      </>
-    );
-  }
-  if (project.videos?.length)
-    return (
-      <ul className={styles.shots} data-terminal-in>
-        {project.videos.map((v) => (
-          <li key={v.src}>
-            <figure>
-              <VideoPlayer src={v.src} poster={v.poster} preload="none" />
-              <figcaption>{v.title}</figcaption>
-            </figure>
-          </li>
-        ))}
-      </ul>
-    );
-  if (project.video)
-    return (
-      <figure className={styles.frame} data-terminal-in>
-        <VideoPlayer src={project.video} silent={project.silent} />
-      </figure>
-    );
-  return null;
+function Media({ project, onZoom }: { project: Project; onZoom: (index: number) => void }) {
+  return (
+    <>
+      {project.videos?.length ? (
+        <VideoGallery videos={project.videos} />
+      ) : (
+        project.video && (
+          <div className={styles.videoStage} data-terminal-in>
+            <VideoPlayer src={project.video} silent={project.silent} />
+          </div>
+        )
+      )}
+      {project.screenshots?.length ? (
+        <ScreenshotGallery shots={project.screenshots} onOpen={onZoom} />
+      ) : null}
+    </>
+  );
 }
